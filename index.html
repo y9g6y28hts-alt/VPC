@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Vive para Contarlo</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { background-color: #0b0c10; color: #c5c6c7; font-family: system-ui, sans-serif; }
+    .accent-gradient { background: linear-gradient(135deg, #66fcf1 0%, #45a29e 100%); }
+    .glass-card { background: rgba(31, 40, 51, 0.75); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between antialiased">
+
+  <!-- PASO 1: LENDING PAGE (Video 1) -->
+  <section id="step-landing" class="flex-1 flex flex-col items-center justify-center px-4 py-12 text-center max-w-4xl mx-auto w-full">
+    <span class="text-xs uppercase tracking-widest text-teal-400 font-semibold mb-2">Desarrollo Personal & Claridad</span>
+    <h1 class="text-4xl md:text-6xl font-extrabold tracking-tight mb-4 text-white">Vive para Contarlo</h1>
+    <p class="text-real-gray-400 text-base md:text-lg mb-8 max-w-2xl">Define, evalúa y alcanza tus metas con claridad absoluta.</p>
+    
+    <div class="w-full aspect-video rounded-2xl overflow-hidden shadow-2xl border border-gray-800 bg-black mb-8">
+      <iframe id="video-1" class="w-full h-full" src="https://www.youtube.com/embed/dQw4w9WgXcQ" title="Video 1" frameborder="0" allowfullscreen></iframe>
+    </div>
+
+    <button onclick="goToStep('auth')" class="accent-gradient text-white font-medium px-8 py-4 rounded-xl shadow-lg hover:opacity-90 transition text-lg">
+      Comenzar Ahora
+    </button>
+  </section>
+
+  <!-- PASO 2: AUTENTICACIÓN (Login / Registro) -->
+  <section id="step-auth" class="hidden flex-1 flex flex-col items-center justify-center px-4 py-12 text-center max-w-md mx-auto w-full">
+    <div class="glass-card p-8 rounded-2xl w-full shadow-2xl">
+      <h2 class="text-2xl font-bold text-white mb-2">Crear Cuenta o Iniciar Sesión</h2>
+      <p class="text-sm text-gray-400 mb-6">Guarda tu progreso de forma segura</p>
+
+      <button onclick="loginWithGoogle()" class="w-full flex items-center justify-center gap-3 bg-white text-gray-900 font-semibold py-3 px-4 rounded-xl mb-4 hover:bg-gray-100 transition shadow">
+        <svg class="w-5 h-5" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
+        Continuar con Google
+      </button>
+
+      <div class="relative my-6">
+        <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-gray-700"></div></div>
+        <div class="relative flex justify-center text-xs uppercase"><span class="bg-[#1f2833] px-2 text-gray-400">O con email</span></div>
+      </div>
+
+      <form onsubmit="handleEmailAuth(event)" class="space-y-4">
+        <input type="email" id="auth-email" placeholder="Tu correo electrónico" required class="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-teal-400 transition" />
+        <input type="password" id="auth-password" placeholder="Contraseña" required class="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-teal-400 transition" />
+        <button type="submit" class="w-full accent-gradient text-white font-semibold py-3 rounded-xl hover:opacity-90 transition">
+          Ingresar / Registrarse
+        </button>
+      </form>
+    </div>
+  </section>
+
+  <!-- PASO 3: CUESTIONARIO / INTRO (Video 2) -->
+  <section id="step-intro" class="hidden flex-1 flex flex-col items-center justify-center px-4 py-12 text-center max-w-4xl mx-auto w-full">
+    <span class="text-xs uppercase tracking-widest text-teal-400 font-semibold mb-2">Paso 2 de 3</span>
+    <h2 class="text-3xl font-bold text-white mb-4">Instrucciones de Configuración</h2>
+    
+    <div class="w-full aspect-video rounded-2xl overflow-hidden shadow-2xl border border-gray-800 bg-black mb-8">
+      <iframe id="video-2" class="w-full h-full" src="https://www.youtube.com/embed/dQw4w9WgXcQ" title="Video 2" frameborder="0" allowfullscreen></iframe>
+    </div>
+
+    <button onclick="completeIntro()" class="accent-gradient text-white font-semibold px-8 py-4 rounded-xl shadow-lg hover:opacity-90 transition text-lg">
+      Continuar al Dashboard
+    </button>
+  </section>
+
+  <!-- PASO 4: DASHBOARD PRINCIPAL -->
+  <section id="step-dashboard" class="hidden flex-1 max-w-6xl mx-auto w-full p-4 md:p-8">
+    <header class="flex justify-between items-center mb-8 border-b border-gray-800 pb-4">
+      <div>
+        <h1 class="text-2xl font-bold text-white">Mi Panel</h1>
+        <p id="user-display" class="text-xs text-gray-400"></p>
+      </div>
+      <button onclick="logout()" class="text-sm text-red-400 hover:text-red-300 transition">Cerrar Sesión</button>
+    </header>
+
+    <!-- BLOQUEO TRAS 5 DÍAS -->
+    <div id="trial-blocked" class="hidden glass-card border-red-500/50 p-6 rounded-2xl text-center my-6">
+      <h3 class="text-xl font-bold text-red-400 mb-2">Prueba de 5 días finalizada</h3>
+      <p class="text-sm text-gray-300 mb-4">Tu acceso de evaluación ha expirado. Adquiere el acceso completo para continuar.</p>
+      <button class="accent-gradient text-white font-semibold px-6 py-2 rounded-lg">Obtener Acceso</button>
+    </div>
+
+    <!-- CONTENIDO REGULAR DEL DASHBOARD -->
+    <div id="dashboard-content" class="grid md:grid-cols-2 gap-6">
+      <div class="glass-card p-6 rounded-2xl">
+        <h3 class="text-lg font-semibold text-white mb-4">Evaluación de Metas</h3>
+        <textarea id="state-input" rows="6" class="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-white placeholder-gray-500 focus:outline-none focus:border-teal-400 transition mb-4" placeholder="Escribe tus reflexiones o avances aquí..."></textarea>
+        <button onclick="saveDashboardState()" class="accent-gradient text-white font-medium px-4 py-2 rounded-lg hover:opacity-90 transition">
+          Guardar Cambios
+        </button>
+      </div>
+
+      <div class="glass-card p-6 rounded-2xl">
+        <h3 class="text-lg font-semibold text-white mb-2">Estado del Perfil</h3>
+        <p class="text-sm text-gray-400 mb-4">Información sincronizada con tu cuenta en la nube.</p>
+        <div id="trial-counter" class="text-xs text-teal-400 font-mono bg-gray-900 p-3 rounded-lg border border-gray-800">
+          Calculando días restantes...
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    // Configuración de Supabase
+    const SUPABASE_URL = "https://ujswdjvsxzkpzonsiebt.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVqc3dkanZzeHprcHpvbnNpEBtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk2NjY3ODksImV4cCI6MjEwNTI0Mjc4OX0.3sKiVz0eA1dPOrVJkcGlntHYQjGJwpz0KZU4F8E3TUI";
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    let currentUser = null;
+    let userProfile = null;
+
+    // Navegación entre vistas
+    function goToStep(stepId) {
+      ['landing', 'auth', 'intro', 'dashboard'].forEach(s => {
+        document.getElementById(`step-${s}`).classList.add('hidden');
+      });
+      document.getElementById(`step-${stepId}`).classList.remove('hidden');
+    }
+
+    // Inicialización
+    window.addEventListener('DOMContentLoaded', async () => {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      if (session) {
+        currentUser = session.user;
+        await loadUserProfile();
+      }
+    });
+
+    // Escuchar cambios de sesión (ej: post login Google)
+    supabaseClient.auth.onAuthStateChange(async (event, session) => {
+      if (session) {
+        currentUser = session.user;
+        await loadUserProfile();
+      } else {
+        currentUser = null;
+        userProfile = null;
+        goToStep('landing');
+      }
+    });
+
+    // Auth: Google
+    async function loginWithGoogle() {
+      await supabaseClient.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: window.location.origin }
+      });
+    }
+
+    // Auth: Email/Password
+    async function handleEmailAuth(e) {
+      e.preventDefault();
+      const email = document.getElementById('auth-email').value;
+      const password = document.getElementById('auth-password').value;
+
+      let { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+      
+      if (error) {
+        // Intentar registro si no existe
+        const signup = await supabaseClient.auth.signUp({ email, password });
+        if (signup.error) return alert(signup.error.message);
+        alert("Cuenta creada correctamente.");
+      }
+    }
+
+    // Cargar perfil desde la base de datos
+    async function loadUserProfile() {
+      document.getElementById('user-display').innerText = currentUser.email;
+
+      let { data, error } = await supabaseClient
+        .from('profiles')
+        .select('*')
+        .eq('id', currentUser.id)
+        .single();
+
+      if (!data) {
+        // Primer ingreso: crear registro de perfil
+        const { data: newProfile } = await supabaseClient
+          .from('profiles')
+          .insert([{ id: currentUser.id, estado: { video2_visto: false, texto: '' } }])
+          .select()
+          .single();
+        userProfile = newProfile;
+      } else {
+        userProfile = data;
+      }
+
+      checkTrialAndNavigate();
+    }
+
+    // Lógica del Gate de 5 Días (120 Horas)
+    function checkTrialAndNavigate() {
+      const createdAt = new Date(currentUser.created_at).getTime();
+      const now = new Date().getTime();
+      const hoursPassed = (now - createdAt) / (1000 * 60 * 60);
+
+      if (hoursPassed > 120) {
+        goToStep('dashboard');
+        document.getElementById('trial-blocked').classList.remove('hidden');
+        document.getElementById('dashboard-content').classList.add('opacity-30', 'pointer-events-none');
+        document.getElementById('trial-counter').innerText = "Estado: Período de prueba expirado.";
+        return;
+      }
+
+      const hoursLeft = Math.max(0, Math.floor(120 - hoursPassed));
+      document.getElementById('trial-counter').innerText = `Tiempo de prueba restante: ~${hoursLeft} horas.`;
+
+      const estado = userProfile?.estado || {};
+      if (!estado.video2_visto) {
+        goToStep('intro');
+      } else {
+        goToStep('dashboard');
+        if (estado.texto) {
+          document.getElementById('state-input').value = estado.texto;
+        }
+      }
+    }
+
+    // Completar Video 2
+    async function completeIntro() {
+      const currentEstado = userProfile?.estado || {};
+      currentEstado.video2_visto = true;
+
+      await supabaseClient
+        .from('profiles')
+        .update({ estado: currentEstado, updated_at: new Date() })
+        .eq('id', currentUser.id);
+
+      userProfile.estado = currentEstado;
+      goToStep('dashboard');
+    }
+
+    // Guardar estado en Dashboard
+    async function saveDashboardState() {
+      const text = document.getElementById('state-input').value;
+      const currentEstado = userProfile?.estado || {};
+      currentEstado.texto = text;
+
+      await supabaseClient
+        .from('profiles')
+        .update({ estado: currentEstado, updated_at: new Date() })
+        .eq('id', currentUser.id);
+
+      alert("Guardado con éxito.");
+    }
+
+    // Cerrar Sesión
+    async function logout() {
+      await supabaseClient.auth.signOut();
+      goToStep('landing');
+    }
+  </script>
+</body>
+</html>

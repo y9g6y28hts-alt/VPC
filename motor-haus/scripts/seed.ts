@@ -9,14 +9,15 @@
 // Uso: npm run db:reset && npm run db:seed
 // =============================================================================
 
-import { Pool } from "pg";
 import { randomUUID } from "node:crypto";
 import { closePool, Db, withUser } from "@/server/gateway";
+import { getDriver, SqlClient } from "@/server/driver";
 import { saveScenario, ScenarioParams } from "@/server/services/financing";
 import { addDays, addMonths } from "@/domain/finance/dates";
 
 const DEMO_PASSWORD = process.env.MH_DEMO_PASSWORD ?? "MotorHaus-Demo-2026";
-const admin = new Pool({ connectionString: process.env.MH_ADMIN_DATABASE_URL });
+// Consultas administrativas (alta de usuarios y organización): propietario de la base.
+const admin: SqlClient = { query: async (sql, params) => (await getDriver()).admin.query(sql, params) };
 
 type Role = "ceo" | "cfo" | "sales_manager" | "sales_advisor" | "collections" | "inventory_manager" | "imports_manager" | "auditor" | "tech_admin";
 const PEOPLE: Array<{ key: string; email: string; name: string; title: string; role: Role }> = [
@@ -237,13 +238,13 @@ async function payUntil(contract: string, customer: string, untilDaysAgo: number
   }
 }
 
-async function main() {
-  if (!process.env.MH_ADMIN_DATABASE_URL || !(process.env.MH_DATABASE_URL ?? process.env.DATABASE_URL)) {
+export async function runSeed() {
+  if ((await getDriver()).kind === "pg" && (!process.env.MH_ADMIN_DATABASE_URL || !(process.env.MH_DATABASE_URL ?? process.env.DATABASE_URL))) {
     throw new Error("Defina MH_DATABASE_URL (o DATABASE_URL) y MH_ADMIN_DATABASE_URL (ver .env.example)");
   }
   TODAY = (await admin.query<{ d: string }>("select (now() at time zone coalesce($1, 'America/Asuncion'))::date::text as d", [process.env.MH_TIMEZONE ?? null])).rows[0].d;
   const existing = await admin.query("select 1 from public.organizations limit 1");
-  if (existing.rowCount) throw new Error("La base ya contiene datos. Ejecute npm run db:reset antes del seed.");
+  if (existing.rows.length) throw new Error("La base ya contiene datos. Ejecute npm run db:reset antes del seed.");
 
   // 1. Usuarios y organización (único paso con privilegios de servicio)
   for (const p of PEOPLE) {
@@ -533,6 +534,8 @@ async function main() {
   console.log(`\nSeed completo. Organización DEMO ${ORG}. Contraseña de todos los usuarios demo: ${DEMO_PASSWORD}`);
 }
 
-main()
-  .catch((e) => { console.error("✗ Seed falló:", e); process.exitCode = 1; })
-  .finally(async () => { await admin.end(); await closePool(); });
+if (require.main === module) {
+  runSeed()
+    .catch((e) => { console.error("✗ Seed falló:", e); process.exitCode = 1; })
+    .finally(closePool);
+}

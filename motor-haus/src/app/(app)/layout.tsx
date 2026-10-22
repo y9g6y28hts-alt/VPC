@@ -2,6 +2,7 @@ import { getContext, can } from "@/server/context";
 import { ROLE } from "@/lib/labels";
 import { Sidebar, NavGroup } from "./Sidebar";
 import { logoutAction } from "../login/actions";
+import { isEmbedded } from "@/server/driver";
 
 export const dynamic = "force-dynamic";
 
@@ -50,6 +51,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         {ctx.org.isDemo && (
           <div className="border-b border-warn/25 bg-warn-bg px-4 py-1.5 text-center text-[11px] tracking-wide text-warn lg:px-8">
             DATOS DE DEMOSTRACIÓN · organización ficticia; ninguna cifra corresponde a resultados reales
+            {isEmbedded() && " · base embebida: los cambios son temporales y pueden reiniciarse"}
           </div>
         )}
         <main className="mx-auto max-w-[1440px] px-4 py-5 lg:px-8">{children}</main>

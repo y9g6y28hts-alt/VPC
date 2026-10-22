@@ -60,6 +60,10 @@ Fecha de verificación: 22/10/2026. Entorno: PostgreSQL 16 local con shim de Sup
 
 Centro de control, showroom y vista ejecutiva, ficha de unidad, mesa de negociación, cartera, estado de cuenta, PDF de propuesta, vista móvil del centro de control. Estados vacíos, de carga y de error implementados para todas las vistas.
 
+## Despliegue de demostración embebido
+
+Sin base configurada, la app usa PostgreSQL embebido (PGlite 0.5, PostgreSQL 18) generado en el build con las mismas migraciones y el mismo seed. Verificado con build limpio en producción: 27 pantallas, PDF y negociación por la interfaz (`scripts/smoke-demo.ts`). Los cambios en ese modo son temporales y por instancia.
+
 ## Parcialmente implementado
 
 | Funcionalidad | Estado |

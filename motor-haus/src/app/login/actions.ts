@@ -13,7 +13,7 @@ export async function loginAction(_: ActionState, fd: FormData): Promise<ActionS
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message, at: Date.now() };
   const { email, password } = parsed.data;
   try {
-    if (authMode() === "supabase") {
+    if ((await authMode()) === "supabase") {
       const sb = await supabaseServerClient();
       const { error } = await sb.auth.signInWithPassword({ email, password });
       if (error) return { ok: false, error: "Credenciales inválidas.", at: Date.now() };

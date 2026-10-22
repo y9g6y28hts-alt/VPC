@@ -4,6 +4,9 @@ import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 import type { Claims } from "./gateway";
 import { DomainError } from "./errors";
+import { readFileSync } from "node:fs";
+import path from "node:path";
+import { DEMO_DB_DIR, getDriver, isEmbedded } from "./driver";
 
 // -----------------------------------------------------------------------------
 // Autenticación
@@ -18,16 +21,24 @@ const TTL_SECONDS = 8 * 60 * 60;
 
 export type AuthMode = "supabase" | "local";
 
-export function authMode(): AuthMode {
+export async function authMode(): Promise<AuthMode> {
   const mode = (process.env.MH_AUTH_MODE ?? "local") as AuthMode;
-  if (mode === "local" && process.env.NODE_ENV === "production" && process.env.MH_ALLOW_LOCAL_AUTH !== "true") {
+  if (mode === "local") await getDriver().catch(() => undefined); // resuelve si la base es la embebida
+  // La base embebida solo contiene datos de demostración: allí la autenticación local está permitida.
+  if (mode === "local" && process.env.NODE_ENV === "production" && process.env.MH_ALLOW_LOCAL_AUTH !== "true" && !isEmbedded()) {
     throw new DomainError("INTERNAL", "La autenticación local está deshabilitada en producción. Configure MH_AUTH_MODE=supabase.");
   }
   return mode;
 }
 
+let buildSecret: string | undefined;
 function secret(): Buffer {
-  const s = process.env.MH_SESSION_SECRET ?? "";
+  let s = process.env.MH_SESSION_SECRET ?? "";
+  if (!s && isEmbedded()) {
+    // Secreto aleatorio generado en el build de la base de demostración.
+    buildSecret ??= readFileSync(path.join(DEMO_DB_DIR, "session-secret.txt"), "utf8").trim();
+    s = buildSecret;
+  }
   if (s.length < 32) throw new DomainError("INTERNAL", "MH_SESSION_SECRET debe tener al menos 32 caracteres.");
   return Buffer.from(s);
 }
@@ -76,7 +87,7 @@ export async function supabaseServerClient() {
 }
 
 export async function currentClaims(): Promise<Claims | null> {
-  if (authMode() === "supabase") {
+  if ((await authMode()) === "supabase") {
     const sb = await supabaseServerClient();
     const { data, error } = await sb.auth.getUser();
     if (error || !data.user) return null;
@@ -87,7 +98,7 @@ export async function currentClaims(): Promise<Claims | null> {
 }
 
 export async function destroySession(): Promise<void> {
-  if (authMode() === "supabase") {
+  if ((await authMode()) === "supabase") {
     const sb = await supabaseServerClient();
     await sb.auth.signOut();
     return;

@@ -10,7 +10,15 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   agentRules: false,
-  serverExternalPackages: ["pg"],
+  serverExternalPackages: ["pg", "@electric-sql/pglite"],
+  // Base de demostración embebida y archivos WebAssembly de PGlite dentro de las funciones.
+  outputFileTracingIncludes: {
+    "/**": [
+      "./demo-db/**/*",
+      "./node_modules/@electric-sql/pglite/dist/*.{wasm,data}",
+      "./node_modules/@electric-sql/pglite/dist/{pgcrypto,btree_gist}.tar.gz",
+    ],
+  },
   // Fotografías de unidades (hasta 8 MB + sobrecarga multipart).
   experimental: { serverActions: { bodySizeLimit: "9mb" } },
   async headers() {

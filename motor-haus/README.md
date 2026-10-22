@@ -14,7 +14,7 @@ Sistema operativo privado para la gesti처n integral de una concesionaria de veh�
 | [docs/security.md](docs/security.md) | Autenticaci처n, RLS, roles, datos sensibles, respaldo y recuperaci처n |
 | [docs/demo-script.md](docs/demo-script.md) | Guion de presentaci처n en cinco actos y usuarios demo |
 | [docs/quality-report.md](docs/quality-report.md) | Funcionalidades verificadas, parciales y pendientes; riesgos |
-| [docs/deploy-vercel.md](docs/deploy-vercel.md) | Despliegue en Vercel con Neon (paso a paso) |
+| [docs/deploy-vercel.md](docs/deploy-vercel.md) | Despliegue en Vercel: demostraci처n sin configuraci처n o base persistente con Neon |
 
 ## Requisitos
 

@@ -6,7 +6,7 @@ export const metadata: Metadata = { title: "Ingreso" };
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   const { error } = await searchParams;
-  const mode = authMode();
+  const mode = await authMode();
   return (
     <main className="grid min-h-screen place-items-center px-4">
       <div className="w-full max-w-sm">

@@ -1,5 +1,20 @@
 # Motor Haus · Despliegue en Vercel
 
+## Opción A — Demostración sin configurar nada (recomendada para mostrar)
+
+1. Suba la carpeta `motor-haus` (con `vercel.json`) a Vercel: importando el repositorio con **Root Directory = `motor-haus`**, o con `npx vercel --prod` dentro de la carpeta.
+2. No hace falta definir variables ni base de datos.
+
+Durante el build (`npm run build`) se genera una **base PostgreSQL embebida** (PGlite) con el esquema completo y los datos de demostración, y la app la usa automáticamente cuando no hay una base configurada. Si Vercel tiene una `DATABASE_URL` (por ejemplo, de una integración) que está vacía o no responde, también se usa la base embebida en lugar de fallar.
+
+Verificado en una simulación de Vercel (instalación limpia, build sin variables, `next start` en producción) en tres situaciones: sin base, con `DATABASE_URL` vacía y con `DATABASE_URL` inaccesible. En las tres, las 19 secciones, sus expedientes, la descarga de PDF y una negociación con escenario de financiación funcionan. Para revisar el despliegue real: `MH_BASE_URL=https://<su-app>.vercel.app npx tsx scripts/smoke-demo.ts`.
+
+**Limitación:** en este modo los cambios (operaciones, pagos, etc.) viven en la memoria de cada instancia del servidor: son temporales, se pierden al reiniciarse la instancia y no se comparten entre instancias. Sirve para demostrar y explorar; para uso real, use la opción B.
+
+Ingreso: `direccion@motorhaus.demo` / `MotorHaus-Demo-2026`.
+
+## Opción B — Base persistente (Neon)
+
 La aplicación necesita una base PostgreSQL. La forma más simple en Vercel es **Neon** (Marketplace de Vercel). Este procedimiento fue verificado contra una base que replica las restricciones de un Postgres gestionado (propietario con `CREATEROLE`, sin superusuario): instalación, seed, 52 pruebas, build de producción, 33 pantallas y el E2E completo. **No** se verificó todavía sobre una cuenta real de Vercel/Neon.
 
 > Este despliegue usa los **datos de demostración** y la autenticación local con contraseñas demo conocidas. Active *Deployment Protection* en Vercel si el enlace no debe ser público, y no cargue datos reales en este modo.

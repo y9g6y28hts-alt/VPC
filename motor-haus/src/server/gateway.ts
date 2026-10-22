@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
-import { Pool, PoolClient, QueryResultRow, types } from "pg";
+import type { QueryResultRow } from "pg";
 import { DomainError, toDomainError } from "./errors";
+import { closeDriver, getDriver, SqlClient } from "./driver";
 
 // -----------------------------------------------------------------------------
 // Gateway de datos
@@ -8,26 +9,6 @@ import { DomainError, toDomainError } from "./errors";
 // claims JWT del usuario, igual que PostgREST en Supabase. Así el RLS y las
 // funciones de negocio se aplican siempre: el servidor no tiene "modo dios".
 // -----------------------------------------------------------------------------
-
-// numeric y bigint llegan como texto (precisión exacta); las fechas de negocio
-// (tipo date) también, para no aplicar zonas horarias a una fecha sin hora.
-types.setTypeParser(1082, (v) => v);
-
-declare global {
-  // eslint-disable-next-line no-var
-  var __mhPool: Pool | undefined;
-}
-
-function pool(): Pool {
-  if (!globalThis.__mhPool) {
-    // MH_DATABASE_URL tiene prioridad: integraciones como Neon en Vercel crean DATABASE_URL
-    // con el rol propietario, y la aplicación debe conectarse con el rol sin privilegios.
-    const connectionString = process.env.MH_DATABASE_URL ?? process.env.DATABASE_URL;
-    if (!connectionString) throw new DomainError("INTERNAL", "MH_DATABASE_URL / DATABASE_URL no está configurada en el servidor.");
-    globalThis.__mhPool = new Pool({ connectionString, max: Number(process.env.MH_DB_POOL_MAX ?? 10) });
-  }
-  return globalThis.__mhPool;
-}
 
 export interface Claims { sub: string; email: string }
 
@@ -41,7 +22,7 @@ export interface Db {
 
 const IDENT = /^[a-z_][a-z0-9_]*$/;
 
-function makeDb(client: PoolClient): Db {
+function makeDb(client: SqlClient): Db {
   const rows = async <T extends QueryResultRow>(sql: string, params: unknown[] = []) =>
     (await client.query<T>(sql, params)).rows;
   return {
@@ -73,7 +54,8 @@ function makeDb(client: PoolClient): Db {
 export interface TxOptions { asOfDate?: string; opId?: string }
 
 export async function withUser<T>(claims: Claims, fn: (db: Db) => Promise<T>, opts: TxOptions = {}): Promise<T> {
-  const client = await pool().connect();
+  const driver = await getDriver().catch((e) => { throw new DomainError("INTERNAL", (e as Error).message); });
+  return driver.withConnection(async (client) => {
   try {
     await client.query("begin");
     await client.query(
@@ -91,21 +73,20 @@ export async function withUser<T>(claims: Claims, fn: (db: Db) => Promise<T>, op
     const mapped = toDomainError(err);
     if (mapped.code === "INTERNAL") console.error("[motor-haus] error de base de datos:", (err as Error).message);
     throw mapped;
-  } finally {
-    client.release();
   }
+  });
 }
 
 /** Solo autenticación local de desarrollo: verifica credenciales contra auth.users. */
 export async function verifyLocalPassword(email: string, password: string): Promise<string | null> {
-  const r = await pool().query<{ id: string | null }>("select auth_local.verify_password($1, $2) as id", [email, password]);
-  return r.rows[0]?.id ?? null;
+  const driver = await getDriver();
+  return driver.withConnection(async (c) => {
+    const r = await c.query<{ id: string | null }>("select auth_local.verify_password($1, $2) as id", [email, password]);
+    return r.rows[0]?.id ?? null;
+  });
 }
 
-/** Cierra el pool (scripts y pruebas). */
+/** Cierra las conexiones (scripts y pruebas). */
 export async function closePool(): Promise<void> {
-  if (globalThis.__mhPool) {
-    await globalThis.__mhPool.end();
-    globalThis.__mhPool = undefined;
-  }
+  await closeDriver();
 }

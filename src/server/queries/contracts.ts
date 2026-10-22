@@ -26,7 +26,7 @@ export interface ContractListRow {
 
 export async function listContracts(ctx: AppContext, f: { q?: string; status?: string; bucket?: string }) {
   return ctx.db((tx) => tx<ContractListRow[]>`
-    select b.contract_id, b.number, c.full_name as customer, c.id as customer_id, br.name || ' ' || v.model || ' ' || v.year_model as vehicle,
+    select b.contract_id, b.number, c.full_name as customer, c.id as customer_id, app.vehicle_name(br.name, v.model) || ' ' || v.year_model as vehicle,
            b.currency, b.status, k.signed_on, b.sale_price, b.financed_amount, b.total_due, b.cash_collected, b.outstanding,
            b.overdue_amount, b.max_days_overdue, b.next_due_date, b.next_due_amount, b.last_payment_on,
            u.full_name as collector, app.aging_bucket(b.org_id, b.max_days_overdue) as bucket
@@ -51,7 +51,7 @@ export async function getContract(ctx: AppContext, id: string) {
   })[]>`
     select b.*, k.signed_on, k.deal_id, d.number as deal_number, k.trade_in_value, k.down_payment, k.current_version, k.vehicle_id,
            c.full_name as customer, c.id as customer_id, c.phone as customer_phone, v.stock_code,
-           br.name || ' ' || v.model || ' ' || v.year_model as vehicle, u.full_name as collector, s.full_name as seller,
+           app.vehicle_name(br.name, v.model) || ' ' || v.year_model as vehicle, u.full_name as collector, s.full_name as seller,
            app.aging_bucket(b.org_id, b.max_days_overdue) as bucket
     from public.v_contract_balances b
     join public.contracts k on k.id = b.contract_id

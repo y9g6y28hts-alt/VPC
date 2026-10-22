@@ -20,7 +20,7 @@ export async function builderData(ctx: AppContext, opts: { excludeDealId?: strin
   const include = opts.includeVehicleId;
   if (include && !list.some((v) => v.id === include)) {
     const extra = await ctx.db((tx) => tx<VehicleOption[]>`
-      select v.id, v.stock_code || ' · ' || b.name || ' ' || v.model || coalesce(' ' || v.version, '') || ' ' || v.year_model as label,
+      select v.id, v.stock_code || ' · ' || app.vehicle_name(b.name, v.model) || coalesce(' ' || v.version, '') || ' ' || v.year_model as label,
              v.price_currency, v.list_price, v.min_price
       from public.vehicles v join public.brands b on b.id = v.brand_id where v.id = ${include}`);
     list = [...extra, ...list];

@@ -42,7 +42,7 @@ export async function portfolio(ctx: AppContext, f: { sort: { field: string; dir
   const order = SORTS[f.sort.field] ?? "overdue_base";
   return ctx.db((tx) => tx<PortfolioRow[]>`
     select b.contract_id, b.number, c.full_name as customer, c.id as customer_id, c.phone as customer_phone,
-           br.name || ' ' || v.model || ' ' || v.year_model as vehicle, b.currency, b.total_due, b.total_applied, b.cash_collected,
+           app.vehicle_name(br.name, v.model) || ' ' || v.year_model as vehicle, b.currency, b.total_due, b.total_applied, b.cash_collected,
            b.outstanding, b.overdue_amount, b.next_due_date, b.next_due_amount, b.max_days_overdue, b.last_payment_on,
            u.full_name as collector, coalesce(b.collector_id, c.collector_id) as collector_id,
            app.aging_bucket(b.org_id, b.max_days_overdue) as bucket,
@@ -144,7 +144,7 @@ export async function overdueHistory(ctx: AppContext, months = 12) {
   return ctx.db((tx) => tx<{ month: string; overdue_base: string; outstanding_base: string }[]>`
     with months as (
       select (date_trunc('month', app.org_today(${ctx.org.id})) - make_interval(months => g))::date as m_start
-      from generate_series(0, ${months - 1}) g
+      from generate_series(0, ${months - 1}::int) g
     ),
     cutoffs as (
       select m_start, least((m_start + interval '1 month - 1 day')::date, app.org_today(${ctx.org.id})) as cut from months

@@ -39,7 +39,7 @@ export const DEAL_TABS = {
 export async function listDeals(ctx: AppContext, f: { tab: keyof typeof DEAL_TABS; q?: string; seller?: string }) {
   return ctx.db((tx) => tx<DealRow[]>`
     select d.id, d.number, d.status, d.payment_type, d.currency, d.list_price, d.discount_amount, d.sale_price, d.trade_in_value,
-           d.down_payment, c.full_name as customer, c.id as customer_id, b.name || ' ' || v.model || ' ' || v.year_model as vehicle,
+           d.down_payment, c.full_name as customer, c.id as customer_id, app.vehicle_name(b.name, v.model) || ' ' || v.year_model as vehicle,
            v.id as vehicle_id, v.stock_code, u.full_name as seller, d.created_at, d.formalized_at, d.delivered_at, d.requires_approval,
            k.id as contract_id
     from public.deals d
@@ -72,7 +72,7 @@ export async function getDeal(ctx: AppContext, id: string) {
   })[]>`
     select d.*, c.full_name as customer, c.id as customer_id, c.phone as customer_phone, c.doc_number as customer_doc,
            c.doc_type as customer_doc_type, c.email as customer_email,
-           b.name || ' ' || v.model || ' ' || v.year_model as vehicle, b.name as brand, v.model, v.version as vehicle_version,
+           app.vehicle_name(b.name, v.model) || ' ' || v.year_model as vehicle, b.name as brand, v.model, v.version as vehicle_version,
            v.year_model as vehicle_year, v.mileage_km as vehicle_km, v.color as vehicle_color, v.vin as vehicle_vin, v.condition as vehicle_condition,
            v.stock_code, v.min_price as vehicle_min_price, v.price_currency as vehicle_price_currency, v.list_price as vehicle_list_price,
            v.commercial_status as vehicle_commercial_status,

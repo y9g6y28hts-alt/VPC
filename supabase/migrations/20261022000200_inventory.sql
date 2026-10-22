@@ -42,6 +42,11 @@ create unique index suppliers_tax_id_uq on public.suppliers(org_id, tax_id) wher
 -- -----------------------------------------------------------------------------
 -- Vehículos
 -- -----------------------------------------------------------------------------
+-- "Range Rover" + "Range Rover Sport" → "Range Rover Sport"; "Ford" + "Ranger" → "Ford Ranger".
+create or replace function app.vehicle_name(p_brand text, p_model text)
+returns text language sql immutable parallel safe as $$
+  select case when lower(p_model) like lower(p_brand) || '%' then p_model else p_brand || ' ' || p_model end
+$$;
 create table public.vehicles (
   id                 uuid primary key default gen_random_uuid(),
   org_id             uuid not null references public.organizations(id) on delete cascade,

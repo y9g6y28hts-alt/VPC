@@ -50,7 +50,7 @@ export default async function CollectionsPage({ searchParams }: { searchParams: 
       <PageHeader title="Cobranzas" description="Cartera, mora y gestiones. Todos los saldos se calculan desde cuotas y pagos confirmados; las promesas no cuentan como cobro." />
       {missingRate ? <div className="mb-4"><Notice tone="warning">No hay tipo de cambio USD→{base} registrado: los totales consolidados excluyen los contratos en dólares.</Notice></div> : null}
 
-      <StatGrid className="mb-6 xl:grid-cols-6">
+      <StatGrid className="mb-6 xl:grid-cols-3 min-[1700px]:grid-cols-6">
         <Stat id="cb-out" label="Cartera pendiente" value={formatMoneyCompact(outstanding, base)} sub={foreignNote("outstanding")}
           definition={{ formula: "Σ saldo pendiente de contratos vigentes (cuotas − aplicaciones de pagos confirmados). Dólares convertidos con el último tipo de cambio registrado (referencial).", source: "v_contract_balances." }} />
         <Stat id="cb-over" label="Total vencido" value={formatMoneyCompact(overdue, base)} tone={overdue > 0 ? "critical" : "neutral"} sub={foreignNote("overdue")}

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import {
   ArrowLeftRight, Calculator, CarFront, ChartColumn, HandCoins, Handshake, Landmark, LayoutDashboard, Menu,
   Receipt, Settings, ShieldCheck, Stamp, Truck, Users, X, type LucideIcon,
@@ -28,7 +28,12 @@ export function Sidebar({
 }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
-  useEffect(() => setOpen(false), [pathname]);
+  // Cierra el menú móvil al navegar (estado derivado de la ruta, sin efecto).
+  const [lastPath, setLastPath] = useState(pathname);
+  if (lastPath !== pathname) {
+    setLastPath(pathname);
+    setOpen(false);
+  }
 
   const groups = (Object.keys(GROUP_LABELS) as NavItem["group"][])
     .map((g) => ({ g, list: items.filter((i) => i.group === g) }))

@@ -3,7 +3,6 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { ExternalLink, Pencil } from "lucide-react";
 import { ButtonLink } from "@/components/ui/button";
-import { Money } from "@/components/ui/money";
 import { PageHeader } from "@/components/ui/page-header";
 import { DescriptionList, Panel } from "@/components/ui/panel";
 import { EmptyState, Notice } from "@/components/ui/states";

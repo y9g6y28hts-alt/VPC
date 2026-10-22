@@ -51,6 +51,16 @@ returns numeric language sql immutable parallel safe as $$
   select round(p_amount, app.currency_decimals(p_currency))
 $$;
 
+-- Importe formateado para mensajes al usuario: "Gs. 1.500.000" / "US$ 45.000,50".
+create or replace function app.fmt_money(p_amount numeric, p_currency text)
+returns text language sql immutable parallel safe as $$
+  select case p_currency
+    when 'PYG' then 'Gs. ' || translate(to_char(round(p_amount, 0), 'FM999,999,999,999,990'), ',', '.')
+    when 'USD' then 'US$ ' || translate(to_char(p_amount, 'FM999,999,999,990.00'), ',.', '.,')
+    else coalesce(p_amount::text, '') || ' ' || coalesce(p_currency, '')
+  end
+$$;
+
 -- -----------------------------------------------------------------------------
 -- Organizaciones y sucursales
 -- -----------------------------------------------------------------------------

@@ -394,7 +394,7 @@ begin
       v_reason := 'No hay tipo de cambio para comparar con el precio mínimo autorizado';
     elsif v_deal.sale_price < v_min then
       v_kind := 'precio_bajo_minimo';
-      v_reason := format('Precio de venta %s por debajo del mínimo autorizado %s', v_deal.sale_price, v_min);
+      v_reason := format('Precio de venta %s por debajo del mínimo autorizado %s', app.fmt_money(v_deal.sale_price, v_deal.currency), app.fmt_money(v_min, v_deal.currency));
     end if;
   end if;
   if v_kind is null and v_deal.discount_amount * 100 > v_deal.list_price * v_settings.max_discount_pct_without_approval then
@@ -517,7 +517,7 @@ begin
   if v_sum_used <> v_deal.trade_in_value then perform app.fail('El cronograma no refleja el valor del trade-in'); end if;
   if v_sum_down <> v_deal.down_payment then perform app.fail('El cronograma no refleja la entrega inicial'); end if;
   if v_sum_fin <> v_financed then
-    perform app.fail(format('El capital de las cuotas (%s) no coincide con el capital financiado (%s)', v_sum_fin, v_financed));
+    perform app.fail(format('El capital de las cuotas (%s) no coincide con el capital financiado (%s)', app.fmt_money(v_sum_fin, v_deal.currency), app.fmt_money(v_financed, v_deal.currency)));
   end if;
   if v_bad > 0 then perform app.fail('Las entregas no pueden llevar intereses'); end if;
   if v_sum_int <> coalesce((p_plan->>'total_interest')::numeric, 0) then
@@ -603,7 +603,7 @@ begin
 
   perform app.refresh_contract_status(v_contract);
   perform app.audit(v_deal.org_id, 'venta_formalizada', 'deals', v_deal.id::text,
-                    format('Venta %s formalizada: %s %s', v_deal.number, v_deal.currency, v_deal.sale_price));
+                    format('Venta %s formalizada: %s', v_deal.number, app.fmt_money(v_deal.sale_price, v_deal.currency)));
   return v_contract;
 end $$;
 
@@ -631,8 +631,8 @@ begin
     join public.contracts c on c.id = b.contract_id
     where c.deal_id = p_deal_id and b.kind in ('entrega_inicial','entrega_usado');
     if v_pending > 0 then
-      perform app.fail(format('La entrega inicial tiene un saldo pendiente de %s %s. Debe estar cobrada y confirmada antes de entregar.',
-                              v_deal.currency, v_pending));
+      perform app.fail(format('La entrega inicial tiene un saldo pendiente de %s. Debe estar cobrada y confirmada antes de entregar.',
+                              app.fmt_money(v_pending, v_deal.currency)));
     end if;
   end if;
 

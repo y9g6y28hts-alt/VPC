@@ -192,7 +192,7 @@ export async function vehiclePhotos(ctx: AppContext, id: string) {
 /** Opciones de unidades vendibles para selects (ventas, simulador). */
 export async function sellableVehicles(ctx: AppContext) {
   return ctx.db((tx) => tx<{ id: string; label: string; price_currency: "PYG" | "USD"; list_price: string | null; min_price: string | null; commercial_status: string }[]>`
-    select v.id, v.stock_code || ' · ' || b.name || ' ' || v.model || coalesce(' ' || v.version, '') || ' ' || v.year_model as label,
+    select v.id, v.stock_code || ' · ' || app.vehicle_name(b.name, v.model) || coalesce(' ' || v.version, '') || ' ' || v.year_model as label,
            v.price_currency, v.list_price, v.min_price, v.commercial_status
     from public.vehicles v join public.brands b on b.id = v.brand_id
     where v.org_id = ${ctx.org.id} and v.commercial_status in ('disponible','reservado')

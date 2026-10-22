@@ -47,7 +47,7 @@ export function Stat({
         </span>
       </div>
       <div className="display num mt-2 truncate text-[24px] font-semibold leading-none text-ink">{value}</div>
-      {sub ? <div className="num mt-2 truncate text-[12.5px] text-faint">{sub}</div> : null}
+      {sub ? <div className="num mt-2 line-clamp-2 text-[12.5px] leading-snug text-faint">{sub}</div> : null}
     </>
   );
   return (

@@ -80,7 +80,7 @@ export function Columns({ data, valueLabel, color = "var(--color-series-1)", hei
   const ticks = [0, top / 2, top];
   return (
     <div>
-      <div className="relative" style={{ height }}>
+      <div className="relative mt-3" style={{ height }}>
         {ticks.map((t) => (
           <div key={t} className="absolute inset-x-0 flex items-center gap-2" style={{ bottom: `${top ? (t / top) * 100 : 0}%` }} aria-hidden>
             <span className="num w-14 shrink-0 -translate-y-1/2 text-right text-[10.5px] text-faint">{axisFormat(t)}</span>
@@ -117,7 +117,7 @@ export function Line({ data, valueLabel, color = "var(--color-series-2)", height
   const points = data.map((d, i) => `${x(i)},${y(d.value)}`).join(" ");
   return (
     <div>
-      <div className="relative ml-16" style={{ height }}>
+      <div className="relative ml-16 mt-3" style={{ height }}>
         {[0, top / 2, top].map((t) => (
           <div key={t} className="absolute inset-x-0 flex items-center" style={{ bottom: `${top ? (t / top) * 100 : 0}%` }} aria-hidden>
             <span className="num absolute -left-16 w-14 -translate-y-1/2 text-right text-[10.5px] text-faint">{axisFormat(t)}</span>

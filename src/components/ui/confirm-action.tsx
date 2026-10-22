@@ -47,15 +47,19 @@ export function ConfirmAction({
   useEffect(() => {
     if (!state.at || state.at === last.current) return;
     last.current = state.at;
-    if (state.ok) {
-      ref.current?.close();
-      setReason("");
-    }
+    if (state.ok) ref.current?.close();
   }, [state]);
 
   return (
     <>
-      <button type="button" className={buttonClass(triggerVariant, triggerSize)} onClick={() => ref.current?.showModal()}>
+      <button
+        type="button"
+        className={buttonClass(triggerVariant, triggerSize)}
+        onClick={() => {
+          setReason("");
+          ref.current?.showModal();
+        }}
+      >
         {trigger}
       </button>
       <dialog

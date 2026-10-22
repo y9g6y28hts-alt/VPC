@@ -84,7 +84,7 @@ export async function getCustomer(ctx: AppContext, id: string) {
 
 export async function customerDeals(ctx: AppContext, id: string) {
   return ctx.db((tx) => tx<{ id: string; number: string; status: string; currency: string; sale_price: string; vehicle: string; vehicle_id: string; seller: string; created_at: Date; payment_type: string }[]>`
-    select d.id, d.number, d.status, d.currency, d.sale_price, d.payment_type, b.name || ' ' || v.model || ' ' || v.year_model as vehicle, v.id as vehicle_id,
+    select d.id, d.number, d.status, d.currency, d.sale_price, d.payment_type, app.vehicle_name(b.name, v.model) || ' ' || v.year_model as vehicle, v.id as vehicle_id,
            u.full_name as seller, d.created_at
     from public.deals d join public.vehicles v on v.id = d.vehicle_id join public.brands b on b.id = v.brand_id
     join public.user_profiles u on u.id = d.seller_id
@@ -125,7 +125,7 @@ export async function customerInteractions(ctx: AppContext, id: string) {
 export async function customerOpportunities(ctx: AppContext, id: string) {
   return ctx.db((tx) => tx<{ id: string; title: string; stage: string; status: string; expected_value: string | null; currency: string; vehicle: string | null; next_action_at: string | null }[]>`
     select o.id, o.title, s.name as stage, o.status, o.expected_value, o.currency,
-           case when v.id is not null then b.name || ' ' || v.model end as vehicle, o.next_action_at::text
+           case when v.id is not null then app.vehicle_name(b.name, v.model) end as vehicle, o.next_action_at::text
     from public.opportunities o join public.pipeline_stages s on s.id = o.stage_id
     left join public.vehicles v on v.id = o.vehicle_id left join public.brands b on b.id = v.brand_id
     where o.customer_id = ${id} order by o.created_at desc`);
@@ -149,7 +149,7 @@ export async function listOpportunities(ctx: AppContext, sellerId?: string) {
     vehicle: string | null; vehicle_id: string | null; seller: string | null; next_action: string | null; next_action_at: string | null; updated_at: Date; days_in_stage: number;
   }[]>`
     select o.id, o.title, o.stage_id, o.status, o.expected_value, o.currency, c.full_name as customer, c.id as customer_id,
-           case when v.id is not null then b.name || ' ' || v.model || ' ' || v.year_model end as vehicle, v.id as vehicle_id,
+           case when v.id is not null then app.vehicle_name(b.name, v.model) || ' ' || v.year_model end as vehicle, v.id as vehicle_id,
            u.full_name as seller, o.next_action, o.next_action_at::text, o.updated_at,
            (app.org_today(o.org_id) - coalesce((select max(e.occurred_at)::date from public.opportunity_stage_events e where e.opportunity_id = o.id), o.created_at::date)) as days_in_stage
     from public.opportunities o

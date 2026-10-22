@@ -5,8 +5,9 @@ import { ConfigError, serverEnv } from "./env";
 
 /** Cliente de Supabase con la sesión del usuario (cookies). */
 export async function supabaseServer() {
-  const env = serverEnv();
+  // Primero las cookies: marca la ruta como dinámica antes de cualquier validación de entorno.
   const store = await cookies();
+  const env = serverEnv();
   return createServerClient(env.supabaseUrl, env.supabaseAnonKey, {
     cookies: {
       getAll: () => store.getAll(),

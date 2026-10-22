@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { LogOut } from "lucide-react";
 import { ROLE_LABELS } from "@/domain/permissions";
 import type { AppContext } from "@/server/auth/context";
@@ -39,7 +40,7 @@ export function UserMenu({ ctx }: { ctx: AppContext }) {
             .toUpperCase()}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-[13px] font-medium text-ink">{ctx.fullName}</p>
+          <Link href="/cuenta" className="block truncate text-[13px] font-medium text-ink hover:underline" title="Mi cuenta">{ctx.fullName}</Link>
           <p className="truncate text-[11.5px] text-faint">{ROLE_LABELS[ctx.org.role]}</p>
         </div>
         <form action={signOut}>

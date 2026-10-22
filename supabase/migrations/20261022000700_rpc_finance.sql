@@ -107,7 +107,7 @@ begin
     perform app.refresh_contract_status(v_pay.contract_id);
   end if;
   perform app.audit(v_pay.org_id, 'pago_confirmado', 'customer_payments', p_payment_id::text,
-                    format('Pago %s confirmado: %s %s', v_pay.number, v_pay.currency, v_pay.amount));
+                    format('Pago %s confirmado: %s', v_pay.number, app.fmt_money(v_pay.amount, v_pay.currency)));
   return v_unapplied;
 end $$;
 
@@ -244,7 +244,7 @@ begin
   if p_kind = 'nota_credito' then
     select outstanding into v_out from public.v_contract_balances where contract_id = p_contract_id;
     if p_amount > v_out then
-      perform app.fail(format('La nota de crédito (%s) supera el saldo pendiente (%s)', p_amount, v_out));
+      perform app.fail(format('La nota de crédito (%s) supera el saldo pendiente (%s)', app.fmt_money(p_amount, v_ctr.currency), app.fmt_money(v_out, v_ctr.currency)));
     end if;
   end if;
   insert into public.approvals (org_id, kind, entity_type, entity_id, title, reason, amount, currency, payload, requested_by)
@@ -280,7 +280,7 @@ begin
   select coalesce(sum((e->>'principal')::numeric), 0) into v_principal
   from jsonb_array_elements(p_schedule) e where e->>'kind' in ('cuota','refuerzo');
   if v_principal <> v_out then
-    perform app.fail(format('El capital refinanciado (%s) debe igualar el saldo pendiente (%s)', v_principal, v_out));
+    perform app.fail(format('El capital refinanciado (%s) debe igualar el saldo pendiente (%s)', app.fmt_money(v_principal, v_ctr.currency), app.fmt_money(v_out, v_ctr.currency)));
   end if;
   insert into public.approvals (org_id, kind, entity_type, entity_id, title, reason, amount, currency, payload, requested_by)
   values (v_ctr.org_id, 'refinanciacion', 'contract', p_contract_id,
@@ -631,7 +631,7 @@ begin
   perform 1 from public.supplier_invoices where id = v_inv.id for update;
   if v_inv.status <> 'aprobada' then perform app.fail('Sólo se pagan facturas aprobadas'); end if;
   if (p->>'amount')::numeric > v_inv.outstanding - v_inv.paid_registered_pending then
-    perform app.fail(format('El pago supera el saldo pendiente de la factura (%s)', v_inv.outstanding - v_inv.paid_registered_pending));
+    perform app.fail(format('El pago supera el saldo pendiente de la factura (%s)', app.fmt_money(v_inv.outstanding - v_inv.paid_registered_pending, v_inv.currency)));
   end if;
   if not exists (select 1 from public.cash_accounts where id = (p->>'cash_account_id')::uuid and org_id = v_inv.org_id
                  and is_active and currency = v_inv.currency) then
@@ -846,7 +846,7 @@ begin
   update public.cash_movements set status = 'conciliado', reconciliation_id = v_id
    where id = any(coalesce(p_movement_ids, '{}'));
   perform app.audit(v_acc.org_id, 'conciliacion', 'reconciliations', v_id::text,
-                    format('Extracto %s vs sistema %s', p_statement_balance, v_sys));
+                    format('Extracto %s vs sistema %s', app.fmt_money(p_statement_balance, v_acc.currency), app.fmt_money(v_sys, v_acc.currency)));
   return v_id;
 end $$;
 

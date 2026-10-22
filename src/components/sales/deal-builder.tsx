@@ -135,7 +135,7 @@ export function DealBuilder({
   }, [vehicleId]);
 
   const terms = useMemo(() => {
-    const r = num(rate || "0");
+    const r = num(rate);
     const t = Number(term);
     return {
       method,
@@ -150,6 +150,7 @@ export function DealBuilder({
   }, [method, rate, convention, term, firstDue, balloons]);
 
   const result = useMemo((): { schedule: DealSchedule | null; error: string | null } => {
+    if (paymentType === "financiado" && rate.trim() === "") return { schedule: null, error: "Ingrese la tasa de interés (0 si la financiación es sin interés)" };
     if (!Number.isFinite(listPrice)) return { schedule: null, error: vehicle ? "La unidad no tiene precio de lista" : "Seleccione una unidad" };
     const d = num(discount || "0");
     const ti = num(tradeIn || "0");
@@ -171,7 +172,7 @@ export function DealBuilder({
     } catch (e) {
       return { schedule: null, error: e instanceof FinancingError ? e.message : "No se pudo calcular el plan" };
     }
-  }, [listPrice, discount, tradeIn, down, currency, today, paymentType, terms, vehicle]);
+  }, [listPrice, discount, tradeIn, down, currency, today, paymentType, terms, vehicle, rate]);
 
   const s = result.schedule;
   const pricing = Number.isFinite(listPrice)

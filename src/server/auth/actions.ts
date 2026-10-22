@@ -4,7 +4,9 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { fail, type ActionState } from "@/lib/action-state";
+import { getSql, isEmbeddedDemo } from "@/server/db/client";
 import { supabaseServer } from "@/server/supabase";
+import { clearDemoSession, writeDemoSession } from "./demo-session";
 import { ORG_COOKIE, getContext } from "./context";
 
 const credentials = z.object({
@@ -42,9 +44,26 @@ export async function signIn(_prev: ActionState, formData: FormData): Promise<Ac
   redirect(next);
 }
 
+/** Demo autónoma: ingresa como el usuario de demostración elegido. */
+export async function demoSignIn(formData: FormData): Promise<void> {
+  if (!isEmbeddedDemo()) redirect("/ingresar");
+  const userId = String(formData.get("userId") ?? "");
+  const sql = await getSql();
+  const [u] = await sql<{ id: string }[]>`
+    select u.id from auth.users u join public.memberships m on m.user_id = u.id and m.is_active
+    join public.organizations o on o.id = m.org_id and o.is_demo where u.id = ${userId} limit 1`.catch(() => []);
+  if (!u) redirect("/ingresar");
+  await writeDemoSession(u.id);
+  redirect("/");
+}
+
 export async function signOut(): Promise<void> {
-  const supabase = await supabaseServer();
-  await supabase.auth.signOut();
+  if (isEmbeddedDemo()) {
+    await clearDemoSession();
+  } else {
+    const supabase = await supabaseServer();
+    await supabase.auth.signOut();
+  }
   (await cookies()).delete(ORG_COOKIE);
   redirect("/ingresar");
 }

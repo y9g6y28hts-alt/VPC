@@ -26,6 +26,23 @@ gastos, caja y rentabilidad. Interfaz en español; moneda base PYG configurable,
 | Auditoría | `/auditoria` | Registro inalterable con valor anterior y nuevo |
 | Configuración | `/configuracion` | Parámetros, tramos de mora, usuarios y roles, catálogos |
 
+## Demo en Vercel (sin configuración)
+
+Si el proyecto se publica **sin variables de entorno**, la aplicación arranca sola como demo:
+
+1. Importe el repositorio en Vercel (o `vercel --prod` desde la carpeta) y despliegue. Nada más.
+2. Al abrir el enlace aparece «Demo de Da Silva OS»: se elige un rol (Director, Vendedor,
+   Cobranzas…) y se entra sin contraseña.
+
+La demo usa una base PostgreSQL embebida (PGlite) en la memoria del servidor, con las mismas
+migraciones, permisos y funciones que la versión real, y los datos ficticios de demostración.
+La primera visita tarda unos segundos mientras se prepara. Todo funciona (crear operaciones,
+PDF, cobros, caja, reportes), pero los cambios vuelven al estado inicial cuando Vercel reinicia
+el servidor, y no deben cargarse datos reales.
+
+Para usar datos reales basta con definir `DATABASE_URL` y las variables de Supabase
+([Despliegue](docs/DESPLIEGUE.md)): la demo embebida se desactiva automáticamente.
+
 ## Pila
 
 Next.js 16 (App Router) · React 19 · TypeScript estricto · Tailwind CSS 4 · componentes propios ·

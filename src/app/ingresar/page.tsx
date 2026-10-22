@@ -1,11 +1,17 @@
 import type { Metadata } from "next";
 import { Brand } from "@/components/shell/brand";
+import { redirect } from "next/navigation";
+import { getAuthUser } from "@/server/auth/context";
+import { isEmbeddedDemo } from "@/server/db/client";
+import { DemoLogin } from "./demo-login";
 import { LoginForm } from "./login-form";
 
 export const metadata: Metadata = { title: "Ingresar" };
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ siguiente?: string }> }) {
   const { siguiente } = await searchParams;
+  const demo = isEmbeddedDemo();
+  if (demo && (await getAuthUser())) redirect("/");
   return (
     <main className="grid min-h-dvh lg:grid-cols-[1fr_minmax(420px,520px)]">
       <section className="relative hidden overflow-hidden border-r border-line-soft lg:block">
@@ -30,12 +36,22 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           <div className="mb-10 lg:hidden">
             <Brand />
           </div>
-          <h1 className="text-2xl font-semibold text-ink">Ingresar</h1>
-          <p className="mt-1.5 text-sm text-muted">Use las credenciales que le asignó la administración.</p>
-          <LoginForm next={siguiente} />
-          <p className="mt-8 text-[12.5px] leading-relaxed text-faint">
-            ¿Olvidó su contraseña o necesita acceso? Solicítelo al administrador técnico de la empresa.
-          </p>
+          {demo ? (
+            <>
+              <h1 className="text-2xl font-semibold text-ink">Demo de Da Silva OS</h1>
+              <p className="mt-1.5 text-sm text-muted">Datos ficticios de demostración. Puede usar todo libremente: la demo vuelve a su estado inicial cuando el servidor se reinicia.</p>
+              <DemoLogin />
+            </>
+          ) : (
+            <>
+              <h1 className="text-2xl font-semibold text-ink">Ingresar</h1>
+              <p className="mt-1.5 text-sm text-muted">Use las credenciales que le asignó la administración.</p>
+              <LoginForm next={siguiente} />
+              <p className="mt-8 text-[12.5px] leading-relaxed text-faint">
+                ¿Olvidó su contraseña o necesita acceso? Solicítelo al administrador técnico de la empresa.
+              </p>
+            </>
+          )}
         </div>
       </section>
     </main>

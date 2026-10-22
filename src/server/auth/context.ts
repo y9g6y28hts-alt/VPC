@@ -3,7 +3,8 @@ import { cache } from "react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { PermissionSet, type Permission, type Role, isRole } from "@/domain/permissions";
-import { withUser, type Tx } from "@/server/db/client";
+import { getSql, isEmbeddedDemo, withUser, type Tx } from "@/server/db/client";
+import { readDemoSession } from "./demo-session";
 import { isSetupError } from "@/server/health";
 import { supabaseServer } from "@/server/supabase";
 
@@ -30,7 +31,14 @@ export interface AppContext {
 }
 
 /** Usuario autenticado validado contra Supabase Auth (no sólo la cookie). */
-export const getAuthUser = cache(async () => {
+export const getAuthUser = cache(async (): Promise<{ id: string; email?: string | null } | null> => {
+  if (isEmbeddedDemo()) {
+    const id = await readDemoSession();
+    if (!id) return null;
+    const sql = await getSql();
+    const [u] = await sql<{ id: string; email: string | null }[]>`select id, email from auth.users where id = ${id}`;
+    return u ?? null;
+  }
   const supabase = await supabaseServer();
   const { data, error } = await supabase.auth.getUser();
   if (error || !data.user) return null;

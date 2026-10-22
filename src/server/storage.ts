@@ -1,7 +1,7 @@
 import "server-only";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join, normalize } from "node:path";
-import { serverEnv } from "@/server/env";
+import { isEmbeddedDemo } from "@/server/db/client";
 import { supabaseServer } from "@/server/supabase";
 
 /**
@@ -34,7 +34,9 @@ export function sniffType(bytes: Uint8Array, allowed: readonly string[]): { mime
   return hit ? { mime: hit.mime, ext: hit.ext } : null;
 }
 
-const LOCAL_ROOT = join(process.cwd(), "storage-local");
+/** Local en desarrollo (STORAGE_MODE=local) y en la demo autónoma (en /tmp, escribible en Vercel). */
+const isLocal = () => isEmbeddedDemo() || process.env.STORAGE_MODE === "local";
+const LOCAL_ROOT = isEmbeddedDemo() ? "/tmp/dasilva-storage" : join(process.cwd(), "storage-local");
 
 function localPath(bucket: Bucket, path: string): string {
   const full = normalize(join(LOCAL_ROOT, bucket, path));
@@ -43,7 +45,7 @@ function localPath(bucket: Bucket, path: string): string {
 }
 
 export async function putObject(bucket: Bucket, path: string, bytes: Uint8Array, mime: string): Promise<void> {
-  if (serverEnv().storageMode === "local") {
+  if (isLocal()) {
     const full = localPath(bucket, path);
     await mkdir(dirname(full), { recursive: true });
     await writeFile(full, bytes, { flag: "wx" });
@@ -57,7 +59,7 @@ export async function putObject(bucket: Bucket, path: string, bytes: Uint8Array,
 /** Respuesta HTTP con el archivo (local) o redirección a una URL firmada (Supabase). */
 export async function objectResponse(bucket: Bucket, path: string, mime: string, filename: string, inline = true): Promise<Response> {
   const disposition = `${inline ? "inline" : "attachment"}; filename*=UTF-8''${encodeURIComponent(filename)}`;
-  if (serverEnv().storageMode === "local") {
+  if (isLocal()) {
     try {
       const data = await readFile(localPath(bucket, path));
       return new Response(new Uint8Array(data), {

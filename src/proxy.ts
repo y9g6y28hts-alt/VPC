@@ -13,8 +13,19 @@ export async function proxy(request: NextRequest) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   const path = request.nextUrl.pathname;
-  // Sin configuración mínima la app no puede funcionar: se muestra el diagnóstico.
-  if (!url || !key || !process.env.DATABASE_URL) {
+  const isPublic = PUBLIC_PATHS.some((p) => path === p || path.startsWith(`${p}/`));
+  // Demo autónoma (sin DATABASE_URL): sesión por cookie firmada, validada en el servidor.
+  if (!process.env.DATABASE_URL) {
+    if (!isPublic && !request.cookies.has("ds_demo_user")) {
+      const to = request.nextUrl.clone();
+      to.pathname = "/ingresar";
+      to.search = "";
+      return NextResponse.redirect(to);
+    }
+    return response;
+  }
+  // Con base propia pero sin Supabase configurado: diagnóstico.
+  if (!url || !key) {
     if (path === "/estado") return response;
     const to = request.nextUrl.clone();
     to.pathname = "/estado";
@@ -44,7 +55,6 @@ export async function proxy(request: NextRequest) {
     to.search = "";
     return NextResponse.redirect(to);
   }
-  const isPublic = PUBLIC_PATHS.some((p) => path === p || path.startsWith(`${p}/`));
 
   if (!user && !isPublic) {
     const to = request.nextUrl.clone();

@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { DescriptionList, Panel } from "@/components/ui/panel";
 import { ROLE_LABELS } from "@/domain/permissions";
 import { requireContext } from "@/server/auth/context";
+import { isEmbeddedDemo } from "@/server/db/client";
 
 export const metadata: Metadata = { title: "Mi cuenta" };
 
@@ -22,7 +23,7 @@ export default async function AccountPage() {
           ]} />
         </Panel>
         <Panel title="Cambiar contraseña">
-          <PasswordForm />
+          {isEmbeddedDemo() ? <p className="text-[13px] text-muted">La demo no usa contraseñas: se ingresa eligiendo un usuario.</p> : <PasswordForm />}
         </Panel>
       </div>
     </>

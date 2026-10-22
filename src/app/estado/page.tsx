@@ -4,6 +4,7 @@ import { connection } from "next/server";
 import { AlertTriangle, CheckCircle2, CircleMinus, XCircle } from "lucide-react";
 import { Brand } from "@/components/shell/brand";
 import { buttonClass } from "@/components/ui/button";
+import { isEmbeddedDemo } from "@/server/db/client";
 import { runChecks, type CheckStatus } from "@/server/health";
 
 export const metadata: Metadata = { title: "Estado del sistema" };
@@ -22,6 +23,19 @@ const ICON: Record<CheckStatus, { Icon: typeof CheckCircle2; cls: string; label:
  */
 export default async function StatusPage() {
   await connection();
+  if (isEmbeddedDemo()) {
+    return (
+      <main className="mx-auto flex min-h-dvh max-w-2xl flex-col px-5 py-12">
+        <Brand className="mb-10" />
+        <h1 className="text-2xl font-semibold text-ink">Demo autónoma activa</h1>
+        <p className="mt-2 text-sm text-muted">
+          Sin DATABASE_URL la aplicación usa una base de datos embebida con datos de demostración. No requiere configuración.
+          Para operar con datos reales, siga docs/DESPLIEGUE.md.
+        </p>
+        <div className="mt-8"><Link href="/ingresar" className={buttonClass("primary")}>Ir a la demo</Link></div>
+      </main>
+    );
+  }
   const checks = await runChecks();
   const blocking = checks.filter((c) => c.status === "error" || c.status === "skipped");
   const ready = blocking.length === 0;

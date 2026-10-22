@@ -7,6 +7,8 @@ import { fail, ok, type ActionState } from "@/lib/action-state";
 import { zCheckbox, zInt, zNumber, zOptionalText, zText, zUuid } from "@/lib/forms";
 import { guarded, parseForm } from "@/server/action";
 import { getAuthUser } from "@/server/auth/context";
+import { demoUserId } from "@/server/auth/demo-session";
+import { getSql, isEmbeddedDemo } from "@/server/db/client";
 import { ConfigError } from "@/server/env";
 import { supabaseAdmin, supabaseServer } from "@/server/supabase";
 
@@ -80,6 +82,17 @@ export async function createUser(_: ActionState, formData: FormData): Promise<Ac
     if (!parsed.ok) return parsed.state;
     const v = parsed.data;
     if (v.role === "director" && ctx.org.role !== "director") return fail("Sólo un director puede asignar el rol de director.");
+    if (isEmbeddedDemo()) {
+      // Demo autónoma: la cuenta se crea en la base embebida; se ingresa eligiéndola en la pantalla de ingreso.
+      const sql = await getSql();
+      const id = demoUserId(v.email);
+      const [exists] = await sql`select 1 from auth.users where id = ${id} or email = ${v.email}`;
+      if (exists) return fail("Ya existe una cuenta con ese correo.", { fieldErrors: { email: ["Ya registrado"] } });
+      await sql`insert into auth.users (id, email) values (${id}, ${v.email})`;
+      await ctx.db((tx) => tx`select public.rpc_member_add(${ctx.org.id}, ${id}, ${v.full_name}, ${v.role})`);
+      revalidatePath("/configuracion");
+      return ok(`Usuario ${v.email} creado. En la demo se ingresa eligiéndolo en la pantalla de ingreso.`);
+    }
     let admin;
     try {
       admin = supabaseAdmin();
@@ -206,6 +219,7 @@ const passwordSchema = z
 /** Cambio de contraseña propia; exige la contraseña actual. */
 export async function changePassword(_: ActionState, formData: FormData): Promise<ActionState> {
   return guarded([], async () => {
+    if (isEmbeddedDemo()) return fail("La demo no usa contraseñas: se ingresa eligiendo un usuario.");
     const parsed = parseForm(passwordSchema, formData);
     if (!parsed.ok) return parsed.state;
     const user = await getAuthUser();

@@ -50,15 +50,26 @@ export function createSql(url: string, options: { max?: number } = {}): Sql {
   });
 }
 
-const globalForSql = globalThis as unknown as { __dasilvaSql?: Sql };
+const globalForSql = globalThis as unknown as { __dasilvaSql?: Promise<Sql> };
 
-export function getSql(): Sql {
+/**
+ * Sin DATABASE_URL la aplicación funciona como demo autónoma: una base
+ * PostgreSQL embebida (PGlite, en memoria) con las mismas migraciones y los
+ * datos de demostración. Los cambios se pierden al reiniciar el servidor.
+ */
+export function isEmbeddedDemo(): boolean {
+  return !process.env.DATABASE_URL;
+}
+
+export function getSql(): Promise<Sql> {
   if (!globalForSql.__dasilvaSql) {
     const url = process.env.DATABASE_URL;
-    if (!url) {
-      throw new Error("DATABASE_URL no está configurada. Ver docs/DESARROLLO.md.");
-    }
-    globalForSql.__dasilvaSql = createSql(url);
+    globalForSql.__dasilvaSql = url
+      ? Promise.resolve(createSql(url))
+      : import("@/server/demo/embedded").then((m) => m.startEmbeddedDemo()).catch((err) => {
+          globalForSql.__dasilvaSql = undefined;
+          throw err;
+        });
   }
   return globalForSql.__dasilvaSql;
 }
@@ -69,7 +80,8 @@ export interface DbIdentity {
 }
 
 /** Ejecuta `fn` como el usuario autenticado (RLS activo). */
-export async function withUser<T>(identity: DbIdentity, fn: (tx: Tx) => Promise<T>, sql: Sql = getSql()): Promise<T> {
+export async function withUser<T>(identity: DbIdentity, fn: (tx: Tx) => Promise<T>, sqlArg?: Sql): Promise<T> {
+  const sql = sqlArg ?? (await getSql());
   const claims = JSON.stringify({ sub: identity.userId, email: identity.email ?? null, role: "authenticated" });
   const result = await sql.begin(async (tx) => {
     await tx`select set_config('request.jwt.claims', ${claims}, true), set_config('request.jwt.claim.sub', ${identity.userId}, true)`;

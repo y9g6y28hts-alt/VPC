@@ -41,7 +41,7 @@ describe("aislamiento por organización", () => {
   });
 
   it("el rol de conexión del servidor no tiene privilegios propios sin SET ROLE", async () => {
-    const raw = new Pool({ connectionString: process.env.DATABASE_URL });
+    const raw = new Pool({ connectionString: process.env.MH_DATABASE_URL ?? process.env.DATABASE_URL });
     await expect(raw.query("select count(*) from public.units")).rejects.toThrow(/permission denied/);
     await raw.end();
   });

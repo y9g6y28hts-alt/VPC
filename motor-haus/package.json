@@ -13,7 +13,8 @@
     "test:db": "vitest run tests/integration",
     "db:reset": "bash scripts/db-reset.sh",
     "db:seed": "tsx --env-file=.env scripts/seed.ts",
-    "e2e": "tsx --env-file=.env scripts/e2e-smoke.ts"
+    "e2e": "tsx --env-file=.env scripts/e2e-smoke.ts",
+    "crawl": "tsx --env-file=.env scripts/crawl.ts"
   },
   "dependencies": {
     "@supabase/ssr": "0.12.7",

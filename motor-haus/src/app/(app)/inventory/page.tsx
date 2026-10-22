@@ -17,7 +17,7 @@ interface Row {
   usage_value: string | null; usage_unit: string; exterior_color: string | null; currency: string; list_price: string | null;
   offer_price: string | null; minimum_price: string | null; display_status: string; days_in_stock: number | null; cost_actual: string | null;
   cost_estimated_pending: string | null; potential_margin: string | null; potential_margin_pct: string | null; location_name: string | null;
-  reservation_expires_at: string | null; primary_identifier: string | null; in_stock: boolean;
+  reservation_expires_at: string | null; primary_identifier: string | null; in_stock: boolean; cover_id: string | null;
 }
 
 const ICON: Record<string, typeof Car> = { supercar: CarFront, premium_suv: Truck, sedan_gt: Car, classic: Gem, motorcycle: Bike, boat: Anchor, other: Car };
@@ -43,7 +43,7 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
   }, "days_in_stock desc nulls last");
 
   const rows = await query(ctx, (db) => db.rows<Row>(
-    `select * from public.unit_overview
+    `select uo.*, (select m.id from public.unit_media m where m.unit_id = uo.id and m.is_cover limit 1) cover_id from public.unit_overview uo
       where organization_id = $1 and (${SCOPES[scope][1]})
         and ($2 = '' or category = $2) and ($3 = '' or display_status = $3)
         and ($4 = '' or stock_number ilike '%' || $4 || '%' or make ilike '%' || $4 || '%' or model ilike '%' || $4 || '%'
@@ -94,8 +94,17 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
             const Icon = ICON[r.category] ?? Car;
             return (
               <Link key={r.id} href={`/inventory/${r.id}`} className="group flex flex-col rounded-md border border-line bg-surface transition-colors hover:border-faint">
-                <div className="relative flex h-32 items-end justify-between overflow-hidden rounded-t-md border-b border-line-soft bg-gradient-to-br from-raised to-surface px-4 pb-3">
-                  <Icon aria-hidden strokeWidth={0.6} className="absolute -right-3 -top-4 size-36 text-line transition-colors group-hover:text-faint" />
+                <div className="relative flex h-40 items-end justify-between overflow-hidden rounded-t-md border-b border-line-soft bg-gradient-to-br from-raised to-surface px-4 pb-3">
+                  {r.cover_id ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={`/api/media/${r.cover_id}`} alt={`${r.make} ${r.model}`} loading="lazy" className="absolute inset-0 size-full object-cover opacity-90 transition-opacity group-hover:opacity-100" />
+                  ) : (
+                    <>
+                      <span aria-hidden className="absolute -right-2 top-1 select-none whitespace-nowrap text-[44px] font-semibold uppercase tracking-tight text-line/60 transition-colors group-hover:text-line">{r.make.split(" ")[0]}</span>
+                      <Icon aria-hidden strokeWidth={1} className="absolute left-4 top-4 size-6 text-faint" />
+                    </>
+                  )}
+                  <span className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-surface/95 to-transparent" />
                   <span className="relative text-[10px] uppercase tracking-[0.2em] text-muted">{label(CATEGORY, r.category)}</span>
                   <span className="relative"><StatusBadge map={DISPLAY_STATUS} value={r.display_status} /></span>
                 </div>

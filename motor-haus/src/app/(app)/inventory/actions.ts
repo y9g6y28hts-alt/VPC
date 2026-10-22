@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { ActionState, runAction, zAmount, zDate, zOptDate, zOptText, zOptUuid, zText, zUuid } from "@/server/action";
+import { DomainError } from "@/server/errors";
 
 const unitPath = (id: string) => `/inventory/${id}`;
 
@@ -137,4 +138,34 @@ export async function updateDetailsAction(_: ActionState, fd: FormData): Promise
       revalidatePath(unitPath(i.unit));
       return { message: "Ficha actualizada." };
     });
+}
+
+export async function uploadMediaAction(_: ActionState, fd: FormData): Promise<ActionState> {
+  const file = fd.get("file");
+  return runAction(z.object({ unit: zUuid, caption: zOptText }), fd, async (i, db, ctx) => {
+    const { randomUUID } = await import("node:crypto");
+    const { putObject, sniffImage } = await import("@/server/storage");
+    if (!(file instanceof File) || file.size === 0) throw new DomainError("VALIDATION", "Seleccione una imagen.");
+    if (file.size > 8 * 1024 * 1024) throw new DomainError("VALIDATION", "La imagen supera 8 MB.");
+    const buf = Buffer.from(await file.arrayBuffer());
+    const kind = sniffImage(buf);
+    if (!kind) throw new DomainError("VALIDATION", "Formato no admitido: use JPG, PNG o WebP.");
+    const hasCover = await db.maybe("select 1 from public.unit_media where unit_id = $1 and is_cover", [i.unit]);
+    const key = `${ctx.org.id}/${i.unit}/${randomUUID()}.${kind.ext}`;
+    // Primero el registro (RLS verifica inventory.write); si falla la escritura del archivo, la transacción se revierte.
+    await db.one("insert into public.unit_media (organization_id, unit_id, kind, storage_path, caption, is_cover, created_by) values ($1, $2, 'photo', $3, $4, $5, $6) returning id",
+      [ctx.org.id, i.unit, key, i.caption, !hasCover, ctx.user.id]);
+    await putObject(key, buf, kind.type);
+    revalidatePath(unitPath(i.unit));
+    revalidatePath("/inventory");
+    return { message: "Fotografía cargada." };
+  });
+}
+
+export async function setCoverAction(_: ActionState, fd: FormData): Promise<ActionState> {
+  return runAction(z.object({ unit: zUuid, media: zUuid }), fd, async (i, db) => {
+    await db.rows("update public.unit_media set is_cover = false where unit_id = $1 and is_cover", [i.unit]);
+    await db.one("update public.unit_media set is_cover = true where id = $1 and unit_id = $2 returning id", [i.media, i.unit]);
+    revalidatePath(unitPath(i.unit));
+  });
 }

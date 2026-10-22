@@ -11,6 +11,8 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   agentRules: false,
   serverExternalPackages: ["pg"],
+  // Fotografías de unidades (hasta 8 MB + sobrecarga multipart).
+  experimental: { serverActions: { bodySizeLimit: "9mb" } },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },

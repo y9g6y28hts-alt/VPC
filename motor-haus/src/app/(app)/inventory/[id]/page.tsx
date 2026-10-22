@@ -11,7 +11,7 @@ import {
 } from "@/lib/labels";
 import { date, dateTime, money, num } from "@/lib/format";
 import {
-  addCostAction, changeStatusAction, countAction, deliverAction, documentStatusAction, moveUnitAction, receiveUnitAction,
+  addCostAction, changeStatusAction, setCoverAction, uploadMediaAction, countAction, deliverAction, documentStatusAction, moveUnitAction, receiveUnitAction,
   releaseReservationAction, reserveAction, setPriceAction, taskAction, updateDetailsAction, voidCostAction,
 } from "../actions";
 
@@ -44,12 +44,13 @@ export default async function UnitPage({ params }: { params: Promise<{ id: strin
                     from public.deal_items di join public.deals d on d.id = di.deal_id join public.customers c on c.id = d.customer_id
                    where di.unit_id = $1 order by d.created_at desc`, [id]);
     const alerts = await db.rows<R>("select * from public.management_alerts($1) where entity_id = $2", [ctx.org.id, id]);
+    const media = await db.rows<R>("select id, caption, is_cover from public.unit_media where unit_id = $1 order by is_cover desc, sort_order, created_at", [id]);
     const counts = await db.rows<R>("select pc.*, l.name observed from public.physical_counts pc left join public.locations l on l.id = pc.observed_location_id where pc.unit_id = $1 order by counted_on desc, created_at desc limit 3", [id]);
     const customers = can(ctx, "reservation.write")
       ? await db.rows<R>("select id, display_name from public.customers where organization_id = $1 and status <> 'inactive' order by display_name", [ctx.org.id]) : [];
     const reservation = u.reservation_id ? await db.maybe<R>(
       "select r.*, c.display_name customer, p.full_name responsible from public.reservations r join public.customers c on c.id = r.customer_id join public.user_profiles p on p.id = r.responsible_user_id where r.id = $1", [u.reservation_id]) : null;
-    return { u, identifiers, costs, concepts, docs, tasks, events, prices, moves, transitions, blockers: blockers.b, locations, deals, alerts, counts, customers, reservation };
+    return { u, media, identifiers, costs, concepts, docs, tasks, events, prices, moves, transitions, blockers: blockers.b, locations, deals, alerts, counts, customers, reservation };
   });
   if (!d) notFound();
   const { u } = d;
@@ -250,6 +251,29 @@ export default async function UnitPage({ params }: { params: Promise<{ id: strin
         </div>
 
         <div className="min-w-0 space-y-4">
+          <Panel title="Fotografías" subtitle="Almacenamiento privado; se muestran solo a usuarios con acceso al inventario">
+            {d.media.length === 0 ? <Empty title="Sin fotografías" /> : (
+              <div className="grid grid-cols-3 gap-1 p-2">
+                {d.media.map((m, idx) => (
+                  <figure key={m.id} className={`relative ${idx === 0 ? "col-span-3" : ""}`}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={`/api/media/${m.id}`} alt={m.caption ?? `${u.make} ${u.model}`} className={`w-full rounded-sm object-cover ${idx === 0 ? "aspect-[16/9]" : "aspect-square"}`} />
+                    {!m.is_cover && can(ctx, "inventory.write") && (
+                      <ActionForm action={setCoverAction} hideMessage className="absolute bottom-1 right-1"><input type="hidden" name="unit" value={u.id} /><input type="hidden" name="media" value={m.id} /><Submit size="sm" variant="secondary">Portada</Submit></ActionForm>
+                    )}
+                  </figure>
+                ))}
+              </div>
+            )}
+            {can(ctx, "inventory.write") && (
+              <ActionForm action={uploadMediaAction} resetOnSuccess className="flex flex-wrap items-end gap-2 border-t border-line-soft px-4 py-3">
+                <input type="hidden" name="unit" value={u.id} />
+                <Field label="Imagen (JPG, PNG o WebP · máx. 8 MB)" name="file" className="flex-1"><input type="file" name="file" accept="image/jpeg,image/png,image/webp" className="block w-full text-xs text-text-2 file:mr-2 file:rounded-sm file:border file:border-line file:bg-raised file:px-2 file:py-1 file:text-text" /></Field>
+                <Field label="Leyenda" name="caption"><Input name="caption" /></Field>
+                <Submit variant="secondary">Cargar</Submit>
+              </ActionForm>
+            )}
+          </Panel>
           <Panel title="Comercialización">
             <div className="px-4 py-3">
               <Facts cols={2} items={[

@@ -64,6 +64,15 @@ npm run build
 npm start
 ```
 
+Si algo falta, la aplicación redirige a **`/estado`**: una página de diagnóstico (sin
+mostrar claves) que indica qué variable falta, si la base rechaza la contraseña, si las
+migraciones no se aplicaron o si falta crear la organización, con la corrección de cada caso.
+
+En Vercel, las variables `NEXT_PUBLIC_*` se incorporan al compilar: después de agregarlas o
+cambiarlas hay que hacer **Redeploy**. Use para `DATABASE_URL` la cadena «Transaction pooler»
+(host `*.pooler.supabase.com`, puerto 6543): la conexión directa `db.<ref>.supabase.co` sólo
+funciona por IPv6 y Vercel no la alcanza.
+
 Compruebe tras desplegar: ingreso, que la franja «DATOS DE DEMOSTRACIÓN» **no** aparece,
 y que un vendedor no ve costes ni el menú de Caja.
 

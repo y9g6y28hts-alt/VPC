@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { PermissionSet, type Permission, type Role, isRole } from "@/domain/permissions";
 import { withUser, type Tx } from "@/server/db/client";
+import { isSetupError } from "@/server/health";
 import { supabaseServer } from "@/server/supabase";
 
 export const ORG_COOKIE = "ds_org";
@@ -89,7 +90,14 @@ export const getContext = cache(async (): Promise<AppContext | null> => {
 });
 
 export async function requireContext(): Promise<AppContext> {
-  const ctx = await getContext();
+  let ctx: AppContext | null;
+  try {
+    ctx = await getContext();
+  } catch (err) {
+    // Configuración incompleta (variables, base, migraciones): diagnóstico en vez de error genérico.
+    if (isSetupError(err)) redirect("/estado");
+    throw err;
+  }
   if (!ctx) {
     const user = await getAuthUser();
     redirect(user ? "/sin-acceso?motivo=sin-organizacion" : "/ingresar");

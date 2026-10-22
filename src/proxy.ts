@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
-const PUBLIC_PATHS = ["/ingresar", "/auth"];
+const PUBLIC_PATHS = ["/ingresar", "/auth", "/estado"];
 
 /**
  * Renueva la sesión de Supabase (cookies) y redirige al ingreso si no hay
@@ -12,7 +12,15 @@ export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!url || !key) return response;
+  const path = request.nextUrl.pathname;
+  // Sin configuración mínima la app no puede funcionar: se muestra el diagnóstico.
+  if (!url || !key || !process.env.DATABASE_URL) {
+    if (path === "/estado") return response;
+    const to = request.nextUrl.clone();
+    to.pathname = "/estado";
+    to.search = "";
+    return NextResponse.redirect(to);
+  }
 
   const supabase = createServerClient(url, key, {
     cookies: {
@@ -25,17 +33,26 @@ export async function proxy(request: NextRequest) {
     },
   });
 
-  const { data } = await supabase.auth.getUser();
-  const path = request.nextUrl.pathname;
+  let user = null;
+  try {
+    ({ data: { user } } = await supabase.auth.getUser());
+  } catch {
+    // Supabase Auth inaccesible (URL incorrecta o proyecto pausado).
+    if (path === "/estado") return response;
+    const to = request.nextUrl.clone();
+    to.pathname = "/estado";
+    to.search = "";
+    return NextResponse.redirect(to);
+  }
   const isPublic = PUBLIC_PATHS.some((p) => path === p || path.startsWith(`${p}/`));
 
-  if (!data.user && !isPublic) {
+  if (!user && !isPublic) {
     const to = request.nextUrl.clone();
     to.pathname = "/ingresar";
     to.search = path !== "/" ? `?siguiente=${encodeURIComponent(path + request.nextUrl.search)}` : "";
     return NextResponse.redirect(to);
   }
-  if (data.user && path === "/ingresar") {
+  if (user && path === "/ingresar") {
     const to = request.nextUrl.clone();
     to.pathname = "/";
     to.search = "";

@@ -24,11 +24,19 @@ export async function signIn(_prev: ActionState, formData: FormData): Promise<Ac
     for (const i of parsed.error.issues) (fieldErrors[String(i.path[0])] ??= []).push(i.message);
     return fail("Revise los datos.", { fieldErrors });
   }
-  const supabase = await supabaseServer();
-  const { error } = await supabase.auth.signInWithPassword({ email: parsed.data.email, password: parsed.data.password });
+  const unavailable = "No se pudo contactar el servicio de autenticación. Revise la configuración en /estado.";
+  let error: { status?: number } | null;
+  try {
+    const supabase = await supabaseServer();
+    ({ error } = await supabase.auth.signInWithPassword({ email: parsed.data.email, password: parsed.data.password }));
+  } catch {
+    return fail(unavailable);
+  }
   if (error) {
-    // Mensaje genérico: no revela si el correo existe.
-    return fail("Correo o contraseña incorrectos.");
+    if (error.status === 429) return fail("Demasiados intentos. Espere unos minutos y vuelva a intentar.");
+    // Credenciales rechazadas: mensaje genérico que no revela si el correo existe.
+    if (error.status && error.status >= 400 && error.status < 500) return fail("Correo o contraseña incorrectos.");
+    return fail(unavailable);
   }
   const next = parsed.data.next && parsed.data.next.startsWith("/") && !parsed.data.next.startsWith("//") ? parsed.data.next : "/";
   redirect(next);

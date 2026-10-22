@@ -17,8 +17,20 @@ export type Tx = postgres.TransactionSql;
 
 const DATE_OID = 1082;
 
+/** Hosts remotos (Supabase) exigen TLS salvo que la URL indique sslmode. */
+function sslFor(url: string): false | "require" | undefined {
+  try {
+    const u = new URL(url);
+    if (u.searchParams.has("sslmode")) return undefined;
+    return ["localhost", "127.0.0.1", "::1"].includes(u.hostname) ? false : "require";
+  } catch {
+    return undefined;
+  }
+}
+
 export function createSql(url: string, options: { max?: number } = {}): Sql {
   return postgres(url, {
+    ssl: sslFor(url),
     max: options.max ?? 10,
     idle_timeout: 20,
     connect_timeout: 10,

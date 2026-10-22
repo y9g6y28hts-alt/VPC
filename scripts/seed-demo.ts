@@ -206,13 +206,14 @@ async function main() {
   }
 
   // ------------------------------------------------------------- operaciones
-  async function deal(o: { c: string; v: string; cur: "PYG" | "USD"; list: number; disc?: number; down: number; trade?: { id: string; value: number }; type?: "contado" | "financiado" }) {
+  async function deal(o: { c: string; v: string; cur: "PYG" | "USD"; list: number; disc?: number; down: number; trade?: { id: string; value: number }; type?: "contado" | "financiado"; terms?: FinancingTerms; fin?: Omit<FinancingTerms, "firstDueDate"> }) {
+    if (!o.terms && o.fin) o.terms = { ...o.fin, firstDueDate: T(30) };
     const seller = sellerOf[o.c]!;
     const [d] = await as(seller, (tx) => tx<{ id: string }[]>`
       insert into public.deals (org_id, customer_id, vehicle_id, seller_id, currency, list_price, discount_amount, trade_in_appraisal_id,
-                                trade_in_value, down_payment, payment_type, created_by)
+                                trade_in_value, down_payment, payment_type, financing_terms, created_by)
       values (${orgId}, ${cus[o.c]!}, ${veh[o.v]!}, ${seller}, ${o.cur}, ${o.list}, ${o.disc ?? 0}, ${o.trade?.id ?? null},
-              ${o.trade?.value ?? 0}, ${o.down}, ${o.type ?? "financiado"}, ${seller}) returning id`);
+              ${o.trade?.value ?? 0}, ${o.down}, ${o.type ?? "financiado"}, ${o.terms ? tx.json(o.terms as never) : null}, ${seller}) returning id`);
     const [s] = await as(seller, (tx) => tx<{ s: string }[]>`select public.rpc_deal_submit(${d!.id}) as s`);
     if (s!.s === "pendiente_aprobacion") {
       const [ap] = await admin<{ id: string }[]>`select id from public.approvals where entity_id = ${d!.id} and status = 'pendiente'`;
@@ -318,8 +319,9 @@ async function main() {
   // 6) Bronco Sport — descuento 6% pendiente de aprobación
   {
     const dId = await as(U.sofia, (tx) => tx<{ id: string }[]>`
-      insert into public.deals (org_id, customer_id, vehicle_id, seller_id, currency, list_price, discount_amount, down_payment, payment_type, created_by)
-      values (${orgId}, ${cus.c5!}, ${veh.bronco!}, ${U.sofia}, 'PYG', 330000000, 19800000, 100000000, 'financiado', ${U.sofia}) returning id`);
+      insert into public.deals (org_id, customer_id, vehicle_id, seller_id, currency, list_price, discount_amount, down_payment, payment_type, financing_terms, created_by)
+      values (${orgId}, ${cus.c5!}, ${veh.bronco!}, ${U.sofia}, 'PYG', 330000000, 19800000, 100000000, 'financiado',
+              ${tx.json({ method: "frances", ratePercent: 18, rateConvention: "nominal_annual", termMonths: 24, firstDueDate: T(30) } as never)}, ${U.sofia}) returning id`);
     await as(U.sofia, (tx) => tx`select public.rpc_deal_submit(${dId[0]!.id})`);
   }
 

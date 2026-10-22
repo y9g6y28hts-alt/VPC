@@ -12,3 +12,7 @@ next-env.d.ts
 .env.*.local
 .dev/
 storage-local/
+
+# Playwright
+/test-results/
+/playwright-report/

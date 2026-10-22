@@ -1,19 +1,21 @@
 "use client";
 
-import { useActionState, useEffect, useRef, type ReactNode } from "react";
+import { createContext, startTransition, useActionState, useContext, useEffect, useRef, type ReactNode } from "react";
 import { useFormStatus } from "react-dom";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import type { ActionState } from "@/lib/action-state";
 import { buttonClass } from "./button";
 import { FormError } from "./field";
-import { toast } from "./toast";
 
 export type FormAction = (prev: ActionState, formData: FormData) => Promise<ActionState>;
 
+const PendingContext = createContext(false);
+
 /**
- * Formulario conectado a una acción de servidor: muestra errores de campo y
- * generales, deshabilita el envío mientras se procesa y avisa el resultado.
+ * Formulario conectado a una acción de servidor. Envía con startTransition
+ * (en lugar de la prop `action`) para que React no reinicie los campos cuando
+ * el servidor devuelve errores: el usuario conserva lo que escribió.
  */
 export function ActionForm({
   action,
@@ -30,7 +32,7 @@ export function ActionForm({
   resetOnSuccess?: boolean;
   onSuccess?: (state: ActionState) => void;
 }) {
-  const [state, formAction] = useActionState(action, { ok: false });
+  const [state, formAction, pending] = useActionState(action, { ok: false });
   const formRef = useRef<HTMLFormElement>(null);
   const router = useRouter();
   const lastAt = useRef<number | undefined>(undefined);
@@ -39,7 +41,6 @@ export function ActionForm({
     if (!state.at || state.at === lastAt.current) return;
     lastAt.current = state.at;
     if (state.ok) {
-      if (state.message) toast.success(state.message);
       if (resetOnSuccess) formRef.current?.reset();
       onSuccess?.(state);
       const to = successRedirect?.(state);
@@ -48,11 +49,22 @@ export function ActionForm({
   }, [state, router, successRedirect, resetOnSuccess, onSuccess]);
 
   return (
-    <form ref={formRef} action={formAction} className={className} noValidate>
-      {!state.ok && state.message && !state.fieldErrors ? <FormError message={state.message} /> : null}
-      {!state.ok && state.message && state.fieldErrors ? <FormError message={state.message} /> : null}
-      {children(state)}
-    </form>
+    <PendingContext.Provider value={pending}>
+      <form
+        ref={formRef}
+        className={className}
+        noValidate
+        onSubmit={(e) => {
+          e.preventDefault();
+          const submitter = (e.nativeEvent as SubmitEvent).submitter as HTMLElement | null;
+          const fd = new FormData(e.currentTarget, submitter);
+          startTransition(() => formAction(fd));
+        }}
+      >
+        {!state.ok && state.message ? <FormError message={state.message} /> : null}
+        {children(state)}
+      </form>
+    </PendingContext.Provider>
   );
 }
 
@@ -63,6 +75,7 @@ export function SubmitButton({
   className,
   name,
   value,
+  disabled,
 }: {
   children: ReactNode;
   variant?: "primary" | "secondary" | "danger" | "outline";
@@ -70,10 +83,20 @@ export function SubmitButton({
   className?: string;
   name?: string;
   value?: string;
+  disabled?: boolean;
 }) {
-  const { pending } = useFormStatus();
+  const ctxPending = useContext(PendingContext);
+  const { pending: formPending } = useFormStatus();
+  const pending = ctxPending || formPending;
   return (
-    <button type="submit" name={name} value={value} disabled={pending} aria-busy={pending} className={buttonClass(variant, size, className)}>
+    <button
+      type="submit"
+      name={name}
+      value={value}
+      disabled={pending || disabled}
+      aria-busy={pending}
+      className={buttonClass(variant, size, className)}
+    >
       {pending ? <Loader2 className="animate-spin" aria-hidden /> : null}
       {children}
     </button>

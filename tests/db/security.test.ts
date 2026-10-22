@@ -183,3 +183,21 @@ describe("restricciones por rol", () => {
     expect(err).toMatch(/permission denied/);
   });
 });
+
+describe("visibilidad de cobranzas", () => {
+  it("cobranzas ve la unidad de un contrato pero no el resto del inventario", async () => {
+    const { buildDealSchedule, toRpcPayload } = await import("@/domain/financing/deal-schedule");
+    const sold = await createVehicle(f);
+    const other = await createVehicle(f);
+    const cid = await createCustomer(f, f.users.vendedor);
+    const [d] = await as(f.users.vendedor, (tx) => tx<{ id: string }[]>`
+      insert into public.deals (org_id, customer_id, vehicle_id, seller_id, currency, list_price, down_payment, payment_type, created_by)
+      values (${f.orgId}, ${cid}, ${sold}, ${f.users.vendedor}, 'PYG', 300000000, 300000000, 'contado', ${f.users.vendedor}) returning id`);
+    await as(f.users.vendedor, (tx) => tx`select public.rpc_deal_submit(${d!.id})`);
+    const [{ d: today }] = await admin<{ d: string }[]>`select app.org_today(${f.orgId})::text as d`;
+    const p = toRpcPayload(buildDealSchedule({ currency: "PYG", listPrice: 300_000_000, discount: 0, tradeInValue: 0, downPayment: 300_000_000, operationDate: today! }));
+    await as(f.users.administracion, (tx) => tx`select public.rpc_deal_formalize(${d!.id}, ${today!}, ${tx.json(p.plan as never)}, ${tx.json(p.schedule as never)})`);
+    const seen = await as(f.users.cobranzas, (tx) => tx`select id from public.vehicles where id in (${sold}, ${other})`);
+    expect(seen.map((r) => r.id)).toEqual([sold]);
+  });
+});

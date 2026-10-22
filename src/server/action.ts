@@ -1,4 +1,5 @@
 import "server-only";
+import { cookies } from "next/headers";
 import { unstable_rethrow } from "next/navigation";
 import type { z } from "zod";
 import type { Permission } from "@/domain/permissions";
@@ -17,12 +18,29 @@ export async function guarded(perms: Permission[], fn: (ctx: AppContext) => Prom
   if (!ctx) return fail("Su sesión expiró. Ingrese nuevamente.");
   if (perms.length && !ctx.perms.any(...perms)) return fail("No tiene permiso para esta operación.");
   try {
-    return await fn(ctx);
+    const result = await fn(ctx);
+    if (result.ok && result.message) await flash(result.message);
+    return result;
   } catch (err) {
     unstable_rethrow(err);
     const f = toFriendlyError(err);
     return fail(f.message, { needsConfirmation: f.duplicate });
   }
+}
+
+export const FLASH_COOKIE = "ds_flash";
+
+/**
+ * Mensaje de éxito que sobrevive al re-render (p. ej. cuando el botón que lanzó
+ * la acción desaparece porque cambió el estado). Lo muestra el layout.
+ */
+export async function flash(message: string): Promise<void> {
+  (await cookies()).set(FLASH_COOKIE, JSON.stringify({ id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, m: message }), {
+    path: "/",
+    maxAge: 30,
+    httpOnly: false,
+    sameSite: "lax",
+  });
 }
 
 /** Valida un FormData con zod y devuelve errores por campo en español. */

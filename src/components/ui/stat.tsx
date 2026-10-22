@@ -52,6 +52,7 @@ export function Stat({
   );
   return (
     <div
+      data-stat={id}
       className={cn(
         "relative flex min-w-0 flex-col rounded-lg border border-line-soft bg-surface px-4 py-3.5",
         "before:absolute before:inset-y-3 before:left-0 before:w-[2px] before:rounded-r",

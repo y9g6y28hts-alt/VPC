@@ -1,4 +1,6 @@
+import { cookies } from "next/headers";
 import { Brand } from "@/components/shell/brand";
+import { Flash } from "@/components/ui/flash";
 import { NAV } from "@/components/shell/nav";
 import { Sidebar } from "@/components/shell/sidebar";
 import { UserMenu } from "@/components/shell/user-menu";
@@ -16,8 +18,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         and (requested_by <> ${ctx.userId} or ${ctx.org.role} = 'director')`,
   );
 
+  const flashValue = (await cookies()).get("ds_flash")?.value ?? null;
+
   return (
     <div className="lg:flex">
+      <Flash value={flashValue} />
       <Sidebar
         items={items}
         badges={{ aprobaciones: pending?.c ?? 0 }}

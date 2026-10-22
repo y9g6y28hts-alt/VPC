@@ -123,6 +123,10 @@ create policy categories_read on public.vehicle_categories for select to authent
 create policy categories_insert on public.vehicle_categories for insert to authenticated with check (app.has_perm(org_id, 'settings.manage'));
 
 create policy vehicles_read on public.vehicles for select to authenticated using (app.has_perm(org_id, 'inventory.view'));
+-- Cobranzas/finanzas ven las unidades vinculadas a contratos (no todo el inventario).
+create policy vehicles_read_contracted on public.vehicles for select to authenticated
+  using ((app.has_perm(org_id, 'contracts.view') or app.has_perm(org_id, 'collections.view'))
+         and exists (select 1 from public.contracts k where k.vehicle_id = vehicles.id));
 create policy vehicles_insert on public.vehicles for insert to authenticated
   with check (app.has_perm(org_id, 'inventory.create') and commercial_status = 'disponible' and contract_status = 'sin_contrato');
 create policy vehicles_update on public.vehicles for update to authenticated

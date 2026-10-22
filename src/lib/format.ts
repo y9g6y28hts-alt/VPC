@@ -126,3 +126,13 @@ export function formatInputAmount(value: number | string | null | undefined, cur
   const d = currency === "USD" ? 2 : 0;
   return new Intl.NumberFormat("es-PY", { minimumFractionDigits: d, maximumFractionDigits: d, useGrouping: true }).format(n);
 }
+
+/** Enlace de WhatsApp para un teléfono paraguayo (0981… → 595981…). */
+export function whatsappHref(phone: string | null | undefined, text?: string): string | null {
+  if (!phone) return null;
+  let digits = phone.replace(/\D/g, "");
+  if (digits.startsWith("00")) digits = digits.slice(2);
+  if (/^09\d{8}$/.test(digits)) digits = `595${digits.slice(1)}`;
+  if (digits.length < 9) return null;
+  return `https://wa.me/${digits}${text ? `?text=${encodeURIComponent(text)}` : ""}`;
+}

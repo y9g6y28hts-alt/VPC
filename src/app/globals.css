@@ -38,6 +38,12 @@
   --color-info: #7aa7d9;
   --color-info-soft: rgb(122 167 217 / 0.13);
 
+  /* Series de gráficos (validadas contra la superficie oscura con el validador CVD) */
+  --color-series-1: #3987e5;
+  --color-series-2: #d95926;
+  --color-series-3: #199e70;
+  --color-grid: rgb(255 255 255 / 0.06);
+
   --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Archivo Variable", "Inter Variable", ui-sans-serif, system-ui, sans-serif;
 

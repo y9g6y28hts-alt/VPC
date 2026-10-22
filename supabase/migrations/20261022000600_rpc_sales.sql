@@ -364,6 +364,9 @@ begin
   if v_deal.payment_type = 'financiado' and v_deal.trade_in_value + v_deal.down_payment >= v_deal.sale_price then
     perform app.fail('No queda capital a financiar: registre la operación como contado');
   end if;
+  if v_deal.payment_type = 'financiado' and v_deal.financing_terms is null then
+    perform app.fail('Defina las condiciones de financiación (plazo, tasa y sistema) antes de enviar la operación');
+  end if;
 
   if v_deal.trade_in_value > 0 then
     if v_deal.trade_in_appraisal_id is null then perform app.fail('El valor de trade-in requiere una tasación'); end if;

@@ -6,7 +6,6 @@ import { Loader2 } from "lucide-react";
 import type { ActionState } from "@/lib/action-state";
 import { buttonClass } from "./button";
 import { Field, FormError, Textarea } from "./field";
-import { toast } from "./toast";
 
 type Action = (prev: ActionState, formData: FormData) => Promise<ActionState>;
 
@@ -51,7 +50,6 @@ export function ConfirmAction({
     if (state.ok) {
       ref.current?.close();
       setReason("");
-      toast.success(state.message ?? "Operación realizada");
     }
   }, [state]);
 

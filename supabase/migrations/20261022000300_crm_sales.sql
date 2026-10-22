@@ -326,6 +326,9 @@ create table public.deals (
   trade_in_value        numeric(18,2) not null default 0 check (trade_in_value >= 0),
   down_payment          numeric(18,2) not null default 0 check (down_payment >= 0),
   payment_type          text not null check (payment_type in ('contado','financiado')),
+  -- Propuesta: {method, ratePercent, rateConvention, termMonths, firstDueDate, balloons[]}. Null en contado.
+  -- Al formalizar, el motor genera el cronograma definitivo con estas condiciones y la fecha de firma.
+  financing_terms       jsonb,
   status                text not null default 'borrador'
                         check (status in ('borrador','pendiente_aprobacion','aprobada','formalizada','entregada','anulada')),
   requires_approval     boolean not null default false,
@@ -351,7 +354,8 @@ create table public.deals (
   check (app.money_ok(list_price, currency) and app.money_ok(discount_amount, currency)
          and app.money_ok(trade_in_value, currency) and app.money_ok(down_payment, currency)),
   check (payment_type = 'financiado' or trade_in_value + down_payment = list_price - discount_amount
-         or status in ('borrador','pendiente_aprobacion','aprobada','anulada'))
+         or status in ('borrador','pendiente_aprobacion','aprobada','anulada')),
+  check (payment_type = 'contado' or status in ('borrador','anulada') or financing_terms is not null)
 );
 -- Una unidad sólo puede tener una venta formalizada o entregada.
 create unique index deals_vehicle_sold_uq on public.deals(vehicle_id) where status in ('formalizada','entregada');
@@ -412,6 +416,11 @@ begin
                                     'trade_in_value', new.trade_in_value, 'down_payment', new.down_payment,
                                     'payment_type', new.payment_type, 'currency', new.currency)), auth.uid());
   end if;
+  if new.financing_terms is distinct from old.financing_terms then
+    insert into public.deal_events (org_id, deal_id, event, details, actor_id)
+    values (new.org_id, new.id, 'financiacion_modificada',
+            jsonb_build_object('antes', old.financing_terms, 'despues', new.financing_terms), auth.uid());
+  end if;
   if new.status is distinct from old.status then
     insert into public.deal_events (org_id, deal_id, event, details, actor_id)
     values (new.org_id, new.id, 'estado', jsonb_build_object('de', old.status, 'a', new.status), auth.uid());
@@ -437,10 +446,10 @@ begin
   end if;
   if old.status not in ('borrador') and
      (new.list_price, new.discount_amount, new.trade_in_value, new.down_payment, new.payment_type, new.currency,
-      new.vehicle_id, new.customer_id, new.trade_in_appraisal_id)
+      new.vehicle_id, new.customer_id, new.trade_in_appraisal_id, new.financing_terms)
      is distinct from
      (old.list_price, old.discount_amount, old.trade_in_value, old.down_payment, old.payment_type, old.currency,
-      old.vehicle_id, old.customer_id, old.trade_in_appraisal_id) then
+      old.vehicle_id, old.customer_id, old.trade_in_appraisal_id, old.financing_terms) then
     raise exception 'Las condiciones sólo se modifican en borrador' using errcode = '42501';
   end if;
   return new;

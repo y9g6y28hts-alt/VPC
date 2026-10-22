@@ -29,10 +29,12 @@ async function createDeal(opts: {
   return as(seller, async (tx) => {
     const [d] = await tx<{ id: string }[]>`
       insert into public.deals (org_id, customer_id, vehicle_id, seller_id, currency, list_price, discount_amount,
-                                trade_in_appraisal_id, trade_in_value, down_payment, payment_type, created_by)
+                                trade_in_appraisal_id, trade_in_value, down_payment, payment_type, financing_terms, created_by)
       values (${f.orgId}, ${opts.customerId}, ${opts.vehicleId}, ${seller}, ${opts.currency ?? "PYG"},
               ${opts.listPrice ?? 300_000_000}, ${opts.discount ?? 0}, ${opts.tradeIn?.appraisalId ?? null},
-              ${opts.tradeIn?.value ?? 0}, ${opts.down ?? 60_000_000}, ${opts.paymentType ?? "financiado"}, ${seller})
+              ${opts.tradeIn?.value ?? 0}, ${opts.down ?? 60_000_000}, ${opts.paymentType ?? "financiado"},
+              ${(opts.paymentType ?? "financiado") === "financiado" ? tx.json({ method: "frances", ratePercent: 18, rateConvention: "nominal_annual", termMonths: 12, firstDueDate: today } as never) : null},
+              ${seller})
       returning id`;
     return d!.id;
   });
@@ -147,6 +149,15 @@ describe("venta financiada de punta a punta", () => {
   it("el historial registra la operación y los cambios de estado", async () => {
     const ev = await admin`select event from public.deal_events where deal_id = ${dealId} order by id`;
     expect(ev.map((e) => e.event)).toEqual(["creada", "estado", "estado"]);
+  });
+
+  it("una venta financiada sin condiciones no se puede enviar", async () => {
+    const vid2 = await createVehicle(f);
+    const c2 = await createCustomer(f, f.users.vendedor);
+    const d = await as(f.users.vendedor, (tx) => tx`
+      insert into public.deals (org_id, customer_id, vehicle_id, seller_id, currency, list_price, down_payment, payment_type, created_by)
+      values (${f.orgId}, ${c2}, ${vid2}, ${f.users.vendedor}, 'PYG', 300000000, 60000000, 'financiado', ${f.users.vendedor}) returning id`);
+    expect(await errorOf(as(f.users.vendedor, (tx) => tx`select public.rpc_deal_submit(${d[0]!.id})`))).toMatch(/condiciones de financiación/);
   });
 
   it("rechaza un cronograma que no cuadra con la operación", async () => {

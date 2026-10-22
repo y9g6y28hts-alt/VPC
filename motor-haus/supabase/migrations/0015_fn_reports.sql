@@ -443,7 +443,8 @@ language sql stable set search_path = public, app as $$
   with c as (select * from public.sales_contracts where id = p_contract),
   entries as (
     select (select contract_date from c) as d, 1 as o, 'obligations'::text as t,
-      format('Obligaciones emitidas (%s): %s', count(*), string_agg(distinct kind, ', ')) as descr,
+      format('Obligaciones emitidas (%s): %s', count(*), string_agg(distinct case kind when 'down_payment' then 'entrega inicial'
+        when 'installment' then 'cuotas' when 'balloon' then 'refuerzos' else 'cargos' end, ', ')) as descr,
       (select number from c) as ref, sum(amount_due) as debit, 0::numeric as credit
     from public.receivable_installments where contract_id = p_contract and status = 'open'
     union all

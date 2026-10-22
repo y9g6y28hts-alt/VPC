@@ -29,7 +29,7 @@ export interface Fixture {
 }
 
 export async function createFixture(): Promise<Fixture> {
-  const today = (await admin.query<{ d: string }>("select current_date::text d")).rows[0].d;
+  const today = (await admin.query<{ d: string }>("select (now() at time zone 'America/Asuncion')::date::text d")).rows[0].d;
   const tag = randomUUID().slice(0, 8);
   const users = {} as Fixture["users"];
   for (const role of [...ROLES, "advisor2"] as RoleKey[]) {

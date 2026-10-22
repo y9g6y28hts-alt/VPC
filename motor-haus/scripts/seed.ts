@@ -241,7 +241,7 @@ async function main() {
   if (!process.env.MH_ADMIN_DATABASE_URL || !process.env.DATABASE_URL) {
     throw new Error("Defina DATABASE_URL y MH_ADMIN_DATABASE_URL (ver .env.example)");
   }
-  TODAY = (await admin.query<{ d: string }>("select current_date::text as d")).rows[0].d;
+  TODAY = (await admin.query<{ d: string }>("select (now() at time zone coalesce($1, 'America/Asuncion'))::date::text as d", [process.env.MH_TIMEZONE ?? null])).rows[0].d;
   const existing = await admin.query("select 1 from public.organizations limit 1");
   if (existing.rowCount) throw new Error("La base ya contiene datos. Ejecute npm run db:reset antes del seed.");
 

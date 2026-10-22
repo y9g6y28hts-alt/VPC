@@ -1,0 +1,90 @@
+@import "tailwindcss";
+
+/* =============================================================================
+   Motor Haus · Sistema de diseño "Luxury Institutional"
+   Superficies profundas, tipografía precisa, champán solo como énfasis.
+   ========================================================================== */
+
+@theme {
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  --color-ink: #090a0c;          /* fondo */
+  --color-surface: #111317;      /* superficie principal */
+  --color-raised: #191c21;       /* superficie elevada */
+  --color-raised-2: #1f2329;
+  --color-line: #292d34;         /* bordes */
+  --color-line-soft: #1f232a;
+  --color-text: #f3f1eb;         /* blanco cálido */
+  --color-text-2: #c9c6be;
+  --color-muted: #9298a1;        /* texto secundario */
+  --color-faint: #6b717a;
+  --color-accent: #c3a675;       /* champán: solo énfasis */
+  --color-accent-deep: #b48a3e;  /* serie 1 de gráficos (validada CVD) */
+  --color-steel: #4f7fc7;        /* serie 2 de gráficos (validada CVD) */
+  --color-good: #6aa77f;         /* verde sobrio */
+  --color-good-bg: #13241a;
+  --color-warn: #d4a34c;         /* ámbar contenido */
+  --color-warn-bg: #2a2214;
+  --color-risk: #c4554b;         /* rojo oscuro */
+  --color-risk-bg: #2c1614;
+  --color-info: #8fa3bf;
+  --color-info-bg: #161d27;
+
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html, body {
+  background: var(--color-ink);
+  color: var(--color-text);
+}
+
+body {
+  font-feature-settings: "ss01", "cv11";
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Cifras financieras: números tabulares y alineación precisa */
+.num {
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: "tnum", "lnum";
+  white-space: nowrap;
+}
+
+::selection { background: #c3a67544; }
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* Tablas de alta legibilidad */
+.mh-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; }
+.mh-table thead th {
+  position: sticky; top: 0; z-index: 1;
+  background: var(--color-surface);
+  color: var(--color-muted); font-weight: 500; font-size: 11px; letter-spacing: .04em; text-transform: uppercase;
+  text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--color-line); white-space: nowrap;
+}
+.mh-table tbody td { padding: 10px 12px; border-bottom: 1px solid var(--color-line-soft); vertical-align: middle; }
+.mh-table tbody tr:hover td { background: #15181d; }
+.mh-table td.r, .mh-table th.r { text-align: right; }
+.mh-table tfoot td { padding: 10px 12px; border-top: 1px solid var(--color-line); color: var(--color-text-2); font-weight: 500; }
+
+@media print {
+  @page { margin: 14mm; }
+  html, body { background: #fff !important; color: #111 !important; }
+  .no-print { display: none !important; }
+  .print-sheet { background: #fff !important; color: #111 !important; border: 0 !important; box-shadow: none !important; }
+  .print-sheet * { color: #111 !important; border-color: #ccc !important; background: transparent !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}

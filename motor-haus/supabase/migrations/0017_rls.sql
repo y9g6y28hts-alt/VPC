@@ -75,7 +75,8 @@ grant execute on all functions in schema public to authenticated;
 grant execute on function app.uid(), app.is_member(uuid), app.has_perm(uuid, text), app.today(),
   app.exigible_date(uuid, date), app.unit_display_status(text, text, text, text), app.round_money(numeric, char),
   app.can_read_deal(uuid, uuid), app.can_read_contract(uuid), app.can_read_receivables_of_contract(uuid),
-  app.can_read_entity(text, uuid), app.deal_economics(uuid), app.op_id(), app.is_direct_client()
+  app.can_read_entity(text, uuid), app.deal_economics(uuid), app.op_id(), app.is_direct_client(),
+  app.unit_listing_blockers(uuid)
   to authenticated;
 
 -- -----------------------------------------------------------------------------

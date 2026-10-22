@@ -49,9 +49,9 @@ function makeDb(client: PoolClient): Db {
       if (r.length === 0) throw new DomainError("NOT_FOUND", "Registro no encontrado o sin acceso.");
       return r[0];
     },
-    async maybe<T extends QueryResultRow>(sql: string, params: unknown[] = []) {
+    async maybe<T extends QueryResultRow>(sql: string, params: unknown[] = []): Promise<T | null> {
       const r = await rows<T>(sql, params);
-      return r[0] ?? null;
+      return r.length ? r[0] : null;
     },
     async rpc<T>(fn: string, args: Record<string, unknown>) {
       if (!IDENT.test(fn)) throw new DomainError("INTERNAL", "Nombre de función inválido");
@@ -78,13 +78,17 @@ export async function withUser<T>(claims: Claims, fn: (db: Db) => Promise<T>, op
       "select set_config('request.jwt.claims', $1, true), set_config('app.op_id', $2, true), set_config('app.as_of_date', $3, true)",
       [JSON.stringify({ sub: claims.sub, email: claims.email, role: "authenticated" }), opts.opId ?? randomUUID(), opts.asOfDate ?? ""],
     );
+    // Fecha de negocio en la zona horaria de la empresa (current_date, app.today()).
+    await client.query("select set_config('TimeZone', $1, true)", [process.env.MH_TIMEZONE ?? "America/Asuncion"]);
     await client.query("set local role authenticated");
     const result = await fn(makeDb(client));
     await client.query("commit");
     return result;
   } catch (err) {
     await client.query("rollback").catch(() => undefined);
-    throw toDomainError(err);
+    const mapped = toDomainError(err);
+    if (mapped.code === "INTERNAL") console.error("[motor-haus] error de base de datos:", (err as Error).message);
+    throw mapped;
   } finally {
     client.release();
   }

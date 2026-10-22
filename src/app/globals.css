@@ -1,0 +1,107 @@
+@import "tailwindcss";
+@import "@fontsource-variable/inter/wght.css";
+@import "@fontsource-variable/archivo/wdth.css";
+
+/*
+ * Da Silva OS — tokens visuales
+ * Dark luxury, precisión corporativa. El rojo de marca se reserva para la
+ * identidad, la acción principal y el indicador de navegación activa; las
+ * alertas críticas usan un rojo de alerta distinto, siempre acompañado de
+ * texto e icono (nunca sólo color).
+ *
+ * --brand-red es PROVISIONAL hasta calibrarlo con el archivo original del logo
+ * (ver public/brand/README.md).
+ */
+@theme {
+  --color-carbon: #101113;
+  --color-surface: #191b1f;
+  --color-elevated: #22252a;
+  --color-raised: #2a2e34;
+  --color-line: #34383e;
+  --color-line-soft: #26292e;
+  --color-ink: #f5f5f2;
+  --color-ink-2: #d9dad6;
+  --color-muted: #a5a8ae;
+  --color-faint: #73777e;
+
+  --color-brand: #c8102e;
+  --color-brand-hover: #de1a39;
+  --color-brand-ink: #ffffff;
+  --color-brand-soft: rgb(200 16 46 / 0.14);
+
+  --color-positive: #4fae84;
+  --color-positive-soft: rgb(79 174 132 / 0.13);
+  --color-warning: #e0a83e;
+  --color-warning-soft: rgb(224 168 62 / 0.13);
+  --color-critical: #f0555a;
+  --color-critical-soft: rgb(240 85 90 / 0.13);
+  --color-info: #7aa7d9;
+  --color-info-soft: rgb(122 167 217 / 0.13);
+
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Archivo Variable", "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+
+  --shadow-pop: 0 12px 32px -8px rgb(0 0 0 / 0.6), 0 0 0 1px rgb(255 255 255 / 0.04);
+}
+
+@layer base {
+  html {
+    color-scheme: dark;
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    background: var(--color-carbon);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-feature-settings: "cv11", "ss01";
+    -webkit-font-smoothing: antialiased;
+  }
+  ::selection {
+    background: var(--color-brand-soft);
+    color: var(--color-ink);
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-ink-2);
+    outline-offset: 2px;
+  }
+  h1, h2, h3 {
+    font-family: var(--font-display);
+    font-stretch: 108%;
+    letter-spacing: -0.01em;
+  }
+  input, select, textarea, button {
+    font: inherit;
+  }
+  input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+  }
+  dialog::backdrop {
+    background: rgb(0 0 0 / 0.65);
+  }
+}
+
+@utility num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum", "cv11";
+}
+
+@utility display {
+  font-family: var(--font-display);
+  font-stretch: 112%;
+}
+
+@utility scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-line) transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

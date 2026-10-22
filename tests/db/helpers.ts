@@ -26,7 +26,7 @@ export interface OrgFixture {
   users: Record<Role, string>;
 }
 
-export async function createUser(orgId: string, role: Role, name = role): Promise<string> {
+export async function createUser(orgId: string, role: Role, name: string = role): Promise<string> {
   const id = randomUUID();
   await admin`insert into auth.users (id, email) values (${id}, ${`${name}.${id.slice(0, 6)}@test.local`})`;
   await admin`insert into public.user_profiles (id, full_name) values (${id}, ${name})`;

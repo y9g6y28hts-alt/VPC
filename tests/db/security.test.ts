@@ -48,7 +48,8 @@ describe("aislamiento entre organizaciones", () => {
   });
 
   it("un usuario sin membresía no ve nada", async () => {
-    const [{ id }] = await admin<{ id: string }[]>`insert into auth.users (id, email) values (gen_random_uuid(), 'nadie@test.local') returning id`;
+    const [row] = await admin<{ id: string }[]>`insert into auth.users (id, email) values (gen_random_uuid(), 'nadie@test.local') returning id`;
+    const id = row!.id;
     await admin`insert into public.user_profiles (id, full_name) values (${id}, 'Nadie')`;
     const rows = await as(id, (tx) => tx`select count(*)::int as c from public.vehicles`);
     expect(rows[0]!.c).toBe(0);

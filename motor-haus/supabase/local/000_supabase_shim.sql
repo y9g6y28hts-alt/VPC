@@ -17,7 +17,8 @@ begin
     create role authenticated nologin noinherit;
   end if;
   if not exists (select 1 from pg_roles where rolname = 'service_role') then
-    create role service_role nologin noinherit bypassrls;
+    -- Sin BYPASSRLS: no se usa para eludir RLS y así funciona en Postgres gestionado sin superusuario.
+    create role service_role nologin noinherit;
   end if;
   -- Rol de conexión del servidor Next.js. NOINHERIT: sin SET ROLE no tiene
   -- ningún privilegio sobre las tablas; el gateway siempre ejecuta

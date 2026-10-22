@@ -20,8 +20,10 @@ declare global {
 
 function pool(): Pool {
   if (!globalThis.__mhPool) {
-    const connectionString = process.env.DATABASE_URL;
-    if (!connectionString) throw new DomainError("INTERNAL", "DATABASE_URL no está configurada en el servidor.");
+    // MH_DATABASE_URL tiene prioridad: integraciones como Neon en Vercel crean DATABASE_URL
+    // con el rol propietario, y la aplicación debe conectarse con el rol sin privilegios.
+    const connectionString = process.env.MH_DATABASE_URL ?? process.env.DATABASE_URL;
+    if (!connectionString) throw new DomainError("INTERNAL", "MH_DATABASE_URL / DATABASE_URL no está configurada en el servidor.");
     globalThis.__mhPool = new Pool({ connectionString, max: Number(process.env.MH_DB_POOL_MAX ?? 10) });
   }
   return globalThis.__mhPool;

@@ -16,6 +16,7 @@ async function login(browser: Browser, email: string): Promise<Page> {
   const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
   page.on("pageerror", (e) => { throw new Error(`Error de página (${email}): ${e.message}`); });
   await page.goto(`${base}/login`);
+  if (await page.locator("details:not([open]) summary").count()) await page.locator("details summary").first().click();
   await page.fill('input[name="email"]', email);
   await page.fill('input[name="password"]', password);
   await page.click('button[type="submit"]');

@@ -12,6 +12,7 @@ let failures = 0;
 
 async function login(page: Page, email: string) {
   await page.goto(`${base}/login`);
+  if (await page.locator("details:not([open]) summary").count()) await page.locator("details summary").first().click();
   await page.fill('input[name="email"]', email);
   await page.fill('input[name="password"]', password);
   await page.click('button[type="submit"]');
@@ -40,8 +41,11 @@ async function firstLink(page: Page, list: string, pattern: RegExp): Promise<str
   const browser = await chromium.launch({ executablePath: process.env.MH_CHROMIUM ?? "/opt/pw-browsers/chromium-1194/chrome-linux/chrome" });
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
   try {
-    await login(page, "direccion@motorhaus.demo");
-    console.log(`✓ inicio de sesión en ${base}`);
+    // Acceso de demostración con un toque (sin escribir credenciales)
+    await page.goto(`${base}/login`);
+    await page.getByRole("button", { name: /Entrar como Director general/ }).click();
+    await page.waitForURL((u) => !u.pathname.startsWith("/login"), { timeout: 30_000 });
+    console.log(`✓ acceso de demostración con un toque en ${base}`);
     const lists = ["/", "/inventory", "/inventory?view=table", "/imports", "/service", "/customers", "/deals", "/appraisals", "/contracts",
       "/contracts?tab=reservations", "/receivables", "/payments", "/treasury", "/payables", "/approvals", "/documents", "/reports", "/audit", "/admin"];
     for (const p of lists) await check(page, p);

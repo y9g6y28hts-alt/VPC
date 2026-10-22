@@ -15,6 +15,7 @@ mkdirSync(out, { recursive: true });
   page.on("pageerror", (e) => errors.push(e.message));
   page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
   await page.goto(`${base}/login`);
+  if (await page.locator("details:not([open]) summary").count()) await page.locator("details summary").first().click();
   await page.fill('input[name="email"]', email);
   await page.fill('input[name="password"]', process.env.MH_DEMO_PASSWORD ?? "MotorHaus-Demo-2026");
   await page.click('button[type="submit"]');

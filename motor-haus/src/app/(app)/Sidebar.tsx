@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { BrandMark } from "@/components/ui/Brand";
 import {
   Banknote, Car, ChartColumn, FileSignature, Files, Gauge, Handshake, Landmark, LogOut, Menu, Receipt, Scale, Settings,
   ShieldCheck, Ship, Stamp, Users, Wallet, Wrench, X,
@@ -26,15 +27,15 @@ export function Sidebar({ groups, org, isDemo, user, role, logout }: {
   return (
     <>
       <div className="flex items-center justify-between border-b border-line bg-surface px-4 py-2.5 lg:hidden">
-        <span className="text-[11px] uppercase tracking-[0.28em] text-accent">Motor Haus</span>
+        <BrandMark size={26} />
         <button type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open} aria-label="Menú" className="text-text-2">
           {open ? <X className="size-5" /> : <Menu className="size-5" />}
         </button>
       </div>
       <aside className={`${open ? "block" : "hidden"} border-r border-line bg-surface lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col`}>
         <div className="hidden px-5 pb-4 pt-5 lg:block">
-          <div className="text-[11px] uppercase tracking-[0.28em] text-accent">Motor Haus</div>
-          <div className="mt-1 truncate text-xs text-muted">{org}{isDemo && " · demo"}</div>
+          <BrandMark size={34} />
+          <div className="mt-2 truncate text-xs text-muted">{org}{isDemo && " · demo"}</div>
         </div>
         <nav className="flex-1 overflow-y-auto px-2 pb-4" aria-label="Principal">
           {groups.map((g) => (

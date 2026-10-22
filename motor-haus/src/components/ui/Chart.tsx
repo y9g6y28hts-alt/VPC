@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { money } from "@/lib/format";
 
-// Gráfico de columnas con capa de hover. Colores validados (CVD y contraste)
-// sobre la superficie #111317: serie 1 champán profundo, serie 2 acero.
+// Gráfico de columnas con capa de hover. Sobre la superficie azul de marca:
+// serie 1 azul claro, serie 2 blanco azulado (distintas en luminosidad, legibles con CVD).
 const SERIES = ["var(--color-accent-deep)", "var(--color-steel)"];
 
 export interface BarDatum { label: string; values: number[]; note?: string }

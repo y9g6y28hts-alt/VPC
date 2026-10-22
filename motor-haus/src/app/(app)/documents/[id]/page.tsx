@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/ui/Layout";
 import { Badge } from "@/components/ui/Badge";
 import { buttonClass } from "@/components/ui/Button";
 import { PrintButton } from "./PrintButton";
+import { BrandMark } from "@/components/ui/Brand";
 import { dateTime } from "@/lib/format";
 
 export const metadata = { title: "Documento" };
@@ -29,7 +30,7 @@ export default async function DocumentPage({ params }: { params: Promise<{ id: s
       </div>
       <article className="print-sheet mx-auto max-w-4xl rounded-md border border-line bg-surface p-8">
         <div className="mb-6 border-t-2 border-accent-deep pt-3">
-          <div className="flex justify-between text-[11px] uppercase tracking-[0.24em] text-accent"><span>Motor Haus</span><span className="text-muted">{m.number}</span></div>
+          <div className="flex items-center justify-between"><BrandMark size={36} /><span className="text-[11px] uppercase tracking-[0.24em] text-muted">{m.number}</span></div>
           <h1 className="mt-3 text-xl font-semibold">{m.title}</h1>
           <p className="text-sm text-muted">{m.orgName}</p>
           <p className="text-xs text-faint">{m.orgLine}</p>

@@ -1,5 +1,7 @@
 import "server-only";
-import { degrees, PDFDocument, PDFFont, PDFPage, rgb, StandardFonts } from "pdf-lib";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
+import { degrees, PDFDocument, PDFFont, PDFImage, PDFPage, rgb, StandardFonts } from "pdf-lib";
 import type { DocModel } from "./documents";
 
 // PDF institucional A4 generado desde el mismo modelo que la vista HTML.
@@ -10,8 +12,15 @@ const M = 44;
 const INK = rgb(0.07, 0.07, 0.08);
 const MUTED = rgb(0.42, 0.43, 0.46);
 const LINE = rgb(0.82, 0.82, 0.8);
-const GOLD = rgb(0.71, 0.54, 0.24);
+const BRAND = rgb(5 / 255, 4 / 255, 134 / 255); // azul del logo
 const WARN = rgb(0.62, 0.42, 0.08);
+
+// Escudo de la marca; si no está disponible el documento se emite solo con el nombre.
+let logoBytes: Promise<Uint8Array | null> | undefined;
+function loadLogo() {
+  logoBytes ??= readFile(path.join(process.cwd(), "public/brand/motor-haus-logo.png")).then((b) => new Uint8Array(b), () => null);
+  return logoBytes;
+}
 
 function safe(font: PDFFont, text: string): string {
   const replaced = text.replace(/[‐‑‒–—]/g, "-").replace(/[“”]/g, '"').replace(/[‘’]/g, "'").replace(/₲/g, "Gs.").replace(/→/g, "->").replace(/−/g, "-");
@@ -41,20 +50,25 @@ export async function renderPdf(model: DocModel): Promise<Uint8Array> {
   pdf.setCreator("Motor Haus");
   const regular = await pdf.embedFont(StandardFonts.Helvetica);
   const bold = await pdf.embedFont(StandardFonts.HelveticaBold);
+  const logoPng = await loadLogo();
+  const logo: PDFImage | null = logoPng ? await pdf.embedPng(logoPng) : null;
   const width = A4[0] - 2 * M;
   let page: PDFPage = pdf.addPage(A4);
   let y = A4[1] - M;
 
   const text = (t: string, x: number, size = 9, font = regular, color = INK) => page.drawText(safe(font, t), { x, y, size, font, color });
   const header = () => {
-    page.drawRectangle({ x: M, y: A4[1] - M + 6, width, height: 1.2, color: GOLD });
+    page.drawRectangle({ x: M, y: A4[1] - M + 6, width, height: 1.2, color: BRAND });
     y = A4[1] - M - 8;
-    text("MOTOR HAUS", M, 8, bold, GOLD);
+    if (logo) {
+      page.drawImage(logo, { x: M, y: y - 8, width: 22, height: 22 });
+      text("MOTOR HAUS", M + 28, 8, bold, BRAND);
+    } else text("MOTOR HAUS", M, 8, bold, BRAND);
     const right = safe(regular, `${model.number}`);
     page.drawText(right, { x: M + width - regular.widthOfTextAtSize(right, 8), y, size: 8, font: regular, color: MUTED });
-    y -= 12;
+    y -= logo ? 22 : 12;
     if (model.isDemo) {
-      page.drawText("DATOS DE DEMOSTRACION - DOCUMENTO SIN VALIDEZ", { x: M + 30, y: 250, size: 22, font: bold, color: rgb(0.85, 0.82, 0.75), rotate: degrees(30), opacity: 0.35 });
+      page.drawText("DATOS DE DEMOSTRACION - DOCUMENTO SIN VALIDEZ", { x: M + 30, y: 250, size: 22, font: bold, color: rgb(0.78, 0.78, 0.9), rotate: degrees(30), opacity: 0.35 });
     }
   };
   const ensure = (h: number) => {
@@ -76,7 +90,7 @@ export async function renderPdf(model: DocModel): Promise<Uint8Array> {
     if (b.heading) {
       ensure(30);
       y -= 4;
-      text(b.heading.toUpperCase(), M, 8, bold, GOLD);
+      text(b.heading.toUpperCase(), M, 8, bold, BRAND);
       y -= 5;
       page.drawLine({ start: { x: M, y }, end: { x: M + width, y }, thickness: 0.5, color: LINE });
       y -= 12;

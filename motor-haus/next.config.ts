@@ -15,6 +15,7 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     "/**": [
       "./demo-db/**/*",
+      "./public/brand/*",
       "./node_modules/@electric-sql/pglite/dist/*.{wasm,data}",
       "./node_modules/@electric-sql/pglite/dist/{pgcrypto,btree_gist}.tar.gz",
     ],

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { authMode } from "@/server/session";
 import { DEMO_PASSWORD, DEMO_USERS, demoLoginEnabled } from "@/server/demo";
+import { BrandMark } from "@/components/ui/Brand";
 import { DemoAccess, LoginForm } from "./LoginForm";
 
 export const metadata: Metadata = { title: "Ingreso" };
@@ -14,8 +15,8 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
     <main className="grid min-h-screen place-items-center px-4 py-10">
       <div className="w-full max-w-sm">
         <div className="mb-6">
-          <div className="text-[11px] uppercase tracking-[0.28em] text-accent">Motor Haus</div>
-          <h1 className="mt-2 text-xl font-semibold tracking-tight">{demo ? "Demostración" : "Acceso privado"}</h1>
+          <BrandMark size={64} />
+          <h1 className="mt-4 text-xl font-semibold tracking-tight">{demo ? "Demostración" : "Acceso privado"}</h1>
           <p className="mt-1 text-sm text-muted">Sistema de gestión de activos, ventas y finanzas.</p>
         </div>
         {error === "sin-organizacion" && (

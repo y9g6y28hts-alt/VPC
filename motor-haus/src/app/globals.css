@@ -1,35 +1,37 @@
 @import "tailwindcss";
 
 /* =============================================================================
-   Motor Haus · Sistema de diseño "Luxury Institutional"
-   Superficies profundas, tipografía precisa, champán solo como énfasis.
+   Motor Haus · Sistema de diseño de marca
+   Azul institucional del escudo (#050486), letras en blanco. Superficies en
+   azules profundos derivados del mismo tono; el blanco es el énfasis.
    ========================================================================== */
 
 @theme {
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 
-  --color-ink: #090a0c;          /* fondo */
-  --color-surface: #111317;      /* superficie principal */
-  --color-raised: #191c21;       /* superficie elevada */
-  --color-raised-2: #1f2329;
-  --color-line: #292d34;         /* bordes */
-  --color-line-soft: #1f232a;
-  --color-text: #f3f1eb;         /* blanco cálido */
-  --color-text-2: #c9c6be;
-  --color-muted: #9298a1;        /* texto secundario */
-  --color-faint: #6b717a;
-  --color-accent: #c3a675;       /* champán: solo énfasis */
-  --color-accent-deep: #b48a3e;  /* serie 1 de gráficos (validada CVD) */
-  --color-steel: #4f7fc7;        /* serie 2 de gráficos (validada CVD) */
-  --color-good: #6aa77f;         /* verde sobrio */
-  --color-good-bg: #13241a;
-  --color-warn: #d4a34c;         /* ámbar contenido */
-  --color-warn-bg: #2a2214;
-  --color-risk: #c4554b;         /* rojo oscuro */
-  --color-risk-bg: #2c1614;
-  --color-info: #8fa3bf;
-  --color-info-bg: #161d27;
+  --color-brand: #050486;        /* azul del logo */
+  --color-ink: #02022b;          /* fondo */
+  --color-surface: #06064b;      /* superficie principal */
+  --color-raised: #0c0c5d;       /* superficie elevada */
+  --color-raised-2: #12126c;
+  --color-line: #2b2b88;         /* bordes */
+  --color-line-soft: #18186a;
+  --color-text: #ffffff;         /* letras en blanco */
+  --color-text-2: #dcdcf3;
+  --color-muted: #a9a9da;        /* texto secundario */
+  --color-faint: #8383c4;
+  --color-accent: #ffffff;       /* énfasis: blanco de marca */
+  --color-accent-deep: #7b93ff;  /* serie 1 de gráficos: azul claro */
+  --color-steel: #e4e8ff;        /* serie 2 de gráficos: blanco azulado */
+  --color-good: #63c792;
+  --color-good-bg: #0a2c3c;
+  --color-warn: #f0bd57;
+  --color-warn-bg: #2a2140;
+  --color-risk: #ff7a6e;
+  --color-risk-bg: #33123f;
+  --color-info: #a5b6ff;
+  --color-info-bg: #10166a;
 
   --radius-sm: 4px;
   --radius-md: 6px;
@@ -57,7 +59,7 @@ body {
   white-space: nowrap;
 }
 
-::selection { background: #c3a67544; }
+::selection { background: #ffffff40; }
 
 :focus-visible {
   outline: 2px solid var(--color-accent);
@@ -73,7 +75,7 @@ body {
   text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--color-line); white-space: nowrap;
 }
 .mh-table tbody td { padding: 10px 12px; border-bottom: 1px solid var(--color-line-soft); vertical-align: middle; }
-.mh-table tbody tr:hover td { background: #15181d; }
+.mh-table tbody tr:hover td { background: #0f0f63; }
 .mh-table td.r, .mh-table th.r { text-align: right; }
 .mh-table tfoot td { padding: 10px 12px; border-top: 1px solid var(--color-line); color: var(--color-text-2); font-weight: 500; }
 

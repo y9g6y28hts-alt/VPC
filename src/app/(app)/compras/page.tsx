@@ -10,7 +10,7 @@ import { EmptyState } from "@/components/ui/states";
 import { CatalogPill, StatusPill } from "@/components/ui/status";
 import { Table, TableWrap, Td, Th, THead, Tr } from "@/components/ui/table";
 import { Tabs } from "@/components/ui/tabs";
-import { formatDate, formatMoneyCompact, formatNumber } from "@/lib/format";
+import { formatDate, formatMoney, formatMoneyCompact, formatNumber } from "@/lib/format";
 import { INVOICE_CATEGORY, INVOICE_STATUS } from "@/lib/labels";
 import { param, type SearchParams } from "@/lib/url";
 import { requirePerm } from "@/server/auth/context";
@@ -72,19 +72,19 @@ export default async function PayablesPage({ searchParams }: { searchParams: Pro
           {rows.length === 0 ? <div className="rounded-lg border border-line-soft bg-surface"><EmptyState title="Sin facturas en esta vista" /></div> : (
             <TableWrap>
               <Table>
-                <THead><Th>Proveedor</Th><Th>Factura</Th><Th className="hidden lg:table-cell">Concepto</Th><Th>Vence</Th><Th numeric>Importe</Th><Th numeric>Pagado conf.</Th><Th numeric className="hidden xl:table-cell">Registrado s/conf.</Th><Th numeric>Saldo</Th><Th>Estado</Th></THead>
+                <THead><Th>Proveedor</Th><Th>Factura</Th><Th className="hidden lg:table-cell">Concepto</Th><Th>Vence</Th><Th numeric>Importe</Th><Th numeric>Pagado conf.</Th><Th numeric className="hidden 2xl:table-cell">Registrado s/conf.</Th><Th numeric>Saldo</Th><Th>Estado</Th></THead>
                 <tbody>
                   {rows.map((i) => (
                     <Tr key={i.id}>
-                      <Td className="text-ink">{i.supplier}</Td>
+                      <Td className="min-w-36 text-ink">{i.supplier}</Td>
                       <Td><Link href={`/compras/facturas/${i.id}`} className="num text-ink hover:underline">{i.invoice_number}</Link><span className="block text-[11.5px] text-faint">{INVOICE_CATEGORY[i.category]}</span></Td>
                       <Td className="hidden max-w-64 lg:table-cell" muted><span className="block truncate">{i.concept}</span>{i.vehicle ? <span className="block truncate text-[11.5px]">{i.vehicle}</span> : null}</Td>
                       <Td className="num whitespace-nowrap">{formatDate(i.due_date)}
                         {i.status === "aprobada" && Number(i.outstanding) > 0 ? (i.days_overdue > 0 ? <span className="block text-[11.5px] text-critical">Vencida hace {i.days_overdue} d</span> : i.days_left <= settings.payables_due_soon_days ? <span className="block text-[11.5px] text-warning">En {i.days_left} d</span> : null) : null}
                       </Td>
                       <Td numeric><Money value={i.amount} currency={i.currency} /></Td>
-                      <Td numeric><Money value={i.paid_confirmed} currency={i.currency} tone="muted" /></Td>
-                      <Td numeric className="hidden xl:table-cell">{Number(i.paid_registered_pending) ? <Money value={i.paid_registered_pending} currency={i.currency} /> : <span className="text-faint">—</span>}</Td>
+                      <Td numeric><Money value={i.paid_confirmed} currency={i.currency} tone="muted" />{Number(i.paid_registered_pending) ? <span className="block text-[11.5px] text-warning 2xl:hidden">+ {formatMoney(i.paid_registered_pending, i.currency)} sin confirmar</span> : null}</Td>
+                      <Td numeric className="hidden 2xl:table-cell">{Number(i.paid_registered_pending) ? <Money value={i.paid_registered_pending} currency={i.currency} /> : <span className="text-faint">—</span>}</Td>
                       <Td numeric><Money value={i.outstanding} currency={i.currency} tone={i.days_overdue > 0 ? "critical" : undefined} /></Td>
                       <Td>{i.status === "aprobada" && Number(i.outstanding) === 0 ? <StatusPill tone="positive">Pagada</StatusPill> : <CatalogPill catalog={INVOICE_STATUS} value={i.status} />}</Td>
                     </Tr>

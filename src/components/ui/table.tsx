@@ -85,7 +85,7 @@ export function Td({ className, numeric, muted, ...props }: ComponentProps<"td">
   return (
     <td
       className={cn(
-        "h-11 px-3 align-middle text-ink-2",
+        "h-11 px-3 align-middle text-ink-2 [&.num]:whitespace-nowrap [&_.num]:whitespace-nowrap",
         numeric && "num whitespace-nowrap text-right",
         muted && "text-faint",
         className,

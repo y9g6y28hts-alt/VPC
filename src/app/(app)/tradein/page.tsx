@@ -26,7 +26,7 @@ export default async function TradeInPage({ searchParams }: { searchParams: Prom
       <PageHeader title="Trade-in y tasaciones" description="Vehículos usados recibidos como parte de pago. Sólo ingresan al inventario al formalizar la adquisición."
         actions={ctx.perms.has("tradein.create") ? <ButtonLink href="/tradein/nueva" variant="primary"><Plus aria-hidden /> Nueva tasación</ButtonLink> : null} />
       <FilterForm>
-        <FilterSelect name="estado" label="Estado" defaultValue={param(sp, "estado")} allLabel="En curso" options={Object.entries(TRADEIN_STATUS).map(([k, v]) => ({ value: k, label: v.label }))} />
+        <FilterSelect name="estado" label="Estado" defaultValue={param(sp, "estado")} allLabel="Vigentes" options={Object.entries(TRADEIN_STATUS).map(([k, v]) => ({ value: k, label: v.label }))} />
       </FilterForm>
       {rows.length === 0 ? <div className="rounded-lg border border-line-soft bg-surface"><EmptyState title="Sin tasaciones" /></div> : (
         <TableWrap>

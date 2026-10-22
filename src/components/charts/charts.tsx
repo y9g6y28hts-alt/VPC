@@ -74,15 +74,16 @@ export function HBars({ data, valueLabel, color = "var(--color-series-1)", empty
 }
 
 /** Columnas verticales para series temporales (meses). */
-export function Columns({ data, valueLabel, color = "var(--color-series-1)", height = 168, axisFormat }: { data: Datum[]; valueLabel: string; color?: string; height?: number; axisFormat: (n: number) => string }) {
+export function Columns({ data, valueLabel, color = "var(--color-series-1)", height = 168, axisFormat, emptyText = "Sin movimientos en el período" }: { data: Datum[]; valueLabel: string; color?: string; height?: number; axisFormat: (n: number) => string; emptyText?: string }) {
   const max = Math.max(0, ...data.map((d) => d.value));
+  if (max <= 0) return <p className="py-6 text-center text-[13px] text-faint">{emptyText}</p>;
   const top = niceMax(max);
   const ticks = [0, top / 2, top];
   return (
     <div>
-      <div className="relative mt-3" style={{ height }}>
-        {ticks.map((t) => (
-          <div key={t} className="absolute inset-x-0 flex items-center gap-2" style={{ bottom: `${top ? (t / top) * 100 : 0}%` }} aria-hidden>
+      <div className="relative mt-6" style={{ height }}>
+        {ticks.map((t, i) => (
+          <div key={i} className="absolute inset-x-0 flex items-center gap-2" style={{ bottom: `${top ? (t / top) * 100 : 0}%` }} aria-hidden>
             <span className="num w-14 shrink-0 -translate-y-1/2 text-right text-[10.5px] text-faint">{axisFormat(t)}</span>
             <span className="h-px flex-1 -translate-y-1/2 bg-[var(--color-grid)]" />
           </div>
@@ -108,8 +109,9 @@ export function Columns({ data, valueLabel, color = "var(--color-series-1)", hei
 }
 
 /** Línea para evolución (p. ej. morosidad). Puntos con área de interacción por mes. */
-export function Line({ data, valueLabel, color = "var(--color-series-2)", height = 168, axisFormat }: { data: Datum[]; valueLabel: string; color?: string; height?: number; axisFormat: (n: number) => string }) {
+export function Line({ data, valueLabel, color = "var(--color-series-2)", height = 168, axisFormat, emptyText = "Sin valores en el período" }: { data: Datum[]; valueLabel: string; color?: string; height?: number; axisFormat: (n: number) => string; emptyText?: string }) {
   const max = Math.max(0, ...data.map((d) => d.value));
+  if (max <= 0) return <p className="py-6 text-center text-[13px] text-faint">{emptyText}</p>;
   const top = niceMax(max);
   const n = data.length;
   const x = (i: number) => (n <= 1 ? 50 : (i / (n - 1)) * 100);
@@ -117,9 +119,9 @@ export function Line({ data, valueLabel, color = "var(--color-series-2)", height
   const points = data.map((d, i) => `${x(i)},${y(d.value)}`).join(" ");
   return (
     <div>
-      <div className="relative ml-16 mt-3" style={{ height }}>
-        {[0, top / 2, top].map((t) => (
-          <div key={t} className="absolute inset-x-0 flex items-center" style={{ bottom: `${top ? (t / top) * 100 : 0}%` }} aria-hidden>
+      <div className="relative ml-16 mt-6" style={{ height }}>
+        {[0, top / 2, top].map((t, i) => (
+          <div key={i} className="absolute inset-x-0 flex items-center" style={{ bottom: `${top ? (t / top) * 100 : 0}%` }} aria-hidden>
             <span className="num absolute -left-16 w-14 -translate-y-1/2 text-right text-[10.5px] text-faint">{axisFormat(t)}</span>
             <span className="h-px w-full -translate-y-1/2 bg-[var(--color-grid)]" />
           </div>

@@ -20,7 +20,8 @@
     "db:reset": "node scripts/db-reset.mjs",
     "db:seed-demo": "tsx scripts/seed-demo.ts",
     "auth:dev": "node scripts/auth-dev.mjs",
-    "env:local": "node scripts/write-env-local.mjs"
+    "env:local": "node scripts/write-env-local.mjs",
+    "org:create": "tsx scripts/create-org.ts"
   },
   "dependencies": {
     "@fontsource-variable/archivo": "^5.3.0",

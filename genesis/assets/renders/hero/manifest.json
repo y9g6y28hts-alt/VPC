@@ -1,0 +1,79 @@
+{
+  "frames": 30,
+  "lot": "B-05",
+  "progress": [
+    0,
+    0.029,
+    0.062,
+    0.103,
+    0.148,
+    0.194,
+    0.236,
+    0.276,
+    0.311,
+    0.347,
+    0.382,
+    0.417,
+    0.452,
+    0.481,
+    0.51,
+    0.54,
+    0.569,
+    0.598,
+    0.628,
+    0.657,
+    0.686,
+    0.719,
+    0.754,
+    0.789,
+    0.824,
+    0.859,
+    0.894,
+    0.93,
+    0.965,
+    1
+  ],
+  "stages": [
+    {
+      "label": "Terreno y replanteo",
+      "frame": 0
+    },
+    {
+      "label": "Fundaciones",
+      "frame": 3
+    },
+    {
+      "label": "Estructura de hormigón",
+      "frame": 6
+    },
+    {
+      "label": "Mampostería y volúmenes",
+      "frame": 11
+    },
+    {
+      "label": "Fachadas y cubierta",
+      "frame": 16
+    },
+    {
+      "label": "Aberturas y detalles",
+      "frame": 21
+    },
+    {
+      "label": "Paisajismo y exteriores",
+      "frame": 24
+    },
+    {
+      "label": "Residencia terminada",
+      "frame": 28
+    }
+  ],
+  "desktop": [
+    1600,
+    900
+  ],
+  "mobile": [
+    720,
+    1280
+  ],
+  "note": "Rendered with the Viva Lago experience engine (tools/capture-renders.mjs). Conceptual visualisation."
+}

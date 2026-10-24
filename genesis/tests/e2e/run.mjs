@@ -37,13 +37,11 @@ const snap = async (page, name) => {
 
 const xpState = (page) => page.evaluate(async () => (await import('./js/explorer.js'))._debugExperience()?.state ?? null);
 
+// The explorer mirrors its state on #explorer[data-state]. (waitForFunction
+// cannot be used with an async predicate: the returned Promise is truthy.)
 async function waitState(page, states, timeout = 300000) {
   const list = Array.isArray(states) ? states : [states];
-  await page.waitForFunction(
-    async (l) => l.includes((await import('./js/explorer.js'))._debugExperience()?.state),
-    list,
-    { timeout, polling: 500 },
-  );
+  await page.waitForSelector(list.map((s) => `#explorer[data-state="${s}"]`).join(', '), { state: 'attached', timeout });
 }
 
 function collectErrors(page) {
@@ -77,18 +75,26 @@ const gpuArgs = ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ig
     await snap(page, '01-home');
   });
 
+  await check('with reduced motion the hero shows the finished residence without scroll-scrubbing', async () => {
+    assert.match(await page.getAttribute('[data-hero-poster]', 'src'), /f29\.webp$/);
+    assert.equal(await page.locator('[data-hero-media] canvas').count(), 0);
+    assert.match(await page.textContent('[data-hero-stage]'), /Residencia terminada/);
+  });
+
   await check('hero builds the residence as the visitor scrolls', async () => {
-    await page.waitForSelector('[data-hero-media] canvas', { timeout: 20000 });
-    const before = await page.textContent('[data-hero-stage]');
-    const heroHeight = await page.evaluate(() => document.getElementById('inicio').offsetHeight - innerHeight);
-    await page.evaluate((y) => scrollTo(0, y), Math.round(heroHeight * 0.6));
-    await page.waitForTimeout(400);
-    const after = await page.textContent('[data-hero-stage]');
+    const motion = await browser.newPage({ viewport: { width: 1280, height: 760 } });
+    await motion.goto(base);
+    await motion.waitForSelector('[data-hero-media] canvas', { state: 'attached', timeout: 20000 });
+    const before = await motion.textContent('[data-hero-stage]');
+    const heroHeight = await motion.evaluate(() => document.getElementById('inicio').offsetHeight - innerHeight);
+    await motion.evaluate((y) => scrollTo(0, y), Math.round(heroHeight * 0.6));
+    await motion.waitForTimeout(600);
+    const after = await motion.textContent('[data-hero-stage]');
     assert.notEqual(after, before, `stage label follows scroll (${before} → ${after})`);
-    const width = await page.evaluate(() => parseFloat(document.querySelector('[data-hero-progress]').style.width));
+    const width = await motion.evaluate(() => parseFloat(document.querySelector('[data-hero-progress]').style.width));
     assert.ok(width > 40 && width < 80, `progress ${width}%`);
-    await snap(page, '01b-hero-scrolled');
-    await page.evaluate(() => scrollTo(0, 0));
+    await snap(motion, '01b-hero-scrolled');
+    await motion.close();
   });
 
   await check('contact form states that no channel is integrated and never claims to send', async () => {
@@ -284,6 +290,7 @@ const gpuArgs = ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ig
     const rows = await page.locator('.xp-details .facts dd').allTextContents();
     assert.ok(rows.every((r) => r === 'Pendiente de verificación'));
     await page.keyboard.press('Tab');
+    await page.waitForTimeout(700); // let the overlay finish fading in
     await snap(page, 'f01-fallback');
     await page.click('.xp-details .actions .btn:has-text("Consultar por este lote")');
     await page.waitForSelector('.xp-sheet.is-visible');

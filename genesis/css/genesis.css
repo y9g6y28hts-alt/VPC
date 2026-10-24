@@ -1543,6 +1543,25 @@ textarea {
     grid-template-columns: 1fr;
   }
 }
+/* The lot panel docks on the right; keep the plan and stills clear of it. */
+@media (min-width: 761px) {
+  .explorer[data-state='fallback'] .xp-fallback {
+    padding-right: calc(min(380px, 100vw - 2 * var(--gutter)) + 2 * var(--gutter));
+  }
+}
+@media (max-width: 760px) {
+  .explorer[data-state='fallback'] .xp-fallback {
+    padding-bottom: 46vh;
+  }
+}
+/* 3D-only controls have nothing to act on in the 2D fallback. */
+.explorer[data-state='fallback'] .xp-views,
+.explorer[data-state='fallback'] [data-action='replay'] {
+  display: none;
+}
+.xp-fallback input[type='range'] {
+  accent-color: var(--lime);
+}
 
 /* SVG plan */
 .plan-svg .lot {

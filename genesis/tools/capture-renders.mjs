@@ -34,7 +34,7 @@ export function frameProgress(frames = FRAMES) {
 
 // Lot-space camera (x, y, d → target x, y, d); x is mirrored to the sunny side.
 const POSES = {
-  desktop: { size: [1600, 900], camera: [24, 3.4, -11.5, -3.5, 4.2, 14] },
+  desktop: { size: [1600, 900], camera: [24, 3.4, -11.5, -6.5, 4.2, 14] },
   mobile: { size: [720, 1280], camera: [28, 4.5, -30, -1, 1.0, 13] },
 };
 

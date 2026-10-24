@@ -132,7 +132,7 @@ function buildUI() {
   });
   const inquireBtn = h('button', { class: 'btn', type: 'button' }, 'Consultar por este lote', h('span', { class: 'arrow', 'aria-hidden': 'true' }, '→'));
   inquireBtn.addEventListener('click', () => openSheet());
-  const replay2 = h('button', { class: 'btn btn--text', type: 'button' }, 'Repetir construcción');
+  const replay2 = h('button', { class: 'btn btn--text', type: 'button', dataset: { action: 'replay' } }, 'Repetir construcción');
   replay2.addEventListener('click', () => xp?.replay());
   const back2 = h('button', { class: 'btn btn--text', type: 'button' }, 'Volver al desarrollo');
   back2.addEventListener('click', () => (xp ? xp.exit() : showFallbackOverview()));
@@ -208,6 +208,7 @@ function setHash(lotId) {
 
 function onState(state, ctx) {
   const lot = ctx.lot;
+  ui.el.dataset.state = state; // styling hook, also observed by the end-to-end tests
   ui.lotLabelEl.textContent = lot && state !== 'overview' ? lotLabel(lot) : '';
   show(ui.overview, state === 'overview');
   show(ui.build, state === 'building');
@@ -220,7 +221,8 @@ function onState(state, ctx) {
   if (state === 'building') ui.setPauseIcon(Boolean(ctx.paused));
   if ((state === 'complete' || state === 'exploring') && lot) {
     if (ctx.previous === 'building') renderDetails(lot);
-    if (state === 'complete') ui.details.classList.remove('is-collapsed');
+    // On phones the sheet opens collapsed so the residence stays in view.
+    if (state === 'complete') ui.details.classList.toggle('is-collapsed', innerWidth <= 760);
     ui.form.setLot(lot.id);
   }
   if (state === 'overview') setHash(null);
@@ -313,6 +315,7 @@ function stageStills() {
 }
 
 function enterFallback(reason) {
+  ui.el.dataset.state = 'fallback';
   ui.loading.classList.add('is-done');
   show(ui.build, false);
   show(ui.overview, false);
@@ -351,6 +354,7 @@ function showFallbackLot(id) {
   renderDetails(lot);
   ui.lotLabelEl.textContent = lotLabel(lot);
   ui.form.setLot(lot.id);
+  ui.details.classList.toggle('is-collapsed', innerWidth <= 760);
   show(ui.details, true);
   setHash(lot.id);
 }
@@ -379,6 +383,7 @@ export async function openExplorer({ lotId = null } = {}) {
     if (lotId) selectLot(lotId);
     return xp;
   }
+  ui.el.dataset.state = 'loading';
   ui.loading.classList.remove('is-done');
   ui.loadBar.style.width = '0%';
   ui.loadPct.textContent = '0%';
@@ -439,6 +444,7 @@ export function closeExplorer() {
   const done = () => {
     if (el.classList.contains('is-open')) return;
     el.hidden = true;
+    delete el.dataset.state;
     xp?.dispose();
     xp = null;
     ui.fallback.hidden = true;

@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="es-PY">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Viva Lago Country · Génesis Negocios Inmobiliarios</title>
+  <meta name="description" content="Recorré Viva Lago Country, elegí un lote y mirá cómo podría construirse una residencia sobre él. Génesis Negocios Inmobiliarios, Ciudad del Este." />
+  <meta name="theme-color" content="#1f1425" />
+  <!-- Neutral tab icon until the official logo is supplied (see js/config/brand.js). -->
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%231f1425'/%3E%3Crect x='9' y='21' width='14' height='2' fill='%23c3d33b'/%3E%3C/svg%3E" />
+  <link rel="preload" href="assets/fonts/instrument-serif-normal-400.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="assets/fonts/geist-normal-300-600.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="stylesheet" href="css/genesis.css" />
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "./vendor/three/three.module.min.js",
+        "three/addons/": "./vendor/three/addons/"
+      }
+    }
+  </script>
+  <script type="module" src="js/main.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#proyecto">Saltar al contenido</a>
+  <noscript><p style="margin:0;padding:12px 16px;background:#f4efe6;color:#26222a;font:14px/1.5 system-ui,sans-serif">La experiencia interactiva necesita JavaScript. El resto del contenido está disponible abajo.</p></noscript>
+
+  <header class="site-header" id="header">
+    <div class="inner">
+      <a class="brand" href="#inicio" aria-label="Génesis Negocios Inmobiliarios — inicio" data-brand>
+        <span class="brand__name">Génesis</span>
+        <span class="brand__sub">Negocios inmobiliarios</span>
+      </a>
+      <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="nav" aria-label="Abrir menú">
+        <span></span><span></span>
+      </button>
+      <nav class="nav" id="nav" aria-label="Principal">
+        <a href="#proyecto">Viva Lago Country</a>
+        <a href="#experiencia">La experiencia</a>
+        <a href="#genesis">Génesis</a>
+        <a href="#contacto">Contacto</a>
+        <button class="btn btn--light" type="button" data-open-explorer>Explorar lotes</button>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <!-- Hero: the residence takes shape as you scroll (frames rendered by the experience engine). -->
+    <section class="hero" id="inicio" aria-label="Presentación">
+      <div class="hero__stage">
+        <div class="hero__media" data-hero-media>
+          <img src="assets/renders/hero/desktop/f00.webp" alt="" data-hero-poster fetchpriority="high" />
+        </div>
+        <div class="hero__shade"></div>
+        <div class="hero__content">
+          <p class="eyebrow on-dark">Viva Lago Country · Ciudad del Este</p>
+          <h1 class="display h1 hero__title">El comienzo de <em>tu historia.</em></h1>
+          <p class="lede hero__lede">Elegí un lote y mirá cómo una residencia toma forma sobre ese terreno: del replanteo a la última luz del día.</p>
+          <div class="hero__actions">
+            <button class="btn btn--light" type="button" data-open-explorer>Explorar los lotes <span class="arrow" aria-hidden="true">→</span></button>
+            <a class="btn btn--text" href="#experiencia" style="color: var(--ivory)">Cómo funciona</a>
+          </div>
+          <div class="hero__meta">
+            <span class="hero__stage-label" data-hero-stage aria-live="off">Terreno y replanteo</span>
+            <span class="hero__progress" aria-hidden="true"><i data-hero-progress></i></span>
+            <span class="scroll-cue" data-hero-cue>Desplazá para construir</span>
+            <span class="hero__caption">Visualización conceptual generada con la experiencia interactiva. No es una obra aprobada.</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Project -->
+    <section class="section" id="proyecto">
+      <div class="inner split">
+        <div class="reveal">
+          <p class="eyebrow">El desarrollo</p>
+          <h2 class="display h2">Viva Lago Country</h2>
+          <p class="lede" style="margin-top: 28px">Un desarrollo comercializado por Génesis Negocios Inmobiliarios. Esta presentación permite recorrer un trazado ilustrativo, elegir un lote y ver cómo podría construirse una residencia sobre él.</p>
+          <p class="small" style="margin-top: 22px; max-width: 34em">La ficha oficial —ubicación, superficies, precios, disponibilidad y financiación— se publicará al integrar el plano y el inventario verificados. Hasta entonces no mostramos cifras.</p>
+        </div>
+        <div class="reveal">
+          <dl class="facts" data-project-facts>
+            <div><dt>Ubicación</dt><dd><span class="pending">Pendiente de verificación</span></dd></div>
+            <div><dt>Superficie total</dt><dd><span class="pending">Pendiente de verificación</span></dd></div>
+            <div><dt>Cantidad de lotes</dt><dd><span class="pending">Pendiente de verificación</span></dd></div>
+            <div><dt>Servicios y amenities</dt><dd><span class="pending">Pendiente de verificación</span></dd></div>
+            <div><dt>Financiación</dt><dd><span class="pending">Pendiente de verificación</span></dd></div>
+          </dl>
+          <figure class="figure" style="margin-top: 40px">
+            <div data-plan-figure></div>
+            <figcaption><span>Trazado ilustrativo de la demostración</span><span>No es el plano oficial</span></figcaption>
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <!-- Experience -->
+    <section class="section section--dark on-dark" id="experiencia">
+      <div class="inner">
+        <div class="xp-intro reveal">
+          <div>
+            <p class="eyebrow">La experiencia</p>
+            <h2 class="display h2">Elegí el terreno.<br /><em>Mirá cómo se construye.</em></h2>
+          </div>
+          <p class="lede">Una escena tridimensional del desarrollo en la luz de la tarde. Al tocar un lote, la cámara se acerca y una residencia conceptual se levanta sobre él, etapa por etapa.</p>
+        </div>
+        <div class="xp-poster reveal">
+          <img src="assets/renders/overview.webp" alt="Vista aérea de la escena interactiva de Viva Lago Country al atardecer" loading="lazy" data-xp-poster />
+          <div class="xp-poster__cta">
+            <button class="btn btn--light" type="button" data-open-explorer>Abrir la experiencia <span class="arrow" aria-hidden="true">→</span></button>
+            <span class="xp-poster__note">Funciona en computadoras y celulares actuales. Si tu dispositivo no admite 3D, verás una versión simplificada.</span>
+          </div>
+        </div>
+        <ol class="steps reveal">
+          <li><span class="n">01</span><h3>Explorá el desarrollo</h3><p>Recorré el trazado desde el aire: calles, lago y vegetación.</p></li>
+          <li><span class="n">02</span><h3>Elegí un lote</h3><p>Tocá una parcela. La cámara se acerca sin cortes ni pantallas intermedias.</p></li>
+          <li><span class="n">03</span><h3>Mirá cómo se construye</h3><p>Fundaciones, estructura, muros, fachadas, aberturas y jardín, hasta la residencia terminada.</p></li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- Génesis -->
+    <section class="section section--ivory" id="genesis">
+      <div class="inner">
+        <p class="eyebrow reveal">Génesis Negocios Inmobiliarios</p>
+        <div class="brand-row reveal">
+          <h2 class="display h2 brand-statement">El comienzo de <em>tu historia</em>.</h2>
+          <p class="lede" style="max-width: 26em">Negocios inmobiliarios en Ciudad del Este, Paraguay. Consultá con un asesor oficial por la información verificada de cada lote.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Contact -->
+    <section class="section" id="contacto">
+      <div class="inner split">
+        <div class="reveal">
+          <p class="eyebrow">Contacto</p>
+          <h2 class="display h2">Hablemos de tu lote.</h2>
+          <p class="lede" style="margin-top: 24px">Dejanos tus datos y el lote que te interesa. Un asesor de Génesis te responderá con la información verificada.</p>
+        </div>
+        <div class="reveal" data-contact-form></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer on-dark">
+    <div class="inner">
+      <div class="footer-grid">
+        <div>
+          <a class="brand" href="#inicio" aria-label="Génesis — inicio" data-brand style="color: var(--ivory)">
+            <span class="brand__name">Génesis</span>
+            <span class="brand__sub">Negocios inmobiliarios</span>
+          </a>
+          <p style="margin-top: 18px">Ciudad del Este, Paraguay.</p>
+        </div>
+        <div>
+          <h4>Sobre esta presentación</h4>
+          <p>El trazado, la numeración de lotes y la residencia mostrados son ilustrativos y fueron creados para esta demostración. No representan el plano oficial de Viva Lago Country ni un proyecto aprobado. La residencia no está incluida en el precio de ningún lote. Superficies, precios, disponibilidad y condiciones de financiación se informan únicamente a través de un asesor oficial.</p>
+          <p>Escena en tiempo real con three.js (MIT) y ez-tree (MIT). Iluminación con HDRI de Poly Haven (CC0). Texturas arquitectónicas generadas para este proyecto. Tipografías Instrument Serif y Geist (SIL OFL 1.1).</p>
+        </div>
+      </div>
+      <div class="legal">
+        <span>© <span data-year>2026</span> Génesis Negocios Inmobiliarios.</span>
+        <span>Visualizaciones conceptuales, sin valor contractual.</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Explorer overlay; populated by js/explorer.js on first open. -->
+  <div class="explorer" id="explorer" role="dialog" aria-modal="true" aria-label="Viva Lago Country — experiencia interactiva" hidden></div>
+</body>
+</html>

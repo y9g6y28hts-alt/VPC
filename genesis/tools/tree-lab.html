@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <title>Tree lab</title>
+  <!-- Development page for tuning vegetation look and triangle cost. -->
+  <style>html,body{margin:0;height:100%;background:#000}#l{position:fixed;left:8px;top:8px;color:#fff;font:12px monospace;white-space:pre;background:#0008;padding:6px}</style>
+  <script type="importmap">{ "imports": { "three": "../vendor/three/three.module.min.js", "three/addons/": "../vendor/three/addons/" } }</script>
+</head>
+<body>
+<div id="l"></div>
+<script type="module">
+  import * as THREE from 'three';
+  import { AssetLibrary } from '../js/experience/assets.js';
+  import { Environment } from '../js/experience/world/environment.js';
+  import { SPECIES, makeTreeGeometry, barkMaterial, leafMaterial, makePalmGeometry } from '../js/experience/world/vegetation.js';
+  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setSize(innerWidth, innerHeight);
+  renderer.toneMapping = THREE.AgXToneMapping;
+  renderer.shadowMap.enabled = true;
+  document.body.appendChild(renderer.domElement);
+  const scene = new THREE.Scene();
+  const assets = await new AssetLibrary(renderer).load();
+  const env = new Environment(scene, renderer, assets, { shadowMap: 2048 });
+  scene.fog = null;
+  env.fitShadows(new THREE.Vector3(0, 0, 0), 40);
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(200, 200), new THREE.MeshStandardMaterial({ color: '#5c6e3a', roughness: 1 }));
+  ground.rotation.x = -Math.PI / 2;
+  ground.receiveShadow = true;
+  scene.add(ground);
+  const kinds = new URLSearchParams(location.search).get('kinds')?.split(',') || Object.keys(SPECIES);
+  const info = [];
+  kinds.forEach((kind, i) => {
+    const x = (i - (kinds.length - 1) / 2) * 11;
+    let tris = 0;
+    if (kind === 'palm') {
+      const p = makePalmGeometry(7, 8.5);
+      scene.add(Object.assign(new THREE.Mesh(p.trunk, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.9 })), { castShadow: true }).translateX(x));
+      scene.add(Object.assign(new THREE.Mesh(p.leaves, new THREE.MeshStandardMaterial({ vertexColors: true, side: THREE.DoubleSide, roughness: 0.7 })), { castShadow: true }).translateX(x));
+      tris = p.trunk.attributes.position.count / 3 + p.leaves.attributes.position.count / 3;
+    } else {
+      const t = makeTreeGeometry(kind, 11 + i);
+      const spec = SPECIES[kind];
+      const b = new THREE.Mesh(t.branches, barkMaterial(assets, spec.bark));
+      const l = new THREE.Mesh(t.leaves, leafMaterial(assets, spec.leaf, spec.tint));
+      for (const m of [b, l]) { m.castShadow = m.receiveShadow = true; m.position.x = x; scene.add(m); }
+      tris = (t.branches.index ? t.branches.index.count : t.branches.attributes.position.count) / 3 + (t.leaves.index ? t.leaves.index.count : 0) / 3;
+    }
+    info.push(`${kind}: ${Math.round(tris)} tris`);
+  });
+  document.getElementById('l').textContent = info.join('\n');
+  const cam = new THREE.PerspectiveCamera(35, innerWidth / innerHeight, 0.5, 2000);
+  const view = new URLSearchParams(location.search).get('view') || 'side';
+  if (view === 'side') { cam.position.set(0, 7, 34 + kinds.length * 4); cam.lookAt(0, 5, 0); }
+  else { cam.position.set(0, 60, 90); cam.lookAt(0, 0, 0); }
+  renderer.render(scene, cam);
+  window.__ready = true;
+  window.__info = info;
+</script>
+</body>
+</html>

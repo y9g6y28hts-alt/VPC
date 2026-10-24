@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Harness · Viva Lago experience</title>
+  <!-- Development and render-capture harness. Not linked from the site. -->
+  <style>
+    html, body { margin: 0; height: 100%; background: #111; color: #ddd; font: 12px/1.4 system-ui, sans-serif; }
+    #stage { position: fixed; inset: 0; }
+    #log { position: fixed; left: 8px; bottom: 8px; background: rgba(0,0,0,.55); padding: 6px 8px; border-radius: 4px; white-space: pre; pointer-events: none; }
+    body.clean #log { display: none; }
+  </style>
+  <script type="importmap">
+    { "imports": { "three": "../vendor/three/three.module.min.js", "three/addons/": "../vendor/three/addons/" } }
+  </script>
+</head>
+<body>
+  <div id="stage"></div>
+  <div id="log">loading…</div>
+  <script type="module">
+    import { createExperience } from '../js/experience/index.js';
+    const params = new URLSearchParams(location.search);
+    if (params.has('clean')) document.body.classList.add('clean');
+    const log = document.getElementById('log');
+    const lines = {};
+    const show = (k, v) => { lines[k] = v; log.textContent = Object.entries(lines).map(([a, b]) => `${a}: ${b}`).join('\n'); };
+    window.__errors = [];
+    window.addEventListener('error', (e) => window.__errors.push(String(e.message)));
+    window.addEventListener('unhandledrejection', (e) => window.__errors.push(String(e.reason?.stack || e.reason)));
+    try {
+      const xp = await createExperience(document.getElementById('stage'), {
+        tier: params.get('tier') || undefined,
+        reducedMotion: params.has('reduced'),
+        duration: Number(params.get('duration')) || undefined,
+        onProgress: (f, label) => show('progress', `${Math.round(f * 100)}% ${label}`),
+        onState: (s, ctx) => show('state', `${s} ${ctx.lotId || ''}`),
+        onStage: (stage, i, p) => show('stage', `${i} ${stage.label} ${(p * 100).toFixed(0)}%`),
+        onHover: (lot) => show('hover', lot ? lot.id : '-'),
+        onError: (e) => show('error', e.message),
+      });
+      window.xp = xp;
+      show('tier', xp.tier);
+      window.__ready = true;
+    } catch (err) {
+      show('error', err.stack || err.message);
+      window.__errors.push(String(err.stack || err));
+      window.__ready = 'failed';
+    }
+  </script>
+</body>
+</html>

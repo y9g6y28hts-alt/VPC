@@ -1,0 +1,20 @@
+{
+  "name": "genesis-viva-lago",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Génesis Negocios Inmobiliarios — Viva Lago Country interactive architectural experience (static site).",
+  "type": "module",
+  "scripts": {
+    "vendor": "node tools/vendor.mjs",
+    "textures": "python3 tools/generate-textures.py",
+    "serve": "node tools/serve.mjs",
+    "test": "node --test \"tests/unit/*.test.js\"",
+    "check": "node tools/check-syntax.mjs",
+    "e2e": "node tests/e2e/run.mjs"
+  },
+  "devDependencies": {
+    "@dgreenheck/ez-tree": "1.1.0",
+    "@pmndrs/assets": "1.7.0",
+    "three": "0.184.0"
+  }
+}

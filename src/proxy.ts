@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { isEmbeddedDemo } from "@/lib/app-mode";
 
 const PUBLIC_PATHS = ["/ingresar", "/auth", "/estado"];
 
@@ -14,8 +15,8 @@ export async function proxy(request: NextRequest) {
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   const path = request.nextUrl.pathname;
   const isPublic = PUBLIC_PATHS.some((p) => path === p || path.startsWith(`${p}/`));
-  // Demo autónoma (sin DATABASE_URL): sesión por cookie firmada, validada en el servidor.
-  if (!process.env.DATABASE_URL) {
+  // Demo autónoma: sesión por cookie firmada, validada en el servidor.
+  if (isEmbeddedDemo()) {
     if (!isPublic && !request.cookies.has("ds_demo_user")) {
       const to = request.nextUrl.clone();
       to.pathname = "/ingresar";

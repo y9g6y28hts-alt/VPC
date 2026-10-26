@@ -11,6 +11,7 @@
  * (puerto 6543) o a la conexión directa. Sólo se usa en el servidor.
  */
 import postgres from "postgres";
+import { isEmbeddedDemo } from "@/lib/app-mode";
 
 export type Sql = postgres.Sql;
 export type Tx = postgres.TransactionSql;
@@ -53,17 +54,15 @@ export function createSql(url: string, options: { max?: number } = {}): Sql {
 const globalForSql = globalThis as unknown as { __dasilvaSql?: Promise<Sql> };
 
 /**
- * Sin DATABASE_URL la aplicación funciona como demo autónoma: una base
+ * Sin la configuración real completa (ver lib/app-mode) la aplicación funciona como demo autónoma: una base
  * PostgreSQL embebida (PGlite, en memoria) con las mismas migraciones y los
  * datos de demostración. Los cambios se pierden al reiniciar el servidor.
  */
-export function isEmbeddedDemo(): boolean {
-  return !process.env.DATABASE_URL;
-}
+export { isEmbeddedDemo };
 
 export function getSql(): Promise<Sql> {
   if (!globalForSql.__dasilvaSql) {
-    const url = process.env.DATABASE_URL;
+    const url = isEmbeddedDemo() ? null : process.env.DATABASE_URL!.trim();
     globalForSql.__dasilvaSql = url
       ? Promise.resolve(createSql(url))
       : import("@/server/demo/embedded").then((m) => m.startEmbeddedDemo()).catch((err) => {

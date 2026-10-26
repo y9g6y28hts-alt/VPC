@@ -440,6 +440,7 @@ export function closeExplorer() {
   closeSheet();
   el.classList.remove('is-open');
   document.body.classList.remove('is-locked');
+  xp?.suspend?.();
   // Release the GPU: the scene is rebuilt on the next visit (assets come from cache).
   const done = () => {
     if (el.classList.contains('is-open')) return;

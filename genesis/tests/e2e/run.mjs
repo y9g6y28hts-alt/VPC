@@ -86,6 +86,7 @@ const gpuArgs = ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ig
     assert.equal(await page.getAttribute('[data-maps-link]', 'target'), '_blank');
     assert.equal(await page.locator('[data-location-map] svg .map-site').count(), 1);
     await page.click('[data-copy-coords]');
+    await page.waitForFunction(() => document.querySelector('[data-copy-status]').textContent.length > 0, null, { timeout: 5000 });
     assert.match(await page.textContent('[data-copy-status]'), /copiadas|Seleccionadas/);
     assert.equal(await page.locator('[data-infra] li.infra__item').count(), 4, 'four common areas from the plan table');
     await snap(page, '01c-location');
@@ -228,7 +229,8 @@ const gpuArgs = ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ig
     assert.ok(await page.locator('.xp-overview.is-visible').isVisible());
     await snap(page, '09-back-overview');
     await page.click('.xp-close');
-    await page.waitForSelector('#explorer', { state: 'hidden', timeout: 5000 });
+    // One software-rendered frame (SwiftShader) can take ~6 s; allow it to finish.
+    await page.waitForSelector('#explorer', { state: 'hidden', timeout: 20000 });
     assert.equal(await page.evaluate(() => document.body.classList.contains('is-locked')), false);
     assert.equal(await xpState(page), null, 'experience disposed on close');
   });

@@ -475,6 +475,12 @@ export async function createExperience(container, options = {}) {
       return true;
     },
     invalidate,
+    /** Stops rendering at once (the overlay is fading out; disposal follows). */
+    suspend() {
+      frozen = true;
+      cancelAnimationFrame(rafId);
+      rafId = 0;
+    },
     dispose() {
       if (disposed) return;
       disposed = true;

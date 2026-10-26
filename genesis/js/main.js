@@ -87,10 +87,12 @@ const copyStatus = document.querySelector('[data-copy-status]');
 copyBtn?.addEventListener('click', async () => {
   const text = formatDecimal(SITE_LOCATION);
   try {
-    await navigator.clipboard.writeText(text);
+    // Some browsers leave the request pending when permission is not granted.
+    const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('clipboard timeout')), 1200));
+    await Promise.race([navigator.clipboard.writeText(text), timeout]);
     copyStatus.textContent = 'Coordenadas copiadas.';
   } catch {
-    // Clipboard refused (permissions, older browsers): select the text instead.
+    // Clipboard refused or unavailable: select the text instead.
     const range = document.createRange();
     range.selectNodeContents(dec);
     getSelection().removeAllRanges();

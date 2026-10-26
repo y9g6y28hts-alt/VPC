@@ -1,11 +1,13 @@
-// Page bootstrap: header, navigation, reveals, hero sequence, plan figure,
-// contact form and the explorer (loaded on demand).
+// Page bootstrap: header, navigation, reveals, hero sequence, location, lot
+// browser, common areas, contact form and the 3D explorer (loaded on demand).
 import { BRAND } from './config/brand.js';
-import { prefersReducedMotion } from './ui/dom.js';
-import { planSvg } from './ui/plan-svg.js';
+import { h, prefersReducedMotion } from './ui/dom.js';
 import { mountInquiryForm } from './ui/inquiry-form.js';
+import { mountLotBrowser } from './ui/lot-browser.js';
+import { locationSvg, keyPlanSvg } from './ui/site-maps.js';
 import { initHeroSequence } from './hero-sequence.js';
-import { findLot } from './data/viva-lago.js';
+import { findLot, DEVELOPMENT, SITE_LOCATION, COMMON_AREA_TABLE } from './data/viva-lago.js';
+import { formatDms, formatDecimal } from './core/geo.js';
 
 const reducedMotion = prefersReducedMotion();
 
@@ -61,13 +63,66 @@ const io = 'IntersectionObserver' in window
   : null;
 document.querySelectorAll('.reveal').forEach((el) => (io && !reducedMotion ? io.observe(el) : el.classList.add('is-in')));
 
-// Plan figure (same data as the 3D scene).
-const planHost = document.querySelector('[data-plan-figure]');
-if (planHost) planHost.append(planSvg({ labels: true }));
-
 // Contact form.
 const contactHost = document.querySelector('[data-contact-form]');
 const contactForm = contactHost ? mountInquiryForm(contactHost) : null;
+
+/** Carries a lot into the contact form and moves the visitor there. */
+function inquireAbout(lotId) {
+  contactForm?.setLot(lotId);
+  const section = document.getElementById('contacto');
+  section?.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'start' });
+  section?.querySelector('input[name="name"]')?.focus({ preventScroll: true });
+}
+
+// Location: coordinates from the survey, map pin from Génesis, site sketch.
+const dms = document.querySelector('[data-coords-dms]');
+const dec = document.querySelector('[data-coords-decimal]');
+if (dms) dms.textContent = formatDms(SITE_LOCATION);
+if (dec) dec.textContent = formatDecimal(SITE_LOCATION);
+document.querySelector('[data-maps-link]')?.setAttribute('href', DEVELOPMENT.mapsUrl);
+document.querySelector('[data-location-map]')?.append(locationSvg());
+const copyBtn = document.querySelector('[data-copy-coords]');
+const copyStatus = document.querySelector('[data-copy-status]');
+copyBtn?.addEventListener('click', async () => {
+  const text = formatDecimal(SITE_LOCATION);
+  try {
+    await navigator.clipboard.writeText(text);
+    copyStatus.textContent = 'Coordenadas copiadas.';
+  } catch {
+    // Clipboard refused (permissions, older browsers): select the text instead.
+    const range = document.createRange();
+    range.selectNodeContents(dec);
+    getSelection().removeAllRanges();
+    getSelection().addRange(range);
+    copyStatus.textContent = 'Seleccionadas: copialas con Ctrl+C o mantené presionado.';
+  }
+});
+
+// Lot browser (plan, list and lot sheet; no WebGL needed).
+const browserHost = document.querySelector('[data-lot-browser]');
+const lotBrowser = browserHost ? mountLotBrowser(browserHost, { onExplore: (id) => open(id), onInquire: inquireAbout, reducedMotion }) : null;
+
+// Common areas, each with a key plan.
+const infraHost = document.querySelector('[data-infra]');
+if (infraHost) {
+  infraHost.replaceChildren(
+    ...COMMON_AREA_TABLE.map((c, i) =>
+      h(
+        'li',
+        { class: 'infra__item' },
+        keyPlanSvg(c.id, `Plano de ubicación de ${c.name}`),
+        h('div', { class: 'infra__text' },
+          h('span', { class: 'infra__n' }, String(i + 1).padStart(2, '0')),
+          h('h3', {}, c.name),
+          h('p', { class: 'infra__area' }, `${c.areaM2.toLocaleString('es-PY', { minimumFractionDigits: 2 })} m²`, h('span', {}, ` · ${c.parcel}`)),
+          h('p', {}, c.note),
+          c.parts ? h('ul', { class: 'infra__parts' }, ...c.parts.map(([n, a]) => h('li', {}, h('span', {}, n), h('span', {}, `${a.toLocaleString('es-PY', { minimumFractionDigits: 2 })} m²`)))) : null,
+        ),
+      ),
+    ),
+  );
+}
 
 // Year.
 document.querySelectorAll('[data-year]').forEach((n) => (n.textContent = String(new Date().getFullYear())));
@@ -100,6 +155,7 @@ function handleHash() {
   if (m && findLot(m[1])) {
     open(m[1]);
     contactForm?.setLot(m[1]);
+    lotBrowser?.select(m[1]);
   }
 }
 addEventListener('hashchange', handleHash);

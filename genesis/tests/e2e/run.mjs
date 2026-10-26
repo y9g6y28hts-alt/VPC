@@ -63,18 +63,56 @@ const gpuArgs = ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ig
   const page = await context.newPage();
   const errors = collectErrors(page);
 
-  await check('homepage renders headline, navigation and the surveyed project facts', async () => {
+  await check('homepage renders headline, navigation and the surveyed figures', async () => {
     await page.goto(base);
     await page.waitForLoadState('networkidle');
     assert.match(await page.textContent('h1'), /El comienzo de/);
-    assert.equal(await page.locator('.nav a').count(), 4);
-    const facts = await page.locator('[data-project-facts]').textContent();
-    assert.match(facts, /32 lotes en 5 manzanas/);
-    assert.match(facts, /20\.000 m²/);
-    assert.ok(!/USD|Gs\b|\$/.test(facts), 'no prices');
-    assert.deepEqual(await page.locator('[data-project-facts] .pending').allTextContents(), ['Consultar con un asesor']);
-    assert.equal(await page.locator('[data-plan-figure] svg polygon.lot').count(), 32, 'plan figure drawn from the surveyed lots');
+    assert.deepEqual(await page.locator('.nav a').allTextContents(), ['El desarrollo', 'Ubicación', 'Lotes', 'Recorrido 3D', 'Contacto']);
+    for (const id of await page.locator('.nav a').evaluateAll((as) => as.map((a) => a.getAttribute('href')))) {
+      assert.equal(await page.locator(id).count(), 1, `${id} exists`);
+    }
+    const figures = await page.locator('.figures').textContent();
+    assert.match(figures, /32/);
+    assert.match(figures, /20\.000 m²/);
+    assert.ok(!/USD|Gs\b|\$/.test(await page.locator('main').textContent()), 'no prices anywhere on the page');
     await snap(page, '01-home');
+  });
+
+  await check('location shows the surveyed coordinates and the Génesis map link', async () => {
+    await page.locator('#ubicacion').scrollIntoViewIfNeeded();
+    assert.equal(await page.textContent('[data-coords-decimal]'), '-25.460696, -54.682035');
+    assert.equal(await page.textContent('[data-coords-dms]'), '25°27′39″ S, 54°40′55″ O');
+    assert.match(await page.getAttribute('[data-maps-link]', 'href'), /^https:\/\/maps\.app\.goo\.gl\/MoXFWMTVsvddWcvg7/);
+    assert.equal(await page.getAttribute('[data-maps-link]', 'target'), '_blank');
+    assert.equal(await page.locator('[data-location-map] svg .map-site').count(), 1);
+    await page.click('[data-copy-coords]');
+    assert.match(await page.textContent('[data-copy-status]'), /copiadas|Seleccionadas/);
+    assert.equal(await page.locator('[data-infra] li.infra__item').count(), 4, 'four common areas from the plan table');
+    await snap(page, '01c-location');
+  });
+
+  await check('lot browser: filter, plan and list select the same lot, sheet shows plan data, inquiry keeps the lot', async () => {
+    await page.locator('#lotes').scrollIntoViewIfNeeded();
+    assert.equal(await page.locator('[data-lot-browser] polygon.lot').count(), 32);
+    assert.equal(await page.locator('.lot-row').count(), 8, 'the full list opens folded');
+    await page.click('.lot-list__more');
+    assert.equal(await page.locator('.lot-row').count(), 32);
+    await page.click('.lot-filter .chip[data-block="C"]');
+    assert.equal(await page.locator('.lot-row').count(), 4);
+    assert.equal(await page.locator('[data-lot-browser] polygon.lot.is-dim').count(), 28);
+    await page.click('.lot-row:has-text("C-02") .lot-row__btn');
+    const sheet = await page.locator('.lot-sheet').innerText();
+    assert.match(sheet, /Manzana C · Lote 2/i);
+    assert.match(sheet, /383,02/);
+    assert.match(sheet, /Vendido/);
+    assert.ok(await page.locator('[data-lot-browser] polygon.lot.is-selected').count() === 1, 'plan shows the selection');
+    await page.click('.lot-filter .chip[data-block=""]');
+    await page.locator('[data-lot-browser] polygon.lot').nth(8).click();
+    assert.match(await page.locator('.lot-sheet').innerText(), /B-06/);
+    await snap(page, '01d-lots');
+    await page.click('.lot-sheet button:has-text("Consultar por este lote")');
+    assert.equal(await page.inputValue('[data-contact-form] select[name="lot"]'), 'B-06');
+    assert.equal(await page.evaluate(() => document.activeElement?.name), 'name');
   });
 
   await check('with reduced motion the hero shows the finished residence without scroll-scrubbing', async () => {
@@ -259,6 +297,18 @@ const gpuArgs = ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ig
     assert.ok(await page.locator('.nav a:has-text("Contacto")').isVisible());
     await snap(page, 'm02-menu');
     await page.click('.nav-toggle');
+  });
+  await check('mobile: the lot plan turns upright with tappable lots', async () => {
+    await page.locator('#lotes').scrollIntoViewIfNeeded();
+    assert.equal(await page.locator('[data-lot-browser] .plan-svg--portrait').count(), 1);
+    const box = await page.locator('[data-lot-browser] polygon.lot').nth(8).boundingBox();
+    assert.ok(Math.min(box.width, box.height) >= 20, `lot target ${box.width.toFixed(0)}×${box.height.toFixed(0)} px`);
+    await page.locator('[data-lot-browser] polygon.lot').nth(8).tap();
+    assert.match(await page.locator('.lot-sheet').innerText(), /B-06/);
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
+    assert.ok(overflow <= 0, `horizontal overflow ${overflow}px`);
+    await snap(page, 'm02b-lots');
+    await page.evaluate(() => scrollTo(0, 0));
   });
   await check('mobile: experience runs, details appear as a bottom sheet', async () => {
     await page.click('.hero [data-open-explorer]');

@@ -9,6 +9,7 @@
 // Availability is only set where a Génesis document states it; every other lot
 // reads "consultar".
 import { polygonArea, polygonCentroid, lotFrame, lotToWorld, pointInPolygon } from '../core/lot-layout.js';
+import { utmToLatLon } from '../core/geo.js';
 import { MONUMENTS, ROADS, NAUTICAL_ACCESS, ENTRANCE_PAD, RIVER_EDGE, COMMON_PARCELS, SURVEYED_LOTS, UTM_ORIGIN } from './masterplan.js';
 
 export const DEVELOPMENT = Object.freeze({
@@ -27,7 +28,17 @@ export const DEVELOPMENT = Object.freeze({
     amenities: Object.freeze(['Club Náutico & Deportivo', 'Acceso náutico al río Acaray', 'Administración', 'Avenida principal y calles internas']),
     financing: null,
   }),
+  // Location pin shared by Génesis.
   mapsUrl: 'https://maps.app.goo.gl/MoXFWMTVsvddWcvg7',
+});
+
+/**
+ * Centre of the four surveyed monuments in WGS 84 (from the plan's UTM 21S
+ * coordinates; the plan's handheld GPS survey states ±0.80 m).
+ */
+export const SITE_LOCATION = Object.freeze({
+  ...utmToLatLon(UTM_ORIGIN.easting, UTM_ORIGIN.northing, { zone: 21, south: true }),
+  accuracyM: 0.8,
 });
 
 /**
@@ -139,6 +150,28 @@ export function findLot(id) {
 }
 
 export const COMMON_AREAS = COMMON_PARCELS.map((c) => ({ ...c, centroid: polygonCentroid(c.polygon) }));
+
+/**
+ * The plan's common-area table (ÁREA COMÚN), m². The avenue and both streets
+ * are one surveyed road parcel in the drawing, so they share a key plan.
+ */
+export const COMMON_AREA_TABLE = Object.freeze([
+  { id: 'club', name: 'Club Náutico & Deportivo', parcel: 'Manzana D · Lote 01', areaM2: 2141.96, note: 'La parcela más grande del desarrollo, sobre la ribera, en el extremo este.' },
+  { id: 'nautico', name: 'Acceso náutico', parcel: 'Entre las manzanas C y D', areaM2: 517.41, note: 'Paso común desde la Calle 2 hasta la orilla del río Acaray.' },
+  { id: 'administracion', name: 'Administración', parcel: 'Manzana A · Lote 04', areaM2: 341.7, note: 'Junto al ingreso del barrio, en el extremo oeste.' },
+  {
+    id: 'calles',
+    name: 'Avenida principal y calles 1 y 2',
+    parcel: 'Red vial interna',
+    areaM2: 4598.16,
+    parts: [
+      ['Avenida principal', 2358.4],
+      ['Calle 1', 1160.5],
+      ['Calle 2', 1079.26],
+    ],
+    note: 'Una avenida recta de este a oeste y dos calles en arco que dan frente a las manzanas.',
+  },
+]);
 
 // --- Site geometry (local metres, +x east, +z south) --------------------------
 

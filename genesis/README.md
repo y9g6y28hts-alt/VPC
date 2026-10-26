@@ -28,6 +28,12 @@ Development tasks need the devDependencies (`npm install`):
 
 `tools/harness.html` loads the experience alone (with `?tier=low|high`, `?reduced`) and exposes `window.xp` for inspection; `tools/shoot.mjs` captures it in headless Chromium for given lots, construction progress and camera poses; `tools/tree-lab.html` renders the vegetation species side by side with their triangle cost.
 
+## The page
+
+**Hero** (scroll-scrubbed construction rendered by the engine) → **El desarrollo** (verified figures: 2 ha, 32 lots, 365,80–511,56 m², 7.599,23 m² of common areas) → **Ubicación** (address from the plan, WGS 84 coordinates computed from the UTM monuments by `js/core/geo.js` and checked against PROJ in the unit tests, Génesis' Google Maps pin, a site sketch drawn from the data) → **Lotes** (the lot browser: plan, block filter, sortable list, lot sheet; the plan turns upright on phones so lots stay ≥ 20 px to tap; works without WebGL) → **Áreas comunes** (the plan's common-area table, each with a key plan) → **Recorrido 3D** → **Comercializa / de dónde sale cada dato** → **Contacto**. From a lot sheet, "Ver la construcción en 3D" opens the explorer on that lot and "Consultar por este lote" carries the lot into the contact form.
+
+Design tokens live at the top of `css/genesis.css` (colour, type, spacing, motion: `--ease-out` = `cubic-bezier(0.16, 1, 0.3, 1)`, `--dur-*`); only colours, opacity and transforms are animated, and `prefers-reduced-motion` turns entrances off.
+
 ## The experience
 
 **Overview → select → approach → construction → reveal → explore.** The concept residence is fitted to each lot: its plan is scaled across the frontage and into the depth (never in height) and moved inward on curved street fronts, so the house, terraces and pool always stay inside the surveyed polygon (tested for all 32 lots). Selecting a lot (click/tap on the ground, or the accessible list) immediately starts the approach; there is no confirmation step. Construction begins on arrival, plays for ~26 s, and can be paused, scrubbed by stage, replayed, finished early or left at any time. The camera can be taken over at any moment; a drag never breaks the sequence.
@@ -49,10 +55,12 @@ Partially built elements are cut with per-component clipping planes in house spa
 
 ```
 index.html, css/genesis.css     page and design system
-js/main.js                      page bootstrap (header, reveals, hero, contact, deep links)
+js/main.js                      page bootstrap (header, reveals, hero, location, lot browser, common areas, contact, deep links)
+js/ui/lot-browser.js            plan + filter + list + lot sheet
+js/ui/site-maps.js              location sketch and key plans (SVG from the survey data)
 js/explorer.js                  overlay UI for the experience + 2D fallback
 js/hero-sequence.js             scroll-driven construction sequence in the hero
-js/core/                        pure logic, unit-tested: timeline, state machine, lot geometry, inquiry, formatting
+js/core/                        pure logic, unit-tested: timeline, state machine, lot geometry, UTM→WGS 84, inquiry, formatting
 js/data/masterplan.js           GENERATED from the survey: lots, roads, nautical access, river edge, monuments
 js/data/viva-lago.js            development data on top of it: facts, availability, concept fitting, lake
 js/config/brand.js, contact.js  logos/colours (from the brochure) and contact channels (empty until supplied)

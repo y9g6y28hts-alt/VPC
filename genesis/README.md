@@ -2,7 +2,7 @@
 
 A static website for **Génesis Negocios Inmobiliarios** (Ciudad del Este, Paraguay) in which a visitor explores Viva Lago Country, selects a lot and watches a contemporary residence being built on it, stage by stage, in a real-time 3D scene at golden hour.
 
-> **Status: conceptual demonstration.** No official masterplan, parcel survey, inventory, prices, financing terms, contact channels or logo files were available in this repository. The layout, lot numbering, lake and residence are illustrative, every commercial field is `null`, and the interface says so wherever it matters. See [What Génesis needs to supply](#what-génesis-needs-to-supply).
+> **Status: surveyed layout.** Lots, streets, numbering and surfaces come from the georeferenced subdivision plan (*Proyecto de Loteamiento Georreferenciado*, Finca 18.485, 1/1.000, UTM 21S / WGS 84): 32 lots in blocks A–E, the Club Náutico & Deportivo, the administration parcel, the nautical access to the río Acaray, the main avenue and streets 1 and 2. Logos and brand colours come from Génesis' sales brochure. **Prices and financing are deliberately not published**; availability is shown only where a Génesis document states it (C-02 sold). Vegetation, relief, surroundings and the residence are a recreation. See [What Génesis still needs to supply](#what-génesis-still-needs-to-supply).
 
 ## Run it
 
@@ -23,12 +23,14 @@ Development tasks need the devDependencies (`npm install`):
 | `npm run vendor` | Re-copies three.js, ez-tree, tree textures and the HDRI from `node_modules` into `vendor/` and `assets/` |
 | `npm run textures` | Regenerates the procedural PBR textures (Python 3 + NumPy + Pillow) |
 | `node tools/capture-renders.mjs` | Re-renders the hero sequence and posters with the engine itself (options: `--variant=desktop` or `mobile`, `--only=hero` or `overview`) |
+| `python3 tools/survey/extract-plan.py plan.pdf > tools/survey/plan-extract.json` | Reads the surveyor's vector PDF: fits the drawing to the four UTM monuments and polygonizes the line work (Python 3 + pdfplumber, shapely, NumPy) |
+| `python3 tools/survey/build-masterplan.py tools/survey/plan-extract.json > js/data/masterplan.js` | Identifies blocks and lots, checks every drawn area against the plan's surface table (fails above 3 %; currently 0.23 %), picks each lot's street front and writes the data module |
 
 `tools/harness.html` loads the experience alone (with `?tier=low|high`, `?reduced`) and exposes `window.xp` for inspection; `tools/shoot.mjs` captures it in headless Chromium for given lots, construction progress and camera poses; `tools/tree-lab.html` renders the vegetation species side by side with their triangle cost.
 
 ## The experience
 
-**Overview → select → approach → construction → reveal → explore.** Selecting a lot (click/tap on the ground, or the accessible list) immediately starts the approach; there is no confirmation step. Construction begins on arrival, plays for ~26 s, and can be paused, scrubbed by stage, replayed, finished early or left at any time. The camera can be taken over at any moment; a drag never breaks the sequence.
+**Overview → select → approach → construction → reveal → explore.** The concept residence is fitted to each lot: its plan is scaled across the frontage and into the depth (never in height) and moved inward on curved street fronts, so the house, terraces and pool always stay inside the surveyed polygon (tested for all 32 lots). Selecting a lot (click/tap on the ground, or the accessible list) immediately starts the approach; there is no confirmation step. Construction begins on arrival, plays for ~26 s, and can be paused, scrubbed by stage, replayed, finished early or left at any time. The camera can be taken over at any moment; a drag never breaks the sequence.
 
 Construction runs on **one continuous clock** (`js/core/timeline.js`) shared by ~50 components of the actual model (`js/experience/house/residence.js`), each with its own window in that clock:
 
@@ -51,13 +53,15 @@ js/main.js                      page bootstrap (header, reveals, hero, contact, 
 js/explorer.js                  overlay UI for the experience + 2D fallback
 js/hero-sequence.js             scroll-driven construction sequence in the hero
 js/core/                        pure logic, unit-tested: timeline, state machine, lot geometry, inquiry, formatting
-js/data/viva-lago.js            development data (illustrative layout, null commercial fields)
-js/config/brand.js, contact.js  logo and verified contact channels (empty until supplied)
+js/data/masterplan.js           GENERATED from the survey: lots, roads, nautical access, river edge, monuments
+js/data/viva-lago.js            development data on top of it: facts, availability, concept fitting, lake
+js/config/brand.js, contact.js  logos/colours (from the brochure) and contact channels (empty until supplied)
 js/experience/                  three.js scene: renderer, environment, terrain, lots, vegetation, camera, residence
 tools/                          vendor, texture generation, render capture, static server, harness
+tools/survey/                   plan extraction (PDF → georeferenced polygons → js/data/masterplan.js)
 tests/unit, tests/e2e           node:test suites and the Playwright run
 vendor/                         three.js r184 (+ used addons) and ez-tree's generator (both MIT)
-assets/                         fonts (OFL), textures (generated), trees, HDRI (CC0), renders
+assets/                         fonts (OFL), textures (generated), trees, HDRI (CC0), renders, brand (logos)
 ```
 
 ## Rendering
@@ -71,18 +75,17 @@ assets/                         fonts (OFL), textures (generated), trees, HDRI (
 
 ## Commercial integrity
 
-- Lot panel rows (surface, price, availability, financing) render **“Pendiente de verificación”** until real values exist in `LOTS[].commercial`. Scene areas are computed but never shown as surfaces.
-- The residence is labelled as a conceptual visualisation, not included in the lot price and not approved for construction.
+- The lot panel shows the plan's surfaces (own area, proportional common area, total and co-ownership share) and the approximate frontage × depth of the drawing. Price and financing always read **“Consultar con un asesor”**; `priceUSD` and `financing` stay `null` and a unit test fails if either is set.
+- Availability is shown only with a documented source (`KNOWN_AVAILABILITY` in `js/data/viva-lago.js`): today only C-02, marked sold in the brochure. The brochure numbers blocks 1–5; the plan letters them A–E (1 = C, 2 = D, 3 = B, 4 = E, 5 = A).
+- The residence is labelled as a conceptual visualisation adapted to the lot, not included in the lot price and not approved for construction.
 - The inquiry form keeps the selected lot. It reports **sent** only when a configured endpoint answers 2xx; WhatsApp/e-mail are reported as hand-offs; with no channel configured (the current state) it says nothing was sent and offers the text to copy.
+- The plan's personal data (owner, ID numbers, professional) is not published anywhere on the site, and the plan PDF itself is not part of the repository; `tools/survey/plan-extract.json` keeps only the drawing's geometry and labels.
 
-## What Génesis needs to supply
+## What Génesis still needs to supply
 
-1. **Official masterplan** (road centrelines, lot polygons and identifiers, lake and common areas) → replace the geometry in `js/data/viva-lago.js` and set `DEVELOPMENT.dataStatus = 'verified'`.
-2. **Inventory** per lot (surface, price, availability, financing) → `LOTS[].commercial`.
-3. **Contact channel**: WhatsApp number, sales e-mail and/or an HTTPS inquiry endpoint → `js/config/contact.js`.
-4. **Logo files**: official colour artwork and a monochrome (ivory) variant → `assets/brand/`, referenced in `js/config/brand.js`. The colour lime (`--lime` in `css/genesis.css`) is an approximation to be replaced with the official value.
-5. **Project facts** (location, total area, amenities) → `DEVELOPMENT.facts` and the facts list in `index.html`.
-6. Optionally, a professionally designed residence as a GLB with components split by trade, to replace the concept model at the same fidelity target.
+1. **Contact channel**: WhatsApp number, sales e-mail and/or an HTTPS inquiry endpoint → `js/config/contact.js`.
+2. **Availability per lot** (if it should be public) → `KNOWN_AVAILABILITY`, with its source.
+3. Optionally, a professionally designed residence as a GLB with components split by trade, to replace the concept model.
 
 ## Assets and licences
 
@@ -95,3 +98,5 @@ assets/                         fonts (OFL), textures (generated), trees, HDRI (
 | HDRI “sunrise” | Poly Haven via npm `@pmndrs/assets` | CC0 |
 | Instrument Serif, Geist, Geist Mono | Google Fonts | SIL OFL 1.1 (`assets/fonts/OFL-*.txt`) |
 | Architectural textures, renders | Generated by this project's tools | Project |
+| Génesis and Viva Lago Country logos | Génesis' sales brochure (GENESIS LOTE, March 2026) | Génesis (trademarks) |
+| Subdivision geometry | Proyecto de Loteamiento Georreferenciado (Finca 18.485) | Génesis / owner |

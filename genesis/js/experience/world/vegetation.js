@@ -6,7 +6,7 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { Tree, TreePreset } from '../../../vendor/ez-tree/index.js';
 import { mulberry32, fbm } from '../../core/noise.js';
 import { distanceToPolyline, pointInPolygon } from '../../core/lot-layout.js';
-import { lakeRoad, boulevard, ROAD } from '../../data/viva-lago.js';
+import { ROADS, NAUTICAL_ACCESS, COMMON_AREAS, SITE, insideSite } from '../../data/viva-lago.js';
 
 const nextFrame = () => new Promise((r) => (typeof requestAnimationFrame === 'function' ? requestAnimationFrame(() => r()) : setTimeout(r, 0)));
 
@@ -327,14 +327,15 @@ export class Vegetation {
     this.group = new THREE.Group();
     this.group.name = 'vegetation';
     this.disposables = [];
-    this.roadLines = [lakeRoad.points.filter((_, i) => i % 6 === 0), boulevard.points.filter((_, i) => i % 6 === 0)];
+    this.roadRing = [...ROADS, ROADS[0]];
+    this.accessRing = [...NAUTICAL_ACCESS, NAUTICAL_ACCESS[0]];
   }
 
   _blocked(x, z, clearance = 2) {
     const p = { x, z };
-    if (distanceToPolyline(p, this.roadLines[0]) < ROAD.laneWidth / 2 + clearance + 1) return true;
-    if (distanceToPolyline(p, this.roadLines[1]) < ROAD.boulevardHalfWidth + clearance + 1) return true;
-    if (distanceToPolyline(p, this.terrain.accessRoad) < 4 + clearance) return true;
+    if (pointInPolygon(p, ROADS) || distanceToPolyline(p, this.roadRing) < clearance) return true;
+    if (pointInPolygon(p, NAUTICAL_ACCESS) || distanceToPolyline(p, this.accessRing) < clearance * 0.5) return true;
+    if (this.terrain.streetDistance(x, z) < clearance + 1) return true;
     if (this.terrain.lakeDistance(x, z) < clearance) return true;
     for (const lot of this.lots) {
       const c = lot.centroid;
@@ -374,49 +375,61 @@ export class Vegetation {
     };
     const pickBroadleaf = (r) => (r < 0.32 ? 'canopyLarge' : r < 0.55 ? 'shadeLarge' : r < 0.75 ? 'canopyMedium' : r < 0.9 ? 'shadeMedium' : 'shrub');
 
-    // 1. Lakeshore band behind the lakefront lots (two loose rows).
-    for (const row of [0, 1]) {
-      for (let s = 6 + row * 4; s < lakeRoad.length - 6; s += 8 + rnd() * 10) {
-        if (rnd() > 0.55 + 0.45 * density) continue;
-        const p = lakeRoad.pointAt(s);
-        const n = lakeRoad.normalAt(s, -1);
-        const off = ROAD.laneWidth / 2 + ROAD.verge + 40 + 3 + row * 7 + rnd() * 5;
-        tryPlace(pickBroadleaf(rnd()), p.x + n.x * off + (rnd() - 0.5) * 4, p.z + n.z * off + (rnd() - 0.5) * 4, 2.5);
+    const scatter = (poly, count, pick, clearance = 3) => {
+      let minX = Infinity;
+      let maxX = -Infinity;
+      let minZ = Infinity;
+      let maxZ = -Infinity;
+      for (const q of poly) {
+        minX = Math.min(minX, q.x);
+        maxX = Math.max(maxX, q.x);
+        minZ = Math.min(minZ, q.z);
+        maxZ = Math.max(maxZ, q.z);
       }
-    }
-
-    // 2. Green spaces at the junction, with yellow lapachos as accents.
-    const apex = lakeRoad.pointAt(lakeRoad.length / 2);
-    const greens = [
-      { cx: apex.x, cz: apex.z - 30, rx: 26, rz: 18, n: 16 },
-      { cx: apex.x - 31, cz: apex.z + 31, rx: 14, rz: 20, n: 10 },
-      { cx: apex.x + 31, cz: apex.z + 31, rx: 14, rz: 20, n: 10 },
-    ];
-    for (const g of greens) {
       let placed = 0;
-      for (let k = 0; k < g.n * 8 && placed < Math.ceil(g.n * (0.5 + density * 0.5)); k++) {
-        const a = rnd() * Math.PI * 2;
-        const r = Math.sqrt(rnd());
-        const roll = rnd();
-        const kind = roll < 0.16 ? 'lapacho' : roll < 0.75 ? pickBroadleaf(rnd()) : roll < 0.88 ? 'shrub' : 'shrubB';
-        if (tryPlace(kind, g.cx + Math.cos(a) * g.rx * r, g.cz + Math.sin(a) * g.rz * r, 3)) placed++;
+      for (let k = 0; k < count * 10 && placed < count; k++) {
+        const x = minX + rnd() * (maxX - minX);
+        const z = minZ + rnd() * (maxZ - minZ);
+        if (!pointInPolygon({ x, z }, poly)) continue;
+        if (tryPlace(pick(rnd()), x, z, clearance)) placed++;
       }
+    };
+
+    // 1. Riverbank: the strip between the title boundary and the water keeps
+    //    its gallery forest.
+    for (let k = 0; k < 520; k++) {
+      const x = 20 + rnd() * 200;
+      const z = -140 + rnd() * 260;
+      if (insideSite({ x, z })) continue;
+      const shore = this.terrain.lakeDistance(x, z);
+      if (shore < 1.5 || shore > 16) continue;
+      if (this.terrain.devDistance(x, z) < 1.5) continue;
+      if (rnd() > 0.5 + 0.5 * density) continue;
+      tryPlace(pickBroadleaf(rnd()), x, z, 2.5);
     }
 
-    // 3. Palm alley on the boulevard median.
-    const median = boulevard.length - 34;
-    for (let s = 8; s < median; s += 13) {
-      const p = boulevard.pointAt(s);
-      placements.palm.push(this._matrix(p.x + (rnd() - 0.5) * 0.6, p.z, 0.9 + rnd() * 0.25, rnd() * Math.PI * 2, 0.15));
+    // 2. Common areas: the club grounds and the administration parcel, with
+    //    yellow lapachos as accents (their final design is not yet defined).
+    const club = COMMON_AREAS.find((c) => c.id === 'club');
+    if (club) scatter(club.polygon, Math.round(9 + 5 * density), (r) => (r < 0.25 ? 'lapacho' : r < 0.7 ? pickBroadleaf(rnd()) : 'shrubB'), 4);
+    const admin = COMMON_AREAS.find((c) => c.id === 'administracion');
+    if (admin) scatter(admin.polygon, 3, (r) => (r < 0.5 ? 'lapacho' : 'shrub'), 2);
+    // Pindó palms flank the entrance from the west street.
+    const entrance = ROADS.filter((q) => Math.abs(q.x - SITE[3].x) < 14).sort((a, b) => a.z - b.z);
+    if (entrance.length) {
+      const zs = [entrance[0].z - 2.5, entrance[entrance.length - 1].z + 2.5];
+      for (const z of zs) placements.palm.push(this._matrix(SITE[3].x - 3 - rnd(), z, 0.95 + rnd() * 0.2, rnd() * Math.PI * 2));
     }
 
-    // 4. Windbreak along the back of the inland and boulevard lots.
-    for (let k = 0; k < 1400; k++) {
-      const x = (rnd() - 0.5) * 560;
-      const z = -40 + rnd() * 380;
+    // 3. Neighbouring land: a windbreak along the northern property line and
+    //    scattered trees in the fields to the west and south.
+    for (let k = 0; k < 2600; k++) {
+      const x = -360 + rnd() * 560;
+      const z = -260 + rnd() * 520;
       const dev = this.terrain.devDistance(x, z);
-      if (dev < 50 || dev > 66) continue;
-      if (rnd() > 0.35 * (0.5 + density * 0.5)) continue;
+      if (dev < 4) continue;
+      const band = dev < 26 ? 0.22 : dev < 60 ? 0.03 : 0;
+      if (rnd() > band * (0.5 + density * 0.5)) continue;
       tryPlace(pickBroadleaf(rnd()), x, z, 3, [0.8, 1.2]);
     }
 
@@ -501,9 +514,9 @@ export class Vegetation {
 
     const spots = [];
     const ok = (x, z) =>
-      this.terrain.devDistance(x, z) > 72 &&
+      this.terrain.devDistance(x, z) > 60 &&
       this.terrain.lakeDistance(x, z) > 7 &&
-      distanceToPolyline({ x, z }, this.terrain.accessRoad) > 9;
+      this.terrain.streetDistance(x, z) > 5;
     const add = (x, z, s = 1) => {
       if (ok(x, z)) spots.push([x, z, s]);
     };

@@ -141,14 +141,15 @@ export async function createExperience(container, options = {}) {
     const g = residence.group;
     g.position.set(lot.frame.origin.x, 0, lot.frame.origin.z);
     g.rotation.set(0, lot.frame.rotationY, 0);
-    g.updateMatrixWorld(true);
+    residence.fitToLot(lot.houseScale);
     g.visible = true;
     terrainUniforms.uSiteOrigin.value.set(lot.frame.origin.x, lot.frame.origin.z);
     terrainUniforms.uSiteRight.value.set(lot.frame.right.x, lot.frame.right.z);
     terrainUniforms.uSiteIn.value.set(lot.frame.inward.x, lot.frame.inward.z);
     terrainUniforms.uSiteHalfWidthDepth.value.set(lot.frontage / 2 - 0.25, lot.depth - 0.25);
     const h = residence.terrainHole;
-    terrainUniforms.uHole.value.set(h.x0, h.x1, h.d0, h.d1);
+    const k = lot.houseScale;
+    terrainUniforms.uHole.value.set(h.x0 * k.x, h.x1 * k.x, h.d0 * k.z, h.d1 * k.z);
   }
 
   // ---------------------------------------------------------------- state reactions
@@ -221,7 +222,7 @@ export async function createExperience(container, options = {}) {
       }
       lots.setSiteActive(false);
       director.setMode('cinematic');
-      env.fitShadows(new THREE.Vector3(0, 0, 40), 320);
+      env.fitShadows(new THREE.Vector3(18, 0, 0), 200);
       director.flyTo(OVERVIEW_POSE, { duration: 3.4, arc: 0.1 }).then(() => {
         if (machine.state === State.RETURNING) machine.send(Event.RETURNED);
       });

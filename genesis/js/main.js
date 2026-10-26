@@ -9,13 +9,14 @@ import { findLot } from './data/viva-lago.js';
 
 const reducedMotion = prefersReducedMotion();
 
-// Official logo, when supplied, replaces the typeset name.
-if (BRAND.logo.mono) {
+// Official wordmark replaces the typeset name: ivory over dark grounds, colour
+// once the header turns solid (CSS picks the visible one).
+if (BRAND.logo.wordmarkMono) {
   for (const a of document.querySelectorAll('[data-brand]')) {
-    const img = document.createElement('img');
-    img.src = BRAND.logo.mono;
-    img.alt = BRAND.legalName;
-    a.replaceChildren(img);
+    const mono = Object.assign(document.createElement('img'), { src: BRAND.logo.wordmarkMono, alt: BRAND.legalName, className: 'brand__logo brand__logo--mono' });
+    const colour = Object.assign(document.createElement('img'), { src: BRAND.logo.wordmarkColor, alt: '', className: 'brand__logo brand__logo--color' });
+    colour.setAttribute('aria-hidden', 'true');
+    a.replaceChildren(mono, colour);
   }
 }
 
@@ -62,7 +63,7 @@ document.querySelectorAll('.reveal').forEach((el) => (io && !reducedMotion ? io.
 
 // Plan figure (same data as the 3D scene).
 const planHost = document.querySelector('[data-plan-figure]');
-if (planHost) planHost.append(planSvg());
+if (planHost) planHost.append(planSvg({ labels: true }));
 
 // Contact form.
 const contactHost = document.querySelector('[data-contact-form]');

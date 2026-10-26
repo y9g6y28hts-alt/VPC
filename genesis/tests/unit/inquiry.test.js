@@ -10,7 +10,7 @@ import {
   submitInquiry,
 } from '../../js/core/inquiry.js';
 import { CONTACT } from '../../js/config/contact.js';
-import { lotDetailRows, formatArea, formatPrice, PENDING, lotLabel } from '../../js/core/format.js';
+import { lotDetailRows, formatArea, formatPrice, PENDING, ASK, lotLabel } from '../../js/core/format.js';
 
 const NONE = { whatsapp: null, email: null, inquiryEndpoint: null };
 
@@ -90,7 +90,15 @@ test('WhatsApp is a hand-off, not a confirmed send', async () => {
 
 test('property rows never invent values', () => {
   const rows = lotDetailRows({ commercial: { areaM2: null, priceUSD: null, availability: null, financing: null } });
-  assert.ok(rows.every((r) => r.pending && r.value === PENDING));
+  assert.ok(rows.every((r) => r.pending));
+  assert.equal(rows.find((r) => r.key === 'area').value, PENDING);
+  // Prices are never shown on the site; availability only when documented.
+  const lot = { commercial: { areaM2: 384, priceUSD: 99999, availability: null, financing: 'x' }, survey: { commonAreaM2: 235.32, totalAreaM2: 619.32, sharePct: 3.0966 }, frontage: 12, depth: 32 };
+  const shown = lotDetailRows(lot);
+  assert.ok(!shown.some((r) => /99/.test(r.value)), 'no price figure');
+  assert.equal(shown.find((r) => r.key === 'price').value, ASK);
+  assert.equal(shown.find((r) => r.key === 'availability').value, ASK);
+  assert.equal(lotDetailRows({ ...lot, commercial: { ...lot.commercial, availability: 'sold' } }).find((r) => r.key === 'availability').value, 'Vendido');
   assert.equal(formatArea(812.4), `${(812).toLocaleString('es-PY')} m²`);
   assert.equal(formatPrice(-1), PENDING);
   assert.equal(lotLabel({ block: 'A', number: 7 }), 'Manzana A · Lote 7');

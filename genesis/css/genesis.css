@@ -1,6 +1,7 @@
 /* Génesis — Viva Lago Country
    Editorial, restrained interface around the architectural experience.
-   Plum and ivory carry the brand; the institutional lime is a rare accent. */
+   Plum and ivory carry the interface; the brand green (from Génesis' brochure)
+   is a rare accent. */
 
 @font-face {
   font-family: 'Instrument Serif';
@@ -39,9 +40,11 @@
   --plum-700: #3b2946;
   --plum-500: #6b5679;
   --plum-300: #a796b3;
-  /* Institutional lime (approximation — replace with the official value). */
-  --lime: #c3d33b;
-  --lime-ink: #8d9a1c;
+  /* Brand colours sampled from Génesis' brochure: green accent, purples. */
+  --lime: #81a941;
+  --lime-ink: #4f6e22;
+  --brand-purple: #7f4180;
+  --brand-purple-deep: #5e0c72;
   /* Neutrals */
   --ivory: #f4efe6;
   --paper: #faf7f2;
@@ -306,8 +309,40 @@ textarea {
   line-height: 1;
 }
 .brand img {
-  height: 26px;
+  height: 22px;
   width: auto;
+  display: block;
+}
+.brand__logo--color {
+  display: none !important;
+}
+.site-header.is-solid .brand__logo--mono,
+.site-header.nav-open .brand__logo--mono {
+  display: none !important;
+}
+.site-header.is-solid .brand__logo--color,
+.site-header.nav-open .brand__logo--color {
+  display: block !important;
+}
+.project-title {
+  margin: 4px 0 0;
+}
+.project-logo {
+  display: block;
+  width: min(100%, 340px);
+  height: auto;
+}
+.genesis-lockup {
+  display: block;
+  width: min(100%, 480px);
+  height: auto;
+}
+.xp-loading__logo {
+  display: block;
+  width: 180px;
+  height: auto;
+  margin: 0 auto 22px;
+  opacity: 0.92;
 }
 .brand__name {
   font-family: var(--sans);
@@ -1564,10 +1599,15 @@ textarea {
 }
 
 /* SVG plan */
+.plan-svg .site {
+  fill: rgba(244, 239, 230, 0.03);
+  stroke: rgba(214, 86, 74, 0.75);
+  stroke-width: 0.6;
+}
 .plan-svg .lot {
   fill: rgba(244, 239, 230, 0.06);
-  stroke: rgba(244, 239, 230, 0.45);
-  stroke-width: 0.6;
+  stroke: rgba(244, 239, 230, 0.5);
+  stroke-width: 0.35;
   cursor: pointer;
   transition: fill 0.2s;
 }
@@ -1576,36 +1616,70 @@ textarea {
   fill: rgba(195, 211, 59, 0.22);
   outline: none;
 }
+.plan-svg .lot.is-sold {
+  fill: rgba(244, 239, 230, 0.14);
+}
 .plan-svg .lot.is-selected {
   fill: rgba(195, 211, 59, 0.35);
   stroke: var(--lime);
-  stroke-width: 1.2;
+  stroke-width: 0.8;
 }
-.plan-svg .road {
-  fill: none;
-  stroke: rgba(244, 239, 230, 0.3);
-  stroke-linecap: round;
+.plan-svg .road-area {
+  fill: rgba(244, 239, 230, 0.1);
+  stroke: none;
+}
+.plan-svg .common {
+  fill: rgba(140, 170, 110, 0.18);
+  stroke: rgba(244, 239, 230, 0.35);
+  stroke-width: 0.35;
 }
 .plan-svg .lake {
   fill: rgba(120, 150, 160, 0.25);
 }
 .plan-svg .label {
-  fill: rgba(244, 239, 230, 0.55);
+  fill: rgba(244, 239, 230, 0.62);
   font-family: var(--mono);
-  font-size: 6px;
-  letter-spacing: 0.1em;
+  font-size: 3.2px;
+  letter-spacing: 0.04em;
   pointer-events: none;
 }
+.plan-svg .label--block {
+  font-size: 4.2px;
+  letter-spacing: 0.18em;
+  fill: rgba(244, 239, 230, 0.8);
+}
+.plan-svg .label--common {
+  font-size: 3px;
+  letter-spacing: 0.12em;
+}
+.plan-svg .label--river {
+  font-size: 4px;
+  letter-spacing: 0.3em;
+  fill: rgba(170, 200, 210, 0.75);
+}
 .figure .plan-svg .lot {
-  stroke: rgba(38, 34, 42, 0.4);
+  stroke: rgba(38, 34, 42, 0.45);
   fill: rgba(38, 34, 42, 0.04);
   cursor: default;
 }
-.figure .plan-svg .road {
-  stroke: rgba(38, 34, 42, 0.3);
+.figure .plan-svg .lot.is-sold {
+  fill: rgba(38, 34, 42, 0.12);
+}
+.figure .plan-svg .road-area {
+  fill: rgba(38, 34, 42, 0.08);
+}
+.figure .plan-svg .common {
+  fill: rgba(90, 120, 60, 0.14);
+  stroke: rgba(38, 34, 42, 0.35);
 }
 .figure .plan-svg .lake {
   fill: rgba(80, 110, 120, 0.18);
+}
+.figure .plan-svg .label {
+  fill: rgba(38, 34, 42, 0.7);
+}
+.figure .plan-svg .label--river {
+  fill: rgba(60, 100, 115, 0.8);
 }
 
 @media (prefers-reduced-motion: reduce) {

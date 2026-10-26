@@ -100,7 +100,7 @@ export class Environment {
 
     this.focus = new THREE.Vector3();
     this.radius = 300;
-    this.fitShadows(new THREE.Vector3(0, 0, 0), 320);
+    this.fitShadows(new THREE.Vector3(18, 0, 0), 200);
   }
 
   /** Set the fog colour to the sky's horizon radiance around a view direction. */

@@ -1,16 +1,24 @@
 // Génesis brand configuration.
 //
-// The official logo artwork was not supplied with this repository. Until it is,
-// the interface sets the company name in the site's text face; it does not try
-// to imitate the logo. Drop the official files in assets/brand/ and point these
-// paths at them (keep the original colour artwork for official applications).
+// Logo artwork is taken from Génesis' own sales brochure ("GENESIS LOTE",
+// March 2026): the wordmark is the brochure's vector drawing, the Viva Lago
+// Country mark is its embedded artwork. Colours are sampled from the same file.
 export const BRAND = Object.freeze({
   name: 'Génesis',
   legalName: 'Génesis Negocios Inmobiliarios',
   city: 'Ciudad del Este, Paraguay',
   slogan: 'El comienzo de tu historia',
+  colors: Object.freeze({ purple: '#7f4180', purpleDeep: '#5e0c72', green: '#81a941', lilac: '#bc82bf' }),
   logo: Object.freeze({
-    color: null, // e.g. 'assets/brand/genesis-logo.svg' (lime wordmark on purple)
-    mono: null, // e.g. 'assets/brand/genesis-logo-mono-ivory.svg'
+    // Full lockup with the slogan, for generous sizes.
+    color: 'assets/brand/genesis-logo-color.svg',
+    mono: 'assets/brand/genesis-logo-ivory.svg',
+    // Wordmark alone, for the header and other small placements.
+    wordmarkColor: 'assets/brand/genesis-wordmark-color.svg',
+    wordmarkMono: 'assets/brand/genesis-wordmark-ivory.svg',
+  }),
+  development: Object.freeze({
+    logo: 'assets/brand/viva-lago-logo.webp',
+    logoMono: 'assets/brand/viva-lago-logo-ivory.webp',
   }),
 });

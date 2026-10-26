@@ -10,7 +10,7 @@ import { mountInquiryForm } from './ui/inquiry-form.js';
 import { BRAND } from './config/brand.js';
 import { DEVELOPMENT, CONCEPT_RESIDENCE, LOTS, findLot } from './data/viva-lago.js';
 import { CONSTRUCTION_STAGES } from './core/timeline.js';
-import { lotDetailRows, lotLabel } from './core/format.js';
+import { lotDetailRows, lotLabel, formatArea } from './core/format.js';
 
 const root = () => document.getElementById('explorer');
 let ui = null;
@@ -24,7 +24,7 @@ export function setHeroManifest(m) {
 }
 
 function brandMark() {
-  if (BRAND.logo.mono) return h('img', { src: BRAND.logo.mono, alt: BRAND.legalName });
+  if (BRAND.logo.wordmarkMono) return h('img', { class: 'brand__logo', src: BRAND.logo.wordmarkMono, alt: BRAND.legalName });
   return h('span', { class: 'brand__name' }, BRAND.name);
 }
 
@@ -36,11 +36,11 @@ function buildUI() {
   const disclosure = h(
     'div',
     { class: 'xp-disclosure', hidden: true, id: 'xp-disclosure' },
-    h('p', {}, h('strong', {}, 'Demostración conceptual. '), 'El trazado, la numeración de lotes, el lago y la vegetación son ilustrativos: todavía no se integró el plano oficial de Viva Lago Country.'),
-    h('p', {}, 'La residencia es un concepto arquitectónico para visualizar el potencial del terreno. No está aprobada para construcción ni incluida en el precio del lote.'),
-    h('p', {}, 'Superficies, precios, disponibilidad y financiación se informan únicamente a través de un asesor oficial.'),
+    h('p', {}, h('strong', {}, 'Plano georreferenciado. '), `Lotes, calles, numeración y superficies provienen del ${DEVELOPMENT.planSource}. La vegetación, el entorno y el relieve son una recreación.`),
+    h('p', {}, 'La residencia es un concepto arquitectónico, ajustado a las medidas de cada lote, para visualizar el potencial del terreno. No está aprobada para construcción ni incluida en el precio del lote.'),
+    h('p', {}, 'Precios, disponibilidad y financiación se informan únicamente a través de un asesor de Génesis.'),
   );
-  const disclosureBtn = h('button', { class: 'xp-chip', type: 'button', 'aria-expanded': 'false', 'aria-controls': 'xp-disclosure' }, 'Demostración conceptual');
+  const disclosureBtn = h('button', { class: 'xp-chip', type: 'button', 'aria-expanded': 'false', 'aria-controls': 'xp-disclosure' }, 'Sobre esta escena');
   disclosureBtn.addEventListener('click', () => {
     const open = disclosure.hidden;
     disclosure.hidden = !open;
@@ -63,7 +63,7 @@ function buildUI() {
   const loading = h(
     'div',
     { class: 'xp-loading', role: 'status' },
-    h('div', { class: 'xp-loading__inner' }, h('p', { class: 'xp-loading__title' }, 'Preparando Viva Lago Country'), h('div', { class: 'xp-loading__bar' }, loadBar), h('div', { class: 'xp-loading__meta' }, loadLabel, loadPct)),
+    h('div', { class: 'xp-loading__inner' }, h('img', { class: 'xp-loading__logo', src: BRAND.development.logoMono, alt: '' }), h('p', { class: 'xp-loading__title' }, 'Preparando Viva Lago Country'), h('div', { class: 'xp-loading__bar' }, loadBar), h('div', { class: 'xp-loading__meta' }, loadLabel, loadPct)),
   );
 
   // Overview panel
@@ -71,7 +71,7 @@ function buildUI() {
     'select',
     { id: 'xp-lot-select', 'aria-label': 'Elegir un lote de la lista' },
     h('option', { value: '' }, 'Elegir de la lista…'),
-    ...['A', 'B', 'C', 'D'].map((b) => h('optgroup', { label: `Manzana ${b}` }, ...LOTS.filter((l) => l.block === b).map((l) => h('option', { value: l.id }, `${lotLabel(l)}`)))),
+    ...['A', 'B', 'C', 'D', 'E'].map((b) => h('optgroup', { label: `Manzana ${b}` }, ...LOTS.filter((l) => l.block === b).map((l) => h('option', { value: l.id }, `${lotLabel(l)} · ${formatArea(l.commercial.areaM2)}${l.commercial.availability === 'sold' ? ' · vendido' : ''}`)))),
   );
   lotSelect.addEventListener('change', () => {
     if (lotSelect.value) selectLot(lotSelect.value);
@@ -84,7 +84,7 @@ function buildUI() {
     h('h2', {}, 'Elegí un lote'),
     h('p', {}, 'Tocá una parcela para ver cómo podría construirse una residencia en ella. Podés recorrer la escena arrastrando y acercarte con la rueda o con dos dedos.'),
     h('div', { class: 'field' }, lotSelect),
-    h('p', { class: 'note' }, 'Trazado y numeración ilustrativos.'),
+    h('p', { class: 'note' }, `${LOTS.length} lotes · numeración del plano georreferenciado.`),
   );
 
   // Construction controls
@@ -193,7 +193,7 @@ function toastMsg(text, ms = 2600) {
 }
 
 function renderDetails(lot) {
-  ui.detailsLot.textContent = `${lotLabel(lot)} · ${lot.id} · numeración ilustrativa`;
+  ui.detailsLot.textContent = `${lotLabel(lot)} · ${lot.id}`;
   ui.detailsRows.replaceChildren(
     ...lotDetailRows(lot).map((r) => h('div', {}, h('dt', {}, r.label), h('dd', {}, r.pending ? h('span', { class: 'pending' }, r.value) : r.value))),
   );
@@ -331,7 +331,7 @@ function enterFallback(reason) {
     still.src = s.src;
     stepLabel.textContent = s.label;
   });
-  fallbackPlan = planSvg({ interactive: true, onSelect: (id) => showFallbackLot(id), selectedId: fallbackLot?.id || null });
+  fallbackPlan = planSvg({ interactive: true, labels: true, onSelect: (id) => showFallbackLot(id), selectedId: fallbackLot?.id || null });
   ui.fallback.replaceChildren(
     h('div', { class: 'plan' }, fallbackPlan),
     h(
@@ -340,7 +340,7 @@ function enterFallback(reason) {
       h('p', { class: 'notice on-dark', style: { color: 'rgba(244,239,230,.8)' } }, reason),
       h('div', { class: 'still' }, still),
       range ? h('div', {}, range, stepLabel) : null,
-      h('p', { class: 'small', style: { color: 'rgba(244,239,230,.6)' } }, 'Elegí un lote en el plano para ver sus datos y consultar. Plano y residencia ilustrativos.'),
+      h('p', { class: 'small', style: { color: 'rgba(244,239,230,.6)' } }, 'Elegí un lote en el plano para ver sus datos y consultar.'),
     ),
   );
   if (fallbackLot) showFallbackLot(fallbackLot.id);
@@ -409,7 +409,7 @@ export async function openExplorer({ lotId = null } = {}) {
           const dead = xp;
           xp = null;
           setTimeout(() => dead?.dispose(), 0);
-          enterFallback('La escena 3D se interrumpió en este dispositivo. Seguimos con el plano ilustrativo: podés elegir un lote y consultar.');
+          enterFallback('La escena 3D se interrumpió en este dispositivo. Seguimos con el plano: podés elegir un lote y consultar.');
         },
       });
       if (!xp) return null;
@@ -423,8 +423,8 @@ export async function openExplorer({ lotId = null } = {}) {
       xp = null;
       const reason =
         err?.name === 'WebGLUnavailableError'
-          ? 'Tu dispositivo o navegador no permite mostrar la escena 3D. Te mostramos el plano ilustrativo para elegir un lote y consultar.'
-          : 'No pudimos iniciar la escena 3D en este dispositivo. Te mostramos el plano ilustrativo para elegir un lote y consultar.';
+          ? 'Tu dispositivo o navegador no permite mostrar la escena 3D. Te mostramos el plano para elegir un lote y consultar.'
+          : 'No pudimos iniciar la escena 3D en este dispositivo. Te mostramos el plano para elegir un lote y consultar.';
       enterFallback(reason);
       return null;
     } finally {

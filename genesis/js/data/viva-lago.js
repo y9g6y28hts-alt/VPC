@@ -1,109 +1,213 @@
 // Viva Lago Country — development data used by the experience.
 //
-// IMPORTANT: no official masterplan, parcel survey, inventory, prices or
-// financing terms were available when this was built. Everything spatial below
-// is an ILLUSTRATIVE layout for demonstration, and every commercial field is
-// null. Replace `dataStatus`, the road/lake geometry and `LOT_RECORDS` with the
-// official data before presenting any of it as fact.
-import { createPath, layoutLots } from '../core/lot-layout.js';
+// Layout: the georeferenced subdivision plan ("Proyecto de Loteamiento
+// Georreferenciado", Finca 18.485, Ciudad del Este, scale 1/1.000). Geometry,
+// lot numbering and surfaces come from js/data/masterplan.js, which is generated
+// from the surveyor's PDF by tools/survey/ (see the README).
+//
+// Commercial data: prices and financing are intentionally not published here.
+// Availability is only set where a Génesis document states it; every other lot
+// reads "consultar".
+import { polygonArea, polygonCentroid, lotFrame, lotToWorld, pointInPolygon } from '../core/lot-layout.js';
+import { MONUMENTS, ROADS, NAUTICAL_ACCESS, ENTRANCE_PAD, RIVER_EDGE, COMMON_PARCELS, SURVEYED_LOTS, UTM_ORIGIN } from './masterplan.js';
 
 export const DEVELOPMENT = Object.freeze({
   name: 'Viva Lago Country',
   marketedBy: 'Génesis Negocios Inmobiliarios',
-  /** 'conceptual' until the official masterplan and inventory are integrated. */
-  dataStatus: 'conceptual',
+  /** 'surveyed': layout, numbering and surfaces from the georeferenced plan. */
+  dataStatus: 'surveyed',
+  planSource: 'Proyecto de Loteamiento Georreferenciado · Finca 18.485 · escala 1/1.000',
+  utmOrigin: UTM_ORIGIN,
   facts: Object.freeze({
-    location: null,
-    totalAreaHa: null,
-    lotCount: null,
-    amenities: null,
+    location: 'Zona Quinta, Calle 9 Acaray (km 9) · Ciudad del Este, Alto Paraná',
+    totalAreaHa: 2,
+    lotCount: SURVEYED_LOTS.length,
+    privateAreaM2: 12400.77,
+    commonAreaM2: 7599.23,
+    amenities: Object.freeze(['Club Náutico & Deportivo', 'Acceso náutico al río Acaray', 'Administración', 'Avenida principal y calles internas']),
     financing: null,
   }),
+  mapsUrl: 'https://maps.app.goo.gl/MoXFWMTVsvddWcvg7',
 });
+
+/**
+ * Sales material (Génesis brochure, March 2026) numbers the blocks 1–5; the
+ * plan letters them A–E. Both are shown so either reference can be used.
+ */
+export const BROCHURE_BLOCK = Object.freeze({ C: 1, D: 2, B: 3, E: 4, A: 5 });
+
+/** Statuses stated in Génesis documents. Everything else: ask an advisor. */
+const KNOWN_AVAILABILITY = Object.freeze({ 'C-02': { value: 'sold', source: 'Folleto Génesis, marzo 2026' } });
 
 /** Conceptual residence shown on any selected lot (not an approved design). */
 export const CONCEPT_RESIDENCE = Object.freeze({
   name: 'Residencia conceptual',
   storeys: 2,
-  footprint: { width: 15, depthFrom: 6, depthTo: 29 }, // metres in lot-local coordinates
-  status: 'Visualización ilustrativa. No incluida en el precio del lote ni aprobada para construcción.',
+  // Design envelope of the concept, in lot-local metres (garden included).
+  // It is fitted to each lot's frontage and depth (see houseScale).
+  design: { width: 20, depth: 40 },
+  status: 'Visualización ilustrativa, adaptada a las medidas de cada lote. No incluida en el precio del lote ni aprobada para construcción.',
 });
 
-// --- Illustrative masterplan geometry (metres, world X/Z) ---------------------
+const dist = (a, b) => Math.hypot(b.x - a.x, b.z - a.z);
 
-export const ROAD = Object.freeze({
-  laneWidth: 7, // carriageway of the lakeside avenue
-  verge: 3, // curb + sidewalk/grass strip before the lot line
-  boulevardHalfWidth: 10, // two 7 m carriageways and a 6 m planted median
+/** Horizontal fit of the concept to a lot (heights are never scaled). */
+export function houseScale(frontage, depth) {
+  const { width, depth: d } = CONCEPT_RESIDENCE.design;
+  return { x: Math.min(1, Math.max(0.35, (frontage - 0.3) / width)), z: Math.min(1, Math.max(0.35, (depth - 0.3) / d)) };
+}
+
+/** Built footprint of the concept (house, terraces, pool) in design metres. */
+export const CONCEPT_FOOTPRINT = Object.freeze({ x0: -7.65, x1: 7.65, d0: 3.3, d1: 30.6 });
+
+function footprintInside(frame, scale, polygon) {
+  const { x0, x1, d0, d1 } = CONCEPT_FOOTPRINT;
+  const pts = [];
+  for (let i = 0; i <= 8; i++) {
+    const x = x0 + ((x1 - x0) * i) / 8;
+    pts.push([x, d0], [x, d1]);
+  }
+  for (let i = 1; i < 16; i++) {
+    const d = d0 + ((d1 - d0) * i) / 16;
+    pts.push([x0, d], [x1, d]);
+  }
+  return pts.every(([x, d]) => pointInPolygon(lotToWorld(frame, x * scale.x, d * scale.z), polygon));
+}
+
+/**
+ * Places the concept on a lot: the street frame may move inward (curved
+ * fronts) or sideways (corner lots), and the plan is shrunk only as far as
+ * needed for the whole footprint to sit inside the surveyed polygon.
+ */
+function fitConcept(quad, polygon) {
+  const [f0, f1, b1, b0] = quad;
+  const frontage = dist(f0, f1);
+  const base = lotFrame(quad);
+  let best = null;
+  for (let shift = 0; shift <= 5.001; shift += 0.5) {
+    for (const side of [0, -1.5, 1.5, -3, 3]) {
+      const move = (p) => ({ x: p.x + base.inward.x * shift + base.right.x * side, z: p.z + base.inward.z * shift + base.right.z * side });
+      const frame = lotFrame([move(f0), move(f1), move(b1), move(b0)]);
+      const nominal = houseScale(frontage, frame.depth);
+      for (let kz = 1; kz >= 0.6; kz -= 0.05) {
+        for (let kx = 1; kx >= 0.7; kx -= 0.1) {
+          const scale = { x: nominal.x * kx, z: nominal.z * kz };
+          if (scale.x < 0.35 || scale.z < 0.35) continue;
+          // Prefer the largest plan, then the least distorted, then the least moved.
+          const score = scale.x * scale.z - Math.abs(Math.log(scale.x / scale.z)) * 0.02 - shift * 0.002 - Math.abs(side) * 0.003;
+          if (best && score <= best.score) continue;
+          if (footprintInside(frame, scale, polygon)) best = { frame, scale, score };
+        }
+      }
+    }
+  }
+  if (!best) throw new Error('The concept does not fit the lot');
+  return best;
+}
+
+export const LOTS = SURVEYED_LOTS.map((s) => {
+  const fit = fitConcept(s.frameQuad, s.polygon);
+  const frontage = dist(s.frameQuad[0], s.frameQuad[1]);
+  const known = KNOWN_AVAILABILITY[s.id];
+  return {
+    id: s.id,
+    block: s.block,
+    number: s.number,
+    brochureBlock: BROCHURE_BLOCK[s.block],
+    polygon: s.polygon,
+    corners: s.corners,
+    centroid: polygonCentroid(s.polygon),
+    // Street frame of the house placement (lot-local x across, d into the lot).
+    frame: fit.frame,
+    frontage,
+    depth: fit.frame.depth,
+    houseScale: fit.scale,
+    sceneAreaM2: polygonArea(s.polygon),
+    survey: { ownAreaM2: s.areaM2, commonAreaM2: s.commonAreaM2, totalAreaM2: s.totalAreaM2, sharePct: s.sharePct },
+    commercial: {
+      areaM2: s.areaM2,
+      priceUSD: null,
+      availability: known?.value ?? null,
+      availabilitySource: known?.source ?? null,
+      financing: null,
+    },
+  };
 });
-
-const LOT = { width: 20, depth: 40 };
-
-export const lakeRoad = createPath([
-  { x: -232, z: 46 },
-  { x: -120, z: -6 },
-  { x: 0, z: -24 },
-  { x: 120, z: -6 },
-  { x: 232, z: 46 },
-]);
-
-export const boulevard = createPath([
-  { x: 0, z: 300 },
-  { x: 0, z: 120 },
-  { x: 0, z: -20 },
-]);
-
-const apex = lakeRoad.length / 2;
-const lakeSetback = ROAD.laneWidth / 2 + ROAD.verge;
-const boulevardSetback = ROAD.boulevardHalfWidth + ROAD.verge;
-
-/** Lots generated from the illustrative road layout. */
-export const LOTS = [
-  // Lakefront (north side of the avenue). A green is left open at the junction.
-  ...layoutLots(lakeRoad, { side: -1, from: 18, to: lakeRoad.length - 18, ...LOT, setback: lakeSetback, block: 'A', skip: [[apex - 30, apex + 30]] }),
-  // Inland (south side), clear of the boulevard.
-  ...layoutLots(lakeRoad, { side: 1, from: 18, to: lakeRoad.length - 18, ...LOT, setback: lakeSetback, block: 'B', skip: [[apex - 42, apex + 42]] }),
-  // Along the entrance boulevard.
-  ...layoutLots(boulevard, { side: 1, from: 60, to: 250, ...LOT, setback: boulevardSetback, block: 'C' }),
-  ...layoutLots(boulevard, { side: -1, from: 60, to: 250, ...LOT, setback: boulevardSetback, block: 'D' }),
-].map((lot) => ({
-  ...lot,
-  // Commercial data: unknown until the official inventory is integrated.
-  commercial: { areaM2: null, priceUSD: null, availability: null, financing: null },
-}));
 
 export function findLot(id) {
   return LOTS.find((l) => l.id === id) || null;
 }
 
-/** Shoreline of the illustrative lake: beyond the lakefront lots, with natural variation. */
-export function lakeShore() {
-  const pts = [];
-  const offset = lakeSetback + LOT.depth;
-  const steps = 64;
-  for (let i = 0; i <= steps; i++) {
-    const s = (i / steps) * lakeRoad.length;
-    const p = lakeRoad.pointAt(s);
-    const n = lakeRoad.normalAt(s, -1);
-    const wobble = 9 + 6 * Math.sin(i * 0.9) + 4 * Math.sin(i * 2.3 + 1.1);
-    pts.push({ x: p.x + n.x * (offset + wobble), z: p.z + n.z * (offset + wobble) });
-  }
-  return pts;
+export const COMMON_AREAS = COMMON_PARCELS.map((c) => ({ ...c, centroid: polygonCentroid(c.polygon) }));
+
+// --- Site geometry (local metres, +x east, +z south) --------------------------
+
+/** Title boundary through the four monuments (1 SE, 2 NE, 3 NW, 4 SW). */
+export const SITE = Object.freeze([MONUMENTS['1'], MONUMENTS['2'], MONUMENTS['3'], MONUMENTS['4']]);
+
+export { ROADS, NAUTICAL_ACCESS, ENTRANCE_PAD, RIVER_EDGE, MONUMENTS };
+
+export function insideSite(p) {
+  return pointInPolygon(p, SITE);
 }
 
-/** Closed lake polygon: the shoreline plus the far side of the water body. */
-export function lakePolygon() {
-  const shore = lakeShore();
-  const first = shore[0];
-  const last = shore[shore.length - 1];
+const along = (a, b, t, off = 0) => {
+  const l = dist(a, b);
+  const ux = (b.x - a.x) / l;
+  const uz = (b.z - a.z) / l;
+  // `off` is to the left of a→b (outside the site for the edges used below).
+  return { x: a.x + ux * t - uz * off, z: a.z + uz * t + ux * off };
+};
+
+/**
+ * Public streets around the site, from the plan's surroundings: "Calle" along
+ * the southern boundary and the street the main avenue opens onto in the west.
+ * Their surface is not stated on the plan; they are shown as red-earth roads,
+ * as on the plan's satellite image.
+ */
+export const OUTSIDE_STREETS = (() => {
+  const [m1, , m3, m4] = SITE;
+  const south = [along(m4, m1, -260, 6), along(m4, m1, dist(m4, m1) - 6, 6)];
+  const west = [along(m4, m3, -420, -6), along(m4, m3, dist(m4, m3) + 140, -6)];
   return [
-    ...shore,
-    { x: last.x + 120, z: last.z - 40 },
-    { x: last.x + 160, z: -260 },
-    { x: 220, z: -420 },
-    { x: -40, z: -470 },
-    { x: -260, z: -400 },
-    { x: first.x - 150, z: -250 },
-    { x: first.x - 110, z: first.z - 40 },
+    { id: 'calle-sur', width: 8, points: south },
+    { id: 'calle-oeste', width: 8, points: west },
   ];
+})();
+
+/** The lake: the river edge from the plan, then the open water of the Acaray reservoir to the east. */
+export function lakePolygon() {
+  const first = RIVER_EDGE[0];
+  const last = RIVER_EDGE[RIVER_EDGE.length - 1];
+  // Beyond the surveyed edge the shoreline is not part of the plan: a natural,
+  // irregular outline is drawn so the water body does not read as a polygon.
+  const far = [
+    { x: last.x + 40, z: last.z + 120 },
+    { x: last.x + 260, z: last.z + 420 },
+    { x: 1500, z: 520 },
+    { x: 1700, z: -500 },
+    { x: 700, z: -1100 },
+    { x: first.x + 60, z: first.z - 420 },
+    { x: first.x - 10, z: first.z - 140 },
+    first,
+  ];
+  const out = [...RIVER_EDGE];
+  let prev = last;
+  let k = 0;
+  for (const p of far) {
+    const l = dist(prev, p);
+    const n = Math.max(1, Math.round(l / 30));
+    const nx = -(p.z - prev.z) / l;
+    const nz = (p.x - prev.x) / l;
+    for (let i = 1; i <= n; i++) {
+      const t = i / n;
+      // Fade the wobble out where the outline rejoins the surveyed edge.
+      const fade = Math.min(1, dist(prev, first) / 120, dist(p, first) / 120 + (1 - t));
+      const w = (Math.sin(k * 0.73) * 9 + Math.sin(k * 1.91 + 1.3) * 5) * (p === first ? fade * (1 - t) : fade);
+      if (!(p === first && i === n)) out.push({ x: prev.x + (p.x - prev.x) * t + nx * w, z: prev.z + (p.z - prev.z) * t + nz * w });
+      k++;
+    }
+    prev = p;
+  }
+  return out;
 }

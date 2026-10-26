@@ -1,4 +1,4 @@
-// Ground, roads and lake of the illustrative masterplan.
+// Ground, roads and lake of the surveyed masterplan.
 //
 // The terrain is one warped grid (dense near the development, coarse towards the
 // horizon). Heights are flat inside the development so lots and slabs sit level,
@@ -8,7 +8,7 @@
 import * as THREE from 'three';
 import { fbm } from '../../core/noise.js';
 import { distanceToPolyline, pointInPolygon } from '../../core/lot-layout.js';
-import { lakeRoad, boulevard, lakePolygon, ROAD } from '../../data/viva-lago.js';
+import { SITE, ROADS, NAUTICAL_ACCESS, ENTRANCE_PAD, OUTSIDE_STREETS, lakePolygon, insideSite } from '../../data/viva-lago.js';
 import { TILE_M } from '../assets.js';
 
 export const WATER_LEVEL = -0.28;
@@ -18,18 +18,11 @@ const smooth = (e0, e1, x) => {
   return t * t * (3 - 2 * t);
 };
 
-function subsample(points, step) {
-  const out = [];
-  for (let i = 0; i < points.length; i += step) out.push(points[i]);
-  out.push(points[points.length - 1]);
-  return out;
-}
-
 export class TerrainModel {
   constructor() {
-    this.roads = [subsample(lakeRoad.points, 12), subsample(boulevard.points, 12)];
-    // Access road continuing south beyond the boulevard, out of the development.
-    this.accessRoad = [{ x: 0, z: 300 }, { x: -12, z: 700 }, { x: -40, z: 1400 }];
+    this.site = SITE;
+    this.siteRing = [...SITE, SITE[0]];
+    this.streets = OUTSIDE_STREETS;
     this.lake = lakePolygon();
     this.lakeRing = [...this.lake, this.lake[0]];
     let minX = Infinity;
@@ -45,9 +38,17 @@ export class TerrainModel {
     this.lakeBox = { minX: minX - 40, maxX: maxX + 40, minZ: minZ - 40, maxZ: maxZ + 40 };
   }
 
+  /** Distance to the development (0 inside the title boundary). */
   devDistance(x, z) {
     const p = { x, z };
-    return Math.min(distanceToPolyline(p, this.roads[0]), distanceToPolyline(p, this.roads[1]));
+    return insideSite(p) ? 0 : distanceToPolyline(p, this.siteRing);
+  }
+
+  /** Distance to the nearest public street centreline outside the site. */
+  streetDistance(x, z) {
+    let d = Infinity;
+    for (const s of this.streets) d = Math.min(d, distanceToPolyline({ x, z }, s.points) - s.width / 2);
+    return d;
   }
 
   /** Signed distance to the shoreline: negative inside the lake. */
@@ -60,8 +61,7 @@ export class TerrainModel {
 
   sample(x, z) {
     const dev = this.devDistance(x, z);
-    const accessD = distanceToPolyline({ x, z }, this.accessRoad);
-    const flatness = Math.min(smooth(64, 240, dev), smooth(12, 60, accessD));
+    const flatness = Math.min(smooth(18, 220, dev), smooth(4, 40, this.streetDistance(x, z)));
     const rolling = fbm(x * 0.0032, z * 0.0032, 4) * 9 + fbm(x * 0.013, z * 0.013, 3) * 1.4;
     let h = rolling * flatness;
     const lake = this.lakeDistance(x, z);
@@ -74,8 +74,15 @@ export class TerrainModel {
       h = WATER_LEVEL - 0.12 + (h - (WATER_LEVEL - 0.12)) * t;
       shore = 1 - smooth(1, 5, lake);
     }
+    // The development itself is level; the riverbank falls away outside it.
+    if (dev <= 0) {
+      h = 0;
+      shore = 0;
+    } else if (lake > 0) {
+      h *= smooth(0, 3, dev);
+    }
     // 1 = mowed development lawn, 0 = open field.
-    const mowed = 1 - smooth(70, 120, dev);
+    const mowed = 1 - smooth(3, 14, dev);
     return { h, mowed, shore };
   }
 }
@@ -420,10 +427,37 @@ function densify(points, step = 2) {
   return out;
 }
 
-function pathPoints(path, from = 0, to = path.length, step = 2) {
-  const out = [];
-  for (let s = from; s <= to + 1e-6; s += step) out.push(path.pointAt(s));
-  return out;
+/** Flat polygon with metre UVs (world x / -z), lying at height y. */
+function flatPolygon(points, y) {
+  const shape = new THREE.Shape(points.map((p) => new THREE.Vector2(p.x, -p.z)));
+  const g = new THREE.ShapeGeometry(shape, 8);
+  g.rotateX(-Math.PI / 2);
+  const p = g.attributes.position;
+  const uv = g.attributes.uv;
+  for (let k = 0; k < uv.count; k++) uv.setXY(k, p.getX(k), -p.getZ(k));
+  g.translate(0, y, 0);
+  return g;
+}
+
+/** Outline segments of a polygon that are not on the title boundary (those get curbs). */
+function curbRuns(points, boundaryRing) {
+  const runs = [];
+  let run = [];
+  for (let i = 0; i <= points.length; i++) {
+    const a = points[i % points.length];
+    const b = points[(i + 1) % points.length];
+    const mid = { x: (a.x + b.x) / 2, z: (a.z + b.z) / 2 };
+    const onBoundary = distanceToPolyline(mid, boundaryRing) < 0.6;
+    if (!onBoundary && i < points.length) {
+      if (!run.length) run.push(a);
+      run.push(b);
+    } else if (run.length) {
+      runs.push(run);
+      run = [];
+    }
+  }
+  if (run.length) runs.push(run);
+  return runs;
 }
 
 export function buildRoads(model, assets, materials) {
@@ -441,12 +475,17 @@ export function buildRoads(model, assets, materials) {
     polygonOffsetUnits: -2,
   });
   if (!asphalt.map) asphalt.color.set('#3b3b3d');
-  const curbMat = materials.concreteLight;
-  const medianMat = new THREE.MeshStandardMaterial({
-    map: assets.tiled('grass_albedo', TILE_M.grass),
-    color: new THREE.Color(0.92, 1.0, 0.9),
-    roughness: 0.95,
+  const earth = new THREE.MeshStandardMaterial({
+    map: assets.tiled('soil_albedo', TILE_M.soil),
+    normalMap: assets.tiled('soil_normal', TILE_M.soil),
+    color: new THREE.Color(0.64, 0.54, 0.5),
+    roughness: 0.97,
+    polygonOffset: true,
+    polygonOffsetFactor: -2,
+    polygonOffsetUnits: -2,
   });
+  if (!earth.map) earth.color.set('#8a4329');
+  const curbMat = materials.concreteLight;
 
   const add = (geo, mat, { cast = false } = {}) => {
     const m = new THREE.Mesh(geo, mat);
@@ -456,40 +495,28 @@ export function buildRoads(model, assets, materials) {
     return m;
   };
 
-  // Lakeside avenue with turning circles at both ends.
-  const avenue = pathPoints(lakeRoad);
-  const half = ROAD.laneWidth / 2;
-  add(ribbon(avenue, half, 0.02), asphalt);
-  add(curb(avenue, half + 0.075), curbMat);
-  add(curb(avenue, -half - 0.075), curbMat);
-  for (const end of [lakeRoad.pointAt(0), lakeRoad.pointAt(lakeRoad.length)]) {
-    const disc = new THREE.CircleGeometry(11, 48);
-    disc.rotateX(-Math.PI / 2);
-    disc.translate(end.x, 0.021, end.z);
-    const uv = disc.attributes.uv;
-    const p = disc.attributes.position;
-    for (let k = 0; k < uv.count; k++) uv.setXY(k, p.getX(k), p.getZ(k));
-    add(disc, asphalt);
-    const ring = [];
-    for (let a = 0; a <= 64; a++) ring.push({ x: end.x + Math.cos((a / 64) * Math.PI * 2) * 11, z: end.z + Math.sin((a / 64) * Math.PI * 2) * 11 });
-    add(curb(ring, 0.075), curbMat);
+  // Main avenue and streets 1 and 2: one surveyed road parcel, curbed except
+  // where it meets the title boundary (the entrance).
+  add(flatPolygon(ROADS, 0.02), asphalt);
+  for (const run of curbRuns(ROADS, model.siteRing)) add(curb(densify(run, 1), 0.075), curbMat);
+
+  // Nautical access: a paved walk down to the river.
+  add(flatPolygon(NAUTICAL_ACCESS, 0.025), materials.pavers);
+  for (const run of curbRuns(NAUTICAL_ACCESS, model.siteRing)) add(curb(densify(run, 1), 0.06, { height: 0.08 }), curbMat);
+
+  // Entrance pad marked "ACCESO" on the plan, beside the administration.
+  if (ENTRANCE_PAD.length) add(flatPolygon(ENTRANCE_PAD, 0.03), materials.concreteLight);
+
+  // Public red-earth streets outside the site.
+  for (const s of model.streets) {
+    const pts = densify(s.points, 3).map((p) => ({ ...p }));
+    const g = ribbon(pts, s.width / 2, 0.0);
+    // Follow the terrain (the streets leave the levelled site).
+    const pos = g.attributes.position;
+    for (let k = 0; k < pos.count; k++) pos.setY(k, model.sample(pos.getX(k), pos.getZ(k)).h + 0.03);
+    g.computeVertexNormals();
+    add(g, earth);
   }
-
-  // Entrance boulevard: 20 m carriageway with a 6 m planted median.
-  const blvd = pathPoints(boulevard);
-  add(ribbon(blvd, ROAD.boulevardHalfWidth, 0.022), asphalt);
-  add(curb(blvd, ROAD.boulevardHalfWidth + 0.075), curbMat);
-  add(curb(blvd, -ROAD.boulevardHalfWidth - 0.075), curbMat);
-  const median = pathPoints(boulevard, 0, boulevard.length - 34);
-  add(ribbon(median, 3, 0.15), medianMat);
-  add(curb(median, 3, { height: 0.16 }), curbMat);
-  add(curb(median, -3, { height: 0.16 }), curbMat);
-
-  // Two-lane access road out of the development.
-  const access = densify(model.accessRoad, 3);
-  add(ribbon(access, 3.5, 0.02), asphalt);
-
-  group.userData.medianPoints = median;
   return group;
 }
 

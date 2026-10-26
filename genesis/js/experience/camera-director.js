@@ -6,13 +6,18 @@ import { easeInOutCubic, easeInOutSine, clamp, lerp } from '../core/easing.js';
 import { lotToWorld } from '../core/lot-layout.js';
 
 export const OVERVIEW_POSE = Object.freeze({
-  position: new THREE.Vector3(-185, 88, 268),
-  target: new THREE.Vector3(14, 0, -28),
+  position: new THREE.Vector3(-112, 64, 150),
+  target: new THREE.Vector3(26, 0, -6),
 });
 
-/** Converts lot-local design coordinates (x, y, d) to a world Vector3. */
+/**
+ * Converts lot-local design coordinates (x, y, d) to a world Vector3. Design
+ * coordinates follow the residence as it is fitted to the lot (houseScale), so
+ * authored shots frame the house the same way on narrow and wide lots.
+ */
 export function lotPoint(lot, x, y, d) {
-  const p = lotToWorld(lot.frame, x, d);
+  const k = lot.houseScale || { x: 1, z: 1 };
+  const p = lotToWorld(lot.frame, x * k.x, d * k.z);
   return new THREE.Vector3(p.x, y, p.z);
 }
 
@@ -100,11 +105,11 @@ export class CameraDirector {
     c.enabled = true;
     if (mode === 'overview') {
       c.enablePan = true;
-      c.minDistance = 70;
-      c.maxDistance = 720;
+      c.minDistance = 40;
+      c.maxDistance = 520;
       c.minPolarAngle = THREE.MathUtils.degToRad(18);
       c.maxPolarAngle = THREE.MathUtils.degToRad(80);
-      this.bounds = { min: new THREE.Vector3(-260, 0, -160), max: new THREE.Vector3(260, 0, 320) };
+      this.bounds = { min: new THREE.Vector3(-200, 0, -150), max: new THREE.Vector3(240, 0, 170) };
     } else if (mode === 'lot') {
       c.enablePan = true;
       c.minDistance = 8;

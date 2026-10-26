@@ -91,7 +91,7 @@ test('the residence stays inside its lot (plus driveway and path across the verg
 
 test('authored shots: eye-level reveal, cameras outside the house, sunny side preferred', () => {
   const sun = sunDirection();
-  for (const id of ['A-04', 'B-05', 'C-03', 'D-06']) {
+  for (const id of ['A-02', 'B-05', 'C-03', 'D-03', 'E-12']) {
     const lot = findLot(id);
     const side = sunnySide(lot, sun);
     const shots = lotShots(lot, side, 16 / 9);
@@ -103,7 +103,8 @@ test('authored shots: eye-level reveal, cameras outside the house, sunny side pr
       const dz = pose.position.z - lot.frame.origin.z;
       const x = dx * lot.frame.right.x + dz * lot.frame.right.z;
       const d = dx * lot.frame.inward.x + dz * lot.frame.inward.z;
-      const inside = x > -8 && x < 8 && d > 5 && d < 24.5 && pose.position.y < 8;
+      const k = lot.houseScale;
+      const inside = x > -8 * k.x && x < 8 * k.x && d > 5 * k.z && d < 24.5 * k.z && pose.position.y < 8;
       assert.ok(!inside, `${id} ${name} camera is outside the house`);
     }
     const portrait = lotShots(lot, side, 9 / 16);

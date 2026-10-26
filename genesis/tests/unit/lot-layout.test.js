@@ -9,7 +9,8 @@ import {
   distanceToPolyline,
   lotToWorld,
 } from '../../js/core/lot-layout.js';
-import { LOTS, ROAD, lakeRoad, boulevard, lakePolygon, CONCEPT_RESIDENCE, DEVELOPMENT, findLot } from '../../js/data/viva-lago.js';
+import { LOTS, ROADS, SITE, COMMON_AREAS, CONCEPT_FOOTPRINT, lakePolygon, DEVELOPMENT, findLot } from '../../js/data/viva-lago.js';
+import { SURVEYED_LOTS } from '../../js/data/masterplan.js';
 
 test('path is arc-length parametrised', () => {
   const p = createPath([{ x: 0, z: 0 }, { x: 100, z: 0 }]);
@@ -61,40 +62,88 @@ test('frame rotation points an object front (+Z) at the street', () => {
   assert.ok(Math.abs(-Math.sin(r) - lot.frame.right.z) < 1e-9);
 });
 
-test('development lots: unique ids, no overlaps, clear of roads and lake', () => {
-  assert.ok(LOTS.length >= 30, `has a meaningful number of lots (${LOTS.length})`);
+/** Points spread over a polygon's interior (for overlap tests on non-convex lots). */
+function interiorSamples(poly, step = 1.5) {
+  const xs = poly.map((p) => p.x);
+  const zs = poly.map((p) => p.z);
+  const out = [];
+  for (let x = Math.min(...xs) + step / 2; x < Math.max(...xs); x += step) {
+    for (let z = Math.min(...zs) + step / 2; z < Math.max(...zs); z += step) {
+      const p = { x, z };
+      if (pointInPolygon(p, poly) && distanceToPolyline(p, [...poly, poly[0]]) > 0.3) out.push(p);
+    }
+  }
+  return out;
+}
+
+// Cuadro de superficie of the plan (área propia, m²).
+const PLAN_TOTALS = { A: 1106.98, B: 4236.24, C: 1688.96, D: 829.6, E: 4538.99 };
+
+test('surveyed lots: the 32 lots of the plan, with its numbering and surfaces', () => {
+  assert.equal(LOTS.length, 32);
   assert.equal(new Set(LOTS.map((l) => l.id)).size, LOTS.length);
-  for (let i = 0; i < LOTS.length; i++) {
-    for (let j = i + 1; j < LOTS.length; j++) {
-      const overlap = convexIntersectionArea(LOTS[i].polygon, LOTS[j].polygon);
-      assert.ok(overlap < 0.5, `${LOTS[i].id} overlaps ${LOTS[j].id} by ${overlap.toFixed(2)} m²`);
-    }
+  const counts = Object.fromEntries(['A', 'B', 'C', 'D', 'E'].map((b) => [b, LOTS.filter((l) => l.block === b).length]));
+  assert.deepEqual(counts, { A: 3, B: 11, C: 4, D: 2, E: 12 });
+  for (const [block, total] of Object.entries(PLAN_TOTALS)) {
+    const sum = LOTS.filter((l) => l.block === block).reduce((s, l) => s + l.commercial.areaM2, 0);
+    assert.ok(Math.abs(sum - total) < 0.02, `manzana ${block}: ${sum.toFixed(2)} vs ${total}`);
   }
+  const own = LOTS.reduce((s, l) => s + l.commercial.areaM2, 0);
+  assert.ok(Math.abs(own - 12400.77) < 0.05, `área propia ${own}`);
+  // The drawn polygons agree with the tabulated surfaces.
+  for (const lot of LOTS) {
+    const drawn = polygonArea(lot.polygon);
+    assert.ok(Math.abs(drawn - lot.commercial.areaM2) / lot.commercial.areaM2 < 0.01, `${lot.id}: drawn ${drawn.toFixed(1)} vs ${lot.commercial.areaM2}`);
+  }
+  // Title boundary: 2 hectares.
+  assert.ok(Math.abs(polygonArea(SITE) - 20000) < 60, `site ${polygonArea(SITE).toFixed(0)} m²`);
+  assert.equal(SURVEYED_LOTS.length, 32);
+});
+
+test('surveyed lots: inside the site, no overlaps, off the roads and out of the lake', () => {
   const lake = lakePolygon();
+  const samples = new Map(LOTS.map((l) => [l.id, interiorSamples(l.polygon)]));
   for (const lot of LOTS) {
-    for (const p of lot.polygon) {
-      assert.ok(distanceToPolyline(p, lakeRoad.points) >= ROAD.laneWidth / 2 + 1, `${lot.id} clear of the avenue`);
-      assert.ok(distanceToPolyline(p, boulevard.points) >= ROAD.boulevardHalfWidth + 1, `${lot.id} clear of the boulevard`);
-      assert.ok(!pointInPolygon(p, lake), `${lot.id} corner is not in the lake`);
+    const pts = samples.get(lot.id);
+    assert.ok(pts.length > 50, `${lot.id} sampled`);
+    for (const p of pts) {
+      assert.ok(pointInPolygon(p, SITE), `${lot.id} inside the title boundary`);
+      assert.ok(!pointInPolygon(p, ROADS), `${lot.id} off the roads`);
+      assert.ok(!pointInPolygon(p, lake), `${lot.id} out of the lake`);
+    }
+    for (const other of [...LOTS.filter((l) => l !== lot && Math.hypot(l.centroid.x - lot.centroid.x, l.centroid.z - lot.centroid.z) < 80), ...COMMON_AREAS]) {
+      const hit = pts.find((p) => pointInPolygon(p, other.polygon));
+      assert.ok(!hit, `${lot.id} overlaps ${other.id}`);
     }
   }
 });
 
-test('the conceptual residence fits inside every lot', () => {
-  const { width, depthFrom, depthTo } = CONCEPT_RESIDENCE.footprint;
+test('every lot faces a street, and the fitted residence stays inside it', () => {
+  const roadRing = [...ROADS, ROADS[0]];
   for (const lot of LOTS) {
-    for (const [x, d] of [[-width / 2, depthFrom], [width / 2, depthFrom], [width / 2, depthTo], [-width / 2, depthTo]]) {
-      assert.ok(pointInPolygon(lotToWorld(lot.frame, x, d), lot.polygon), `${lot.id} contains footprint corner ${x},${d}`);
+    // The frame starts at the street (moved in on curved fronts such as A-03).
+    const front = lotToWorld(lot.frame, 0, 0);
+    assert.ok(distanceToPolyline(front, roadRing) < 7.5, `${lot.id} front is on a street (${distanceToPolyline(front, roadRing).toFixed(2)} m)`);
+    const k = lot.houseScale;
+    assert.ok(k.x >= 0.35 && k.x <= 1 && k.z >= 0.35 && k.z <= 1, `${lot.id} scale ${k.x},${k.z}`);
+    const { x0, x1, d0, d1 } = CONCEPT_FOOTPRINT;
+    for (const [x, d] of [[x0, d0], [x1, d0], [x1, d1], [x0, d1], [0, d0], [0, d1]]) {
+      const p = lotToWorld(lot.frame, x * k.x, d * k.z);
+      assert.ok(pointInPolygon(p, lot.polygon), `${lot.id} contains footprint point ${x},${d}`);
     }
   }
 });
 
-test('data honesty: development is conceptual and no commercial value is invented', () => {
-  assert.equal(DEVELOPMENT.dataStatus, 'conceptual');
-  for (const v of Object.values(DEVELOPMENT.facts)) assert.equal(v, null);
+test('data honesty: surveyed layout, no prices, availability only where documented', () => {
+  assert.equal(DEVELOPMENT.dataStatus, 'surveyed');
+  assert.equal(DEVELOPMENT.facts.lotCount, 32);
+  assert.equal(DEVELOPMENT.facts.financing, null);
   for (const lot of LOTS) {
-    assert.deepEqual(lot.commercial, { areaM2: null, priceUSD: null, availability: null, financing: null });
+    assert.equal(lot.commercial.priceUSD, null);
+    assert.equal(lot.commercial.financing, null);
+    if (lot.commercial.availability) assert.ok(lot.commercial.availabilitySource, `${lot.id} availability has a source`);
   }
-  assert.equal(findLot('A-01').id, 'A-01');
+  assert.deepEqual(LOTS.filter((l) => l.commercial.availability).map((l) => [l.id, l.commercial.availability]), [['C-02', 'sold']]);
+  assert.equal(findLot('B-05').id, 'B-05');
   assert.equal(findLot('nope'), null);
 });

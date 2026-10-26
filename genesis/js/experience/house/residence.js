@@ -717,8 +717,13 @@ export function buildResidence(lib, plantKit, { lawnDetail = true } = {}) {
     }
     plants.forEach((p, i) => {
       const t0 = 0.87 + (i / plants.length) * 0.05;
+      // The residence group is scaled horizontally to fit each lot; a
+      // counter-scaled anchor keeps every plant's own proportions.
+      const anchor = new THREE.Group();
+      anchor.position.set(p.x, 0, -p.d);
+      anchor.userData.keepProportions = true;
+      group.add(anchor);
       const holder = new THREE.Group();
-      holder.position.set(p.x, 0, -p.d);
       holder.rotation.y = p.rot || 0;
       holder.userData.finalScale = p.scale || 1;
       for (const part of p.parts) {
@@ -727,7 +732,7 @@ export function buildResidence(lib, plantKit, { lawnDetail = true } = {}) {
         m.receiveShadow = true;
         holder.add(m);
       }
-      group.add(holder);
+      anchor.add(holder);
       components.push({ id: `plant-${i}`, stage: 'landscape', meshes: [], holder, shared: true, build: { type: 'grow', window: [t0, t0 + 0.03] } });
     });
 
@@ -818,6 +823,14 @@ export function buildResidence(lib, plantKit, { lawnDetail = true } = {}) {
     pool: POOL,
     // Lot-local rectangle where the terrain is cut away for the pool basin.
     terrainHole: { x0: POOL.x0 - 0.12, x1: POOL.x1 + 0.12, d0: POOL.d0 - 0.12, d1: POOL.d1 + 0.12 },
+    /** Fits the concept's plan to a lot (x across the frontage, z in depth); heights are kept. */
+    fitToLot(scale) {
+      group.scale.set(scale.x, 1, scale.z);
+      for (const child of group.children) {
+        if (child.userData.keepProportions) child.scale.set(1 / scale.x, 1, 1 / scale.z);
+      }
+      group.updateMatrixWorld(true);
+    },
     dispose() {
       const seen = new Set();
       group.traverse((o) => {

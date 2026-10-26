@@ -24,8 +24,8 @@ export function mountInquiryForm(container, { lotId = null, compact = false, onS
     'select',
     { id: `${uid}-lot`, name: 'lot' },
     h('option', { value: '' }, 'Sin lote específico'),
-    ...['A', 'B', 'C', 'D'].map((block) =>
-      h('optgroup', { label: `Manzana ${block} (ilustrativa)` }, ...LOTS.filter((l) => l.block === block).map((l) => h('option', { value: l.id }, `${lotLabel(l)} · ${l.id}`))),
+    ...['A', 'B', 'C', 'D', 'E'].map((block) =>
+      h('optgroup', { label: `Manzana ${block}` }, ...LOTS.filter((l) => l.block === block).map((l) => h('option', { value: l.id }, `${lotLabel(l)} · ${l.id}`))),
     ),
   );
   lotSelect.value = currentLot || '';

@@ -63,15 +63,17 @@ const gpuArgs = ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ig
   const page = await context.newPage();
   const errors = collectErrors(page);
 
-  await check('homepage renders headline, navigation and honest project facts', async () => {
+  await check('homepage renders headline, navigation and the surveyed project facts', async () => {
     await page.goto(base);
     await page.waitForLoadState('networkidle');
     assert.match(await page.textContent('h1'), /El comienzo de/);
     assert.equal(await page.locator('.nav a').count(), 4);
-    const pending = await page.locator('[data-project-facts] .pending').allTextContents();
-    assert.equal(pending.length, 5);
-    assert.ok(pending.every((t) => t === 'Pendiente de verificación'));
-    assert.ok(await page.locator('[data-plan-figure] svg polygon.lot').count() > 30, 'plan figure drawn from lot data');
+    const facts = await page.locator('[data-project-facts]').textContent();
+    assert.match(facts, /32 lotes en 5 manzanas/);
+    assert.match(facts, /20\.000 m²/);
+    assert.ok(!/USD|Gs\b|\$/.test(facts), 'no prices');
+    assert.deepEqual(await page.locator('[data-project-facts] .pending').allTextContents(), ['Consultar con un asesor']);
+    assert.equal(await page.locator('[data-plan-figure] svg polygon.lot').count(), 32, 'plan figure drawn from the surveyed lots');
     await snap(page, '01-home');
   });
 
@@ -147,13 +149,15 @@ const gpuArgs = ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ig
     assert.equal(await page.evaluate(async () => (await import('./js/explorer.js'))._debugExperience().playing), true);
   });
 
-  await check('finishing reveals the residence and the lot panel shows only verified data', async () => {
+  await check('finishing reveals the residence and the lot panel shows the plan surfaces, no prices', async () => {
     await page.click('.xp-build__controls .icon-btn:has-text("Ver terminada")');
     await waitState(page, ['complete', 'exploring']);
     await page.waitForSelector('.xp-details.is-visible');
     const rows = await page.locator('.xp-details .facts dd').allTextContents();
-    assert.equal(rows.length, 4);
-    assert.ok(rows.every((r) => r === 'Pendiente de verificación'), rows.join('|'));
+    assert.equal(rows[0], '384,00 m²', rows.join('|'));
+    assert.match(rows.join('|'), /619,32 m²/);
+    assert.ok(!rows.some((r) => /USD|Gs\b|\$/.test(r)), 'no prices');
+    assert.equal(rows.at(-1), 'Consultar con un asesor');
     assert.match(await page.locator('.xp-details .concept').textContent(), /No incluida en el precio del lote/);
     await snap(page, '06-complete');
   });
@@ -211,7 +215,7 @@ const gpuArgs = ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ig
   await check('without reduced motion the camera flies to the lot and construction starts by itself', async () => {
     await page.goto(`${base}tools/harness.html?clean&tier=low`);
     await page.waitForFunction(() => window.__ready === true, null, { timeout: 300000 });
-    await page.evaluate(() => window.xp.select('A-05'));
+    await page.evaluate(() => window.xp.select('E-05'));
     assert.equal(await page.evaluate(() => window.xp.state), 'approaching');
     await page.waitForFunction(() => window.xp.state === 'building', null, { timeout: 600000, polling: 1000 });
     await page.waitForFunction(() => window.xp.progress > 0, null, { timeout: 300000, polling: 1000 });
@@ -288,7 +292,8 @@ const gpuArgs = ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ig
     await page.click('.xp-fallback polygon.lot >> nth=7');
     await page.waitForSelector('.xp-details.is-visible');
     const rows = await page.locator('.xp-details .facts dd').allTextContents();
-    assert.ok(rows.every((r) => r === 'Pendiente de verificación'));
+    assert.match(rows[0], /^\d{3},\d{2} m²$/);
+    assert.ok(!rows.some((r) => /USD|Gs\b|\$/.test(r)), 'no prices');
     await page.keyboard.press('Tab');
     await page.waitForTimeout(700); // let the overlay finish fading in
     await snap(page, 'f01-fallback');

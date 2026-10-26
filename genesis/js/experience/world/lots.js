@@ -9,7 +9,8 @@ import { mulberry32 } from '../../core/noise.js';
 
 const IVORY = new THREE.Color('#f3ede2');
 const SURVEY = new THREE.Color('#e9dfc9');
-const LIME = new THREE.Color('#c6d63a');
+// Selection reads in the brand's lilac: green would vanish against the lawn.
+const LIME = new THREE.Color('#d4a3d7');
 
 export class LotLayer {
   /**
@@ -31,13 +32,19 @@ export class LotLayer {
       const pos = [];
       const tint = [];
       for (const lot of lots) {
-        const [a, b, c, d] = lot.polygon;
-        for (const p of [a, c, b, a, d, c]) pos.push(p.x, 0.0, p.z);
+        // Surveyed lots can have curved street fronts: triangulate the outline.
+        const contour = lot.polygon.map((p) => new THREE.Vector2(p.x, p.z));
+        const tris = THREE.ShapeUtils.triangulateShape(contour, []);
         const k = rnd() * 2 - 1;
         const w = rnd() * 2 - 1;
         // Some parcels freshly mown, some left longer and drier.
         const t = [1 + k * 0.1 + w * 0.05, 1 + k * 0.08, 1 + k * 0.04 - w * 0.08];
-        for (let i = 0; i < 6; i++) tint.push(...t);
+        for (const tri of tris) {
+          for (const i of tri) {
+            pos.push(contour[i].x, 0.0, contour[i].y);
+            tint.push(...t);
+          }
+        }
       }
       const g = new THREE.BufferGeometry();
       g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
@@ -112,7 +119,7 @@ export class LotLayer {
     // Concrete corner markers (deduplicated shared corners).
     const corners = new Map();
     for (const lot of lots) {
-      for (const c of lot.polygon) corners.set(`${c.x.toFixed(1)}:${c.z.toFixed(1)}`, c);
+      for (const c of lot.corners || lot.polygon) corners.set(`${c.x.toFixed(1)}:${c.z.toFixed(1)}`, c);
     }
     const markerGeo = new THREE.BoxGeometry(0.14, 0.32, 0.14);
     markerGeo.translate(0, 0.12, 0);

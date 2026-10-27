@@ -90,24 +90,50 @@ function bakeInto(root, material, { keep = [], shadow = true } = {}) {
 }
 
 // ------------------------------------------------------------------ people
+// Shared geometry for people: tapered limbs, a shaped torso, hands and a
+// neck, so figures read as people at the distances the camera sees them.
+const taper = (r0, r1, y0, y1, seg = 10) => new THREE.CylinderGeometry(r1, r0, y0 - y1, seg, 1).translate(0, (y0 + y1) / 2, 0);
+const lathe = (pts, flatten = 0.64) => new THREE.LatheGeometry(pts.map(([r, y]) => new THREE.Vector2(r, y)), 18).scale(1, 1, flatten);
 const GEO = {
-  limb: new THREE.CapsuleGeometry(0.062, 0.68, 4, 8).translate(0, -0.4, 0), // pivot at the hip
-  arm: new THREE.CapsuleGeometry(0.045, 0.5, 4, 8).translate(0, -0.29, 0), // pivot at the shoulder
-  torso: new THREE.CapsuleGeometry(0.155, 0.38, 4, 10),
-  head: new THREE.SphereGeometry(0.105, 14, 10),
-  hair: new THREE.SphereGeometry(0.11, 14, 8, 0, Math.PI * 2, 0, Math.PI * 0.55),
-  shoe: new THREE.BoxGeometry(0.09, 0.06, 0.22).translate(0, -0.03, 0.04),
+  thigh: taper(0.078, 0.056, 0, -0.43),
+  shinPant: taper(0.054, 0.042, -0.43, -0.83),
+  shinSkin: taper(0.05, 0.036, -0.43, -0.83),
+  knee: new THREE.SphereGeometry(0.056, 10, 8).translate(0, -0.43, 0),
+  thighShort: taper(0.08, 0.07, 0, -0.2),
+  thighSkin: taper(0.07, 0.055, -0.2, -0.43),
+  shoe: new THREE.CapsuleGeometry(0.045, 0.14, 3, 8).rotateX(Math.PI / 2).scale(1.05, 0.75, 1).translate(0, -0.86, 0.045),
+  upperArm: taper(0.047, 0.04, 0, -0.29),
+  sleeve: taper(0.056, 0.05, 0.02, -0.13),
+  forearm: taper(0.038, 0.03, -0.29, -0.53),
+  elbow: new THREE.SphereGeometry(0.04, 8, 6).translate(0, -0.29, 0),
+  hand: new THREE.SphereGeometry(0.042, 10, 8).scale(0.8, 1.25, 0.55).translate(0, -0.58, 0),
+  pelvis: lathe([[0, -0.03], [0.12, -0.02], [0.142, 0.06], [0.135, 0.14], [0, 0.16]]),
+  torso: lathe([[0, 0.12], [0.13, 0.13], [0.128, 0.24], [0.14, 0.36], [0.168, 0.47], [0.17, 0.53], [0.13, 0.58], [0, 0.6]]),
+  neck: taper(0.048, 0.044, 0.57, 0.69, 10),
+  head: new THREE.SphereGeometry(0.1, 18, 14).scale(0.88, 1.1, 0.98).translate(0, 0.79, 0.005),
+  hairShort: new THREE.SphereGeometry(0.104, 18, 10, 0, Math.PI * 2, 0, Math.PI * 0.52).scale(0.9, 1.12, 1.02).translate(0, 0.8, -0.006),
+  hairLong: new THREE.CapsuleGeometry(0.085, 0.2, 4, 10).scale(1.1, 1, 0.55).translate(0, 0.72, -0.07),
+  ponytail: new THREE.CapsuleGeometry(0.035, 0.16, 3, 8).rotateX(0.5).translate(0, 0.78, -0.13),
+  cap: new THREE.SphereGeometry(0.108, 16, 8, 0, Math.PI * 2, 0, Math.PI * 0.42).scale(0.92, 1.0, 1.02).translate(0, 0.81, 0),
+  brim: new THREE.CylinderGeometry(0.07, 0.07, 0.012, 14, 1, false, -Math.PI / 2, Math.PI).scale(1.2, 1, 1.25).translate(0, 0.855, 0.08),
 };
 
-/** A stylised person (1.72 m) with hip and shoulder pivots for gait cycles. */
-function person(mats, k) {
+/**
+ * A person about 1.7–1.8 m tall with hip and shoulder pivots for gait
+ * cycles. Outfit and hair vary with k; `sport` dresses for running.
+ */
+function person(mats, k, { sport = false } = {}) {
   const g = new THREE.Group();
   const top = pick(mats.tops, k * 3 + 1);
   const bottom = pick(mats.bottoms, k * 5 + 2);
   const skin = pick(mats.skin, k * 7);
-  const mk = (geo, mat) => {
+  const hairMat = pick(mats.hair, k);
+  const shorts = sport || k % 4 === 1;
+  const shortSleeves = sport || k % 3 !== 0;
+  const hairStyle = ['short', 'long', 'ponytail', 'short', 'cap'][k % 5];
+  const mk = (geo, mat, cast = true) => {
     const mesh = new THREE.Mesh(geo, mat);
-    mesh.castShadow = true;
+    mesh.castShadow = cast;
     return mesh;
   };
   const hips = new THREE.Group();
@@ -115,40 +141,41 @@ function person(mats, k) {
   g.add(hips);
   const legs = [-1, 1].map((s) => {
     const leg = new THREE.Group();
-    leg.position.set(0.09 * s, 0, 0);
-    leg.add(mk(GEO.limb, bottom));
-    const shoe = mk(GEO.shoe, mats.shoes);
-    shoe.position.y = -0.86;
-    leg.add(shoe);
+    leg.position.set(0.085 * s, 0, 0);
+    if (shorts) leg.add(mk(GEO.thighShort, bottom), mk(GEO.thighSkin, skin), mk(GEO.knee, skin), mk(GEO.shinSkin, skin));
+    else leg.add(mk(GEO.thigh, bottom), mk(GEO.knee, bottom), mk(GEO.shinPant, bottom));
+    leg.add(mk(GEO.shoe, mats.shoes));
     hips.add(leg);
     return leg;
   });
   const chest = new THREE.Group();
   hips.add(chest);
-  const torso = mk(GEO.torso, top);
-  torso.position.y = 0.36;
-  chest.add(torso);
-  const head = mk(GEO.head, skin);
-  head.position.y = 0.75;
-  chest.add(head);
-  const hair = mk(GEO.hair, pick(mats.hair, k));
-  hair.position.y = 0.765;
-  chest.add(hair);
+  chest.add(mk(GEO.pelvis, bottom), mk(GEO.torso, top), mk(GEO.neck, skin), mk(GEO.head, skin));
+  if (hairStyle === 'cap') chest.add(mk(GEO.cap, top), mk(GEO.brim, top));
+  else {
+    chest.add(mk(GEO.hairShort, hairMat));
+    if (hairStyle === 'long') chest.add(mk(GEO.hairLong, hairMat));
+    if (hairStyle === 'ponytail') chest.add(mk(GEO.ponytail, hairMat));
+  }
   const arms = [-1, 1].map((s) => {
     const arm = new THREE.Group();
-    arm.position.set(0.21 * s, 0.56, 0);
-    arm.rotation.z = 0.08 * s;
-    arm.add(mk(GEO.arm, k % 3 ? top : skin));
+    arm.position.set(0.195 * s, 0.53, 0);
+    arm.rotation.z = 0.07 * s;
+    arm.add(mk(GEO.upperArm, shortSleeves ? skin : top), mk(GEO.elbow, shortSleeves ? skin : top), mk(GEO.forearm, shortSleeves ? skin : top), mk(GEO.hand, skin));
+    if (shortSleeves) arm.add(mk(GEO.sleeve, top));
     chest.add(arm);
     return arm;
   });
+  // Natural variation in build.
+  const scale = 0.93 + ((k * 37) % 10) / 100;
+  g.scale.setScalar(scale);
   g.userData = { hips, chest, legs, arms };
   return g;
 }
 
 /** A walking person: torso, two legs and two arms, each one mesh. */
-function walkerPerson(mats, k) {
-  const p = person(mats, k);
+function walkerPerson(mats, k, opts) {
+  const p = person(mats, k, opts);
   const { chest, legs, arms } = p.userData;
   bakeInto(chest, mats.baked, { keep: arms });
   for (const l of legs) bakeInto(l, mats.baked, { shadow: false });
@@ -652,7 +679,7 @@ export class Ambient {
     ];
     specs.slice(0, low ? 5 : specs.length).forEach((sp, i) => {
       const walker = new Shuttle(sp.route, { speed: sp.speed, lane: sp.lane, pause: 2.5, offset: sp.off });
-      const who = [walkerPerson(this.mats, i * 3 + 1)];
+      const who = [walkerPerson(this.mats, i * 3 + 1, { sport: Boolean(sp.run) })];
       if (sp.pair) who.push(walkerPerson(this.mats, i * 3 + 2));
       who.forEach((p) => this.group.add(p));
       const d = sp.dog ? dog(this.mats, i, 0.8 + 0.4 * ((i * 37) % 10) / 10) : null;

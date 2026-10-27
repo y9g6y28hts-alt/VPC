@@ -3067,3 +3067,180 @@ textarea {
 .xp-place[aria-pressed='true'] {
   background: rgba(244, 239, 230, 0.12);
 }
+
+/* ------------------------------------------------------------ the club */
+.club-head {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  gap: clamp(32px, 6vw, 96px);
+  align-items: end;
+  margin-bottom: clamp(40px, 5vw, 64px);
+}
+.club-gallery {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  grid-auto-rows: clamp(150px, 15vw, 230px);
+  gap: clamp(10px, 1.2vw, 18px);
+}
+.club-shot {
+  margin: 0;
+  position: relative;
+  min-width: 0;
+  overflow: hidden;
+  background: var(--stone-200);
+}
+.club-shot--feature { grid-column: 1 / -1; grid-row: span 3; }
+.club-shot--wide { grid-column: span 7; grid-row: span 2; }
+.club-shot--tall { grid-column: span 5; grid-row: span 2; }
+.club-shot--half { grid-column: span 6; grid-row: span 2; }
+.club-shot--narrow { grid-column: span 5; grid-row: span 2; }
+.club-shot--wide2 { grid-column: span 7; grid-row: span 2; }
+.club-shot--narrow2 { grid-column: span 5; grid-row: span 2; }
+.club-shot:nth-child(6) { grid-column: span 7; }
+.club-shot__open {
+  all: unset;
+  display: block;
+  position: absolute;
+  inset: 0;
+  cursor: zoom-in;
+}
+.club-shot__open:focus-visible {
+  outline: 2px solid var(--brand-purple);
+  outline-offset: -4px;
+}
+.club-shot img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transform: scale(1.001);
+  transition: transform 1.2s var(--ease-out);
+}
+.club-shot:hover img {
+  transform: scale(1.035);
+}
+.club-shot figcaption {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 12px;
+  padding: 40px 18px 14px;
+  color: var(--ivory);
+  font-size: 13px;
+  background: linear-gradient(to top, rgba(14, 9, 17, 0.62), rgba(14, 9, 17, 0));
+  pointer-events: none;
+}
+.club-shot--feature figcaption {
+  font-family: var(--serif);
+  font-size: clamp(20px, 2vw, 28px);
+  padding: 80px clamp(18px, 3vw, 36px) clamp(16px, 2.4vw, 28px);
+}
+.club-shot__kind {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(244, 239, 230, 0.72);
+  white-space: nowrap;
+}
+.club-note {
+  margin-top: 18px;
+  color: var(--ink-soft);
+  max-width: 70ch;
+}
+@media (max-width: 760px) {
+  .club-head {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .club-gallery {
+    grid-template-columns: minmax(0, 1fr);
+    grid-auto-rows: 62vw;
+  }
+  .club-shot,
+  .club-shot:nth-child(6) {
+    grid-column: 1 / -1;
+    grid-row: span 1;
+  }
+  .club-shot--tall {
+    grid-row: span 2;
+  }
+  .club-shot figcaption {
+    padding: 32px 14px 12px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .club-shot img,
+  .club-shot:hover img {
+    transition: none;
+    transform: none;
+  }
+}
+
+/* Lightbox */
+.lightbox {
+  width: 100vw;
+  height: 100vh;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: rgba(14, 9, 17, 0.96);
+  color: var(--ivory);
+}
+.lightbox::backdrop {
+  background: rgba(14, 9, 17, 0.9);
+}
+.lightbox__figure {
+  margin: 0;
+  position: absolute;
+  inset: max(56px, env(safe-area-inset-top, 0px)) max(16px, 6vw) 72px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+}
+.lightbox__img {
+  max-width: 100%;
+  max-height: 100%;
+  min-height: 0;
+  object-fit: contain;
+}
+.lightbox figcaption {
+  display: flex;
+  gap: 18px;
+  font-size: 13px;
+  color: rgba(244, 239, 230, 0.8);
+}
+.lightbox__count {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: rgba(244, 239, 230, 0.55);
+}
+.lightbox__nav,
+.lightbox__close {
+  position: absolute;
+  background: rgba(244, 239, 230, 0.08);
+  border: 1px solid rgba(244, 239, 230, 0.24);
+  color: var(--ivory);
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  font-size: 20px;
+  cursor: pointer;
+}
+.lightbox__nav:hover,
+.lightbox__close:hover {
+  background: rgba(244, 239, 230, 0.18);
+}
+.lightbox__nav--prev { left: max(12px, env(safe-area-inset-left, 0px)); top: 50%; transform: translateY(-50%); }
+.lightbox__nav--next { right: max(12px, env(safe-area-inset-right, 0px)); top: 50%; transform: translateY(-50%); }
+.lightbox__close { right: max(12px, env(safe-area-inset-right, 0px)); top: max(12px, env(safe-area-inset-top, 0px)); }
+@media (max-width: 760px) {
+  .lightbox__nav { top: auto; bottom: 14px; transform: none; }
+}

@@ -72,9 +72,19 @@ const gpuArgs = ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ig
     assert.match(await page.textContent('.stats-card'), /datos del plano/);
     assert.ok(!/USD|Gs\b|\$/.test(await page.locator('main').textContent()), 'no prices on the home page');
     await snap(page, '00-genesis-home');
-    await page.locator('.category').scrollIntoViewIfNeeded();
-    assert.match(await page.textContent('.category'), /Conocer barrios privados/);
-    await Promise.all([page.waitForURL(/barrios\.html/), page.click('.category')]);
+    assert.deepEqual(await page.locator('.category .btn--pill').allTextContents().then((t) => t.map((x) => x.replace(/\s*→$/, '').trim())), ['Conocer barrios privados', 'Conocer nuestros lotes disponibles', 'Conocer terrenos y futuras inversiones']);
+    // The team: round portraits open “Conocé a …”, Escape closes it.
+    await page.locator('#equipo').scrollIntoViewIfNeeded();
+    await page.locator('.member', { hasText: 'Jinsu Annahas' }).click();
+    await page.waitForSelector('.profile[open]');
+    assert.match(await page.textContent('.profile__name'), /Conocé a\s*Jinsu Annahas/);
+    await snap(page, '00-team-profile');
+    await page.keyboard.press('Escape');
+    await page.waitForSelector('.profile[open]', { state: 'detached' }).catch(() => {});
+    assert.equal(await page.locator('.profile[open]').count(), 0);
+    assert.match(await page.textContent('.office'), /Ciudad del Este/);
+    await page.locator('.category--feature').scrollIntoViewIfNeeded();
+    await Promise.all([page.waitForURL(/barrios\.html/), page.click('.category--feature')]);
     assert.match(await page.textContent('h1'), /Barrios privados/);
     const card = page.locator('.project-card', { hasText: 'Viva Lago Country' });
     assert.equal(await card.count(), 1);

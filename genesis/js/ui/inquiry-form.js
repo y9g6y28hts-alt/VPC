@@ -11,10 +11,10 @@ let counter = 0;
 
 /**
  * @param {HTMLElement} container
- * @param {{ lotId?: string|null, compact?: boolean, onSubmitted?: (result: object) => void }} options
+ * @param {{ lotId?: string|null, topic?: string, compact?: boolean, onSubmitted?: (result: object) => void }} options
  * @returns {{ setLot: (id: string|null) => void, element: HTMLElement }}
  */
-export function mountInquiryForm(container, { lotId = null, compact = false, onSubmitted } = {}) {
+export function mountInquiryForm(container, { lotId = null, topic: initialTopic = null, compact = false, onSubmitted } = {}) {
   const uid = `iq${++counter}`;
   const configured = hasAnyChannel(CONTACT);
   let currentLot = lotId;
@@ -43,6 +43,10 @@ export function mountInquiryForm(container, { lotId = null, compact = false, onS
     h('div', { class: 'choices' }, ...Object.entries(CONTACT_PREFERENCES).map(([value, label]) => h('label', { class: 'choice' }, h('input', { type: 'radio', name: `${uid}-preferred`, value }), h('span', {}, label)))),
   );
   const topic = h('select', { id: `${uid}-topic`, name: 'topic' }, ...Object.entries(INQUIRY_TOPICS).map(([value, label]) => h('option', { value }, label)));
+  if (INQUIRY_TOPICS[initialTopic]) topic.value = initialTopic;
+  // A land or investment inquiry is not about a Viva Lago lot.
+  const lotField = field('lot', 'Lote de interés', lotSelect);
+  lotField.hidden = initialTopic === 'land';
   const message = h('textarea', { id: `${uid}-message`, name: 'message', rows: compact ? 3 : 4, placeholder: 'Contanos qué te interesa saber (opcional)' });
   const status = h('div', { class: 'form-status', role: 'status', 'aria-live': 'polite' });
   const submit = h('button', { class: 'btn', type: 'submit' }, configured ? 'Enviar consulta' : 'Preparar consulta', h('span', { class: 'arrow', 'aria-hidden': 'true' }, '→'));
@@ -53,7 +57,7 @@ export function mountInquiryForm(container, { lotId = null, compact = false, onS
     configured
       ? null
       : h('p', { class: 'notice' }, 'El canal de contacto oficial todavía no está integrado en este sitio, así que este formulario no envía mensajes. Te preparamos la consulta para que la copies y la envíes por el canal oficial de Génesis.'),
-    h('div', { class: 'row' }, field('name', 'Nombre', name), field('lot', 'Lote de interés', lotSelect)),
+    h('div', { class: 'row' }, field('name', 'Nombre', name), lotField),
     h('div', { class: 'row' }, field('phone', 'Teléfono o WhatsApp', phone), field('email', 'Correo electrónico', email)),
     h('div', { class: 'error', id: `${uid}-contact-err`, 'aria-live': 'polite' }),
     h('div', { class: 'row' }, preferredGroup, field('topic', 'Motivo de la consulta', topic)),

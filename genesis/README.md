@@ -64,6 +64,9 @@ Partially built elements are cut with per-component clipping planes in house spa
 ```
 index.html                      Génesis home: hero, “Conocé nuestros barrios privados”, Nosotros, contact
 barrios.html                    the private neighbourhoods (one card per development; Viva Lago Country today)
+terrenos.html                   land and future investments: how Génesis helps, interest list (topic “land”)
+js/config/company.js            vision, office (address/hours/map) and team (name, role, photo, bio)
+js/ui/team.js                   round portraits and the “Conocé a …” profile card
 viva-lago.html                  the development: lots, location, club, construction film, 3D explorer
 css/genesis.css                 design system for all pages
 js/ui/shell.js                  shared shell: header, menu, reveals, analytics, contact button, footer year
@@ -125,11 +128,14 @@ Every item below is a one-line change; until it is set the page adapts on its ow
 | Google Analytics 4 measurement ID | `SITE.analyticsId` | Loads GA4 (IP anonymised; off with Do Not Track / GPC). Events: `select_lot`, `inquiry` (status, lot, channel, topic), `open_explorer`, `contact_button`, `open_map`, `gallery_fullscreen`, `spec_action`, `brochure_download`; never names, phones or messages |
 | Brochure PDF (e.g. `assets/docs/viva-lago-brochure.pdf`) | `SITE.brochureUrl` | “Descargar brochure (PDF)” appears in the development sheet |
 | Availability per lot, with its source | `KNOWN_AVAILABILITY` in `js/data/viva-lago.js` | Lot browser and 3D show sold / reserved / available |
+| Team: each person's name as it should be written, role and a square photo (≥ 800 × 800); optional two-line bio | `TEAM` in `js/config/company.js`, photos in `assets/team/` | Round portraits in “Nuestro equipo” and their “Conocé a …” cards (monograms until a photo arrives) |
+| Vision (approve or replace the draft) | `COMPANY.vision` | “Nuestra visión” on the home page |
+| Office address, opening hours, Google Maps link | `COMPANY.office` | “Nuestra oficina” with “Cómo llegar” |
 | Legal review | `privacidad.html` | The privacy policy is a draft for Génesis' legal adviser |
 
 Optionally: drone photos or video of the site, Génesis' track record for “Nosotros”, and a professionally designed residence as a GLB with components split by trade, to replace the concept model.
 
-Publishing: the site is static. Copy `index.html`, `barrios.html`, `viva-lago.html`, `privacidad.html`, `manifest.webmanifest`, `robots.txt`, `css/`, `js/`, `vendor/` and `assets/` (without `assets/trees/source`) to any web host with HTTPS; `.exr` must be served as a binary file.
+Publishing: the site is static. Copy `index.html`, `barrios.html`, `terrenos.html`, `viva-lago.html`, `privacidad.html`, `manifest.webmanifest`, `robots.txt`, `css/`, `js/`, `vendor/` and `assets/` (without `assets/trees/source`) to any web host with HTTPS; `.exr` must be served as a binary file.
 
 ## Assets and licences
 

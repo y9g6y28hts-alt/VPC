@@ -35,14 +35,15 @@ export function mailtoUrl(email, subject, body) {
 
 /** How the visitor wants to be contacted, and what the conversation is for. */
 export const CONTACT_PREFERENCES = Object.freeze({ whatsapp: 'WhatsApp', call: 'Llamada', email: 'Correo electrónico' });
-export const INQUIRY_TOPICS = Object.freeze({ info: 'Recibir información del lote', visit: 'Coordinar una visita al predio', advisor: 'Conversar con un asesor' });
+export const INQUIRY_TOPICS = Object.freeze({ info: 'Recibir información del lote', visit: 'Coordinar una visita al predio', advisor: 'Conversar con un asesor', land: 'Terrenos y futuras inversiones' });
 
 export function composeInquiryMessage({ developmentName, lotId, name, message, preferred, topic }) {
   const lines = [];
   lines.push(`Hola, soy ${name?.trim() || '(sin nombre)'}.`);
   if (lotId) lines.push(`Me interesa el lote ${lotId} de ${developmentName}.`);
+  else if (topic === 'land') lines.push('Me interesan los terrenos y las futuras inversiones de Génesis.');
   else lines.push(`Me interesa ${developmentName}.`);
-  if (INQUIRY_TOPICS[topic]) lines.push(`Motivo: ${INQUIRY_TOPICS[topic].toLowerCase()}.`);
+  if (INQUIRY_TOPICS[topic] && topic !== 'land') lines.push(`Motivo: ${INQUIRY_TOPICS[topic].toLowerCase()}.`);
   if (CONTACT_PREFERENCES[preferred]) lines.push(`Prefiero que me contacten por ${CONTACT_PREFERENCES[preferred].toLowerCase()}.`);
   if (message?.trim()) lines.push(message.trim());
   lines.push('Quisiera recibir información verificada sobre superficie, precio, disponibilidad y financiación.');

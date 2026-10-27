@@ -26,7 +26,7 @@
   <script type="module" src="js/site.js"></script>
 </head>
 <body class="page-home">
-  <a class="skip-link" href="#barrios">Saltar al contenido</a>
+  <a class="skip-link" href="#proyectos">Saltar al contenido</a>
   <header class="site-header" id="header">
     <div class="inner">
       <a class="brand" href="./" aria-label="Génesis Negocios Inmobiliarios — inicio" data-brand>
@@ -37,8 +37,9 @@
         <span></span><span></span>
       </button>
       <nav class="nav" id="nav" aria-label="Principal">
-        <a href="barrios.html">Barrios privados</a>
+        <a href="#proyectos">Proyectos</a>
         <a href="#nosotros">Nosotros</a>
+        <a href="#equipo">Equipo</a>
         <a href="#contacto">Contacto</a>
         <a class="btn btn--light" href="barrios.html">Conocer barrios</a>
       </nav>
@@ -55,8 +56,9 @@
       <div class="home-hero__shade"></div>
       <div class="home-hero__content">
         <img class="home-hero__logo" src="assets/brand/genesis-logo-ivory.svg" alt="Génesis — El comienzo de tu historia" width="483" height="105" />
+        <p class="eyebrow on-dark home-hero__eyebrow">Desarrolladora inmobiliaria · Ciudad del Este</p>
         <h1 class="display home-hero__title" id="home-title">Tierra, agua y <em>el comienzo de tu historia.</em></h1>
-        <p class="lede home-hero__lede">Barrios privados frente al agua en Ciudad del Este, con información clara y un asesor a tu lado en cada decisión.</p>
+        <p class="lede home-hero__lede">Desarrollamos barrios privados, comercializamos lotes y terrenos y te acompañamos en cada operación inmobiliaria, con información clara y un asesor a tu lado.</p>
         <div class="home-hero__actions">
           <a class="btn btn--light" href="barrios.html">Ver nuestros barrios privados <span class="arrow" aria-hidden="true">→</span></a>
         </div>
@@ -71,23 +73,51 @@
       <p class="home-hero__caption">Render ilustrativo · Club de Viva Lago Country</p>
     </section>
 
-    <!-- Categories: the private neighbourhoods. -->
-    <section class="section categories" id="barrios" aria-labelledby="cat-title">
+    <!-- Projects: what Génesis develops and sells. -->
+    <section class="section categories" id="proyectos" aria-labelledby="cat-title">
       <div class="inner">
         <div class="categories__head reveal">
           <p class="eyebrow">Nuestros proyectos</p>
-          <h2 class="display h2" id="cat-title">Conocé nuestros <em>barrios privados.</em></h2>
+          <h2 class="display h2" id="cat-title">Conocé nuestros <em>barrios privados</em>, lotes y terrenos.</h2>
         </div>
-        <a class="category reveal" href="barrios.html">
-          <span class="category__media">
-            <img src="assets/gallery/deck-piscina-1100.webp" srcset="assets/gallery/deck-piscina-1100.webp 1100w, assets/gallery/deck-piscina-2000.webp 2000w" sizes="(max-width: 1320px) 100vw, 1320px" alt="Deck y piscina frente al río Acaray en Viva Lago Country (render ilustrativo)" width="2576" height="1570" loading="lazy" decoding="async" />
-          </span>
-          <span class="category__body">
-            <span class="category__title">Barrios privados</span>
-            <span class="category__text">Tu hogar rodeado de naturaleza, frente al agua, con club náutico y acceso propio al río.</span>
-            <span class="btn btn--pill">Conocer barrios privados <span class="arrow" aria-hidden="true">→</span></span>
-          </span>
-        </a>
+        <div class="categories__grid">
+          <a class="category category--feature reveal" href="barrios.html">
+            <span class="category__media">
+              <img src="assets/gallery/deck-piscina-1100.webp" srcset="assets/gallery/deck-piscina-1100.webp 1100w, assets/gallery/deck-piscina-2000.webp 2000w" sizes="(max-width: 1320px) 100vw, 1320px" alt="Deck y piscina frente al río Acaray en Viva Lago Country (render ilustrativo)" width="2576" height="1570" loading="lazy" decoding="async" />
+              <span class="category__tag">Render ilustrativo</span>
+            </span>
+            <span class="category__body">
+              <span class="category__n">01</span>
+              <span class="category__title">Barrios privados</span>
+              <span class="category__text">Tu hogar rodeado de naturaleza, frente al agua, con club náutico y acceso propio al río.</span>
+              <span class="btn btn--pill">Conocer barrios privados <span class="arrow" aria-hidden="true">→</span></span>
+            </span>
+          </a>
+          <a class="category category--tile reveal" href="viva-lago.html#lotes">
+            <span class="category__media">
+              <img src="assets/home/lotes-1100.webp" srcset="assets/home/lotes-1100.webp 1100w, assets/home/lotes-1600.webp 1600w" sizes="(max-width: 900px) 100vw, 650px" alt="Lote amojonado frente al río en Viva Lago Country (render con trazado de rayos)" width="1600" height="900" loading="lazy" decoding="async" />
+              <span class="category__tag">Render ilustrativo</span>
+            </span>
+            <span class="category__body">
+              <span class="category__n">02</span>
+              <span class="category__title">Lotes disponibles</span>
+              <span class="category__text">Treinta y dos lotes de 366 a 512 m² en Viva Lago Country. Miralos en el plano y en 3D; la disponibilidad te la confirma un asesor.</span>
+              <span class="btn btn--pill">Conocer nuestros lotes disponibles <span class="arrow" aria-hidden="true">→</span></span>
+            </span>
+          </a>
+          <a class="category category--tile reveal" href="terrenos.html">
+            <span class="category__media">
+              <img src="assets/home/terrenos-1100.webp" alt="Atardecer sobre el río Acaray (render ilustrativo)" width="1100" height="1145" loading="lazy" decoding="async" />
+              <span class="category__tag">Render ilustrativo</span>
+            </span>
+            <span class="category__body">
+              <span class="category__n">03</span>
+              <span class="category__title">Terrenos e inversiones</span>
+              <span class="category__text">Terrenos para tu próximo proyecto y oportunidades de inversión inmobiliaria, con el respaldo técnico de Génesis.</span>
+              <span class="btn btn--pill">Conocer terrenos y futuras inversiones <span class="arrow" aria-hidden="true">→</span></span>
+            </span>
+          </a>
+        </div>
       </div>
     </section>
 
@@ -98,12 +128,19 @@
           <p class="eyebrow on-dark">Nosotros</p>
           <img class="nosotros-lockup" src="assets/brand/genesis-logo-ivory.svg" alt="Génesis — El comienzo de tu historia" width="483" height="105" loading="lazy" />
         </div>
+        <p class="about-intro reveal">Génesis Negocios Inmobiliarios es una <strong>desarrolladora y empresa de bienes raíces</strong> de Ciudad del Este. Desarrollamos barrios privados, comercializamos lotes y terrenos y asesoramos cada operación de principio a fin.</p>
         <div class="mission reveal">
           <h2 class="eyebrow on-dark mission__label" id="nosotros-title">Nuestra misión</h2>
           <blockquote class="mission__text">
             <p>Nuestra misión es brindar soluciones inmobiliarias integrales con eficiencia, ética y conocimiento técnico, acompañando a cada cliente en la toma de decisiones para garantizar <em>operaciones seguras, claras y exitosas.</em></p>
           </blockquote>
           <p class="mission__sign">Génesis Negocios Inmobiliarios · Ciudad del Este</p>
+        </div>
+        <div class="mission mission--vision reveal" data-vision>
+          <h2 class="eyebrow on-dark mission__label">Nuestra visión</h2>
+          <blockquote class="mission__text">
+            <p data-vision-text></p>
+          </blockquote>
         </div>
         <ol class="pillars reveal" aria-label="Cómo trabajamos">
           <li>
@@ -130,13 +167,36 @@
       </div>
     </section>
 
-    <!-- Contact -->
-    <section class="section" id="contacto">
+    <!-- Team -->
+    <section class="section team" id="equipo" aria-labelledby="team-title">
+      <div class="inner">
+        <div class="team__head reveal">
+          <p class="eyebrow">Nuestro equipo</p>
+          <h2 class="display h2" id="team-title">Las personas que te <em>acompañan.</em></h2>
+          <p class="lede">Directivos y asesores de Génesis. Tocá cada retrato para conocerlos.</p>
+        </div>
+        <ul class="team__list reveal" data-team aria-label="Equipo de Génesis"></ul>
+      </div>
+    </section>
+
+    <!-- Office and contact -->
+    <section class="section section--ivory" id="contacto" aria-labelledby="contact-title">
       <div class="inner split">
         <div class="reveal">
           <p class="eyebrow">Contacto</p>
-          <h2 class="display h2">Hablemos.</h2>
-          <p class="lede" style="margin-top: 24px">Dejanos tus datos y un asesor de Génesis te responderá con la información verificada de cada barrio y cada lote.</p>
+          <h2 class="display h2" id="contact-title">Hablemos.</h2>
+          <p class="lede" style="margin-top: 24px">Dejanos tus datos y un asesor de Génesis te responderá con la información verificada de cada barrio, lote o terreno.</p>
+          <div class="office" aria-labelledby="office-title">
+            <p class="eyebrow" id="office-title">Nuestra oficina</p>
+            <p class="office__city">Ciudad del Este</p>
+            <p class="office__region">Alto Paraná, Paraguay</p>
+            <dl class="office__details">
+              <div data-office-address hidden><dt>Dirección</dt><dd></dd></div>
+              <div data-office-hours hidden><dt>Horario</dt><dd></dd></div>
+            </dl>
+            <p class="office__visit" data-office-visit>Coordiná tu visita a la oficina o al predio con un asesor.</p>
+            <a class="btn btn--ghost" href="#" target="_blank" rel="noopener" data-office-map hidden>Cómo llegar <span class="arrow" aria-hidden="true">↗</span></a>
+          </div>
         </div>
         <div class="reveal" data-contact-form></div>
       </div>
@@ -158,10 +218,13 @@
           <h4>Génesis</h4>
           <a href="./">Inicio</a>
           <a href="./#nosotros">Nosotros</a>
+          <a href="./#equipo">Equipo</a>
           <a href="./#contacto">Contacto</a>
-          <h4>Barrios privados</h4>
-          <a href="barrios.html">Todos los barrios</a>
+          <h4>Proyectos</h4>
+          <a href="barrios.html">Barrios privados</a>
           <a href="viva-lago.html">Viva Lago Country</a>
+          <a href="viva-lago.html#lotes">Lotes disponibles</a>
+          <a href="terrenos.html">Terrenos e inversiones</a>
         </nav>
         <div>
           <h4>Sobre este sitio</h4>

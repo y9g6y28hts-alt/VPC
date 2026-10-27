@@ -50,7 +50,7 @@ for (const v of VARIANTS) {
     if (fs.existsSync(webp)) return;
     const png = path.join(WORK, `${v}-${tag(t)}.png`);
     const t0 = Date.now();
-    const r = spawnSync('python3', [path.join(root, 'tools/cinematic/render.py'), '--dir', WORK, '--t', tag(t), '--shot', v, '--size', SHOTS[v].size, '--samples', String(SAMPLES), '--grass', '--out', png], { encoding: 'utf8', maxBuffer: 1 << 28 });
+    const r = spawnSync('python3', [path.join(root, 'tools/cinematic/render.py'), '--dir', WORK, '--t', tag(t), '--shot', v, '--size', SHOTS[v].size, '--samples', String(SAMPLES), '--grass', '--fog', '0.0007', '--out', png], { encoding: 'utf8', maxBuffer: 1 << 28 });
     if (r.status !== 0 || !fs.existsSync(png)) {
       console.error(r.stdout?.slice(-2000), r.stderr?.slice(-2000));
       throw new Error(`render failed: ${v} t=${t}`);

@@ -109,6 +109,24 @@ const gpuArgs = ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ig
     await snap(page, '01e-stages');
   });
 
+  await check('construction orbit video: poster, a playable source, labelled as a render; static with reduced motion', async () => {
+    await page.locator('[data-film-video]').scrollIntoViewIfNeeded();
+    await page.waitForSelector('[data-film-video] video source', { state: 'attached', timeout: 10000 });
+    const v = await page.evaluate(() => {
+      const video = document.querySelector('[data-film-video] video');
+      return { poster: video.poster, sources: [...video.querySelectorAll('source')].map((s) => s.type), muted: video.muted, controls: video.controls, label: video.getAttribute('aria-label') };
+    });
+    assert.match(v.poster, /orbit-poster\.webp$/);
+    assert.ok(v.sources.length >= 1, 'at least one source this browser can play');
+    assert.ok(v.muted, 'muted');
+    assert.ok(v.controls, 'reduced motion: native controls, no autoplay');
+    assert.match(v.label, /residencia conceptual/);
+    assert.match(await page.locator('.film-video figcaption').textContent(), /Cycles/);
+    // The figure stays visible: no media error with the available format.
+    await page.waitForTimeout(1500);
+    assert.equal(await page.locator('.film-video.is-unavailable').count(), 0);
+  });
+
   await check('lot browser: filter, plan and list select the same lot, sheet shows plan data, inquiry keeps the lot', async () => {
     await page.locator('#lotes').scrollIntoViewIfNeeded();
     assert.equal(await page.locator('[data-lot-browser] polygon.lot').count(), 32);

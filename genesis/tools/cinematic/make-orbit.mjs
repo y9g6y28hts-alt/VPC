@@ -8,7 +8,8 @@
 // Each construction state is rendered for its stretch of the path (plus a few
 // overlapping frames), so the scene loads once per state; overlapping frames
 // dissolve into the next state. Resumable: existing frames are skipped.
-// Writes assets/cinematic/<lot>/orbit.mp4 (H.264) and orbit-poster.webp.
+// Writes assets/cinematic/<lot>/orbit.mp4 (H.264), orbit.webm (VP9) and
+// orbit-poster.webp.
 import { execFileSync, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -152,5 +153,7 @@ const mp4 = path.join(OUT, 'orbit.mp4');
 // camera path is smooth, so in-between frames are reliable), scaled to 1080p,
 // H.264 for reach.
 execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-framerate', String(FPS), '-i', path.join(seq, '%04d.png'), '-vf', `minterpolate=fps=60:mi_mode=mci:mc_mode=aobmc:me_mode=bidir:vsbmc=1,scale=1920:1080:flags=lanczos,format=yuv420p`, '-c:v', 'libx264', '-preset', 'slow', '-crf', '19', '-profile:v', 'high', '-movflags', '+faststart', '-an', mp4], { stdio: 'inherit' });
+// VP9 for browsers without H.264.
+execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-i', mp4, '-c:v', 'libvpx-vp9', '-crf', '33', '-b:v', '0', '-row-mt', '1', '-deadline', 'good', '-cpu-used', '2', '-an', path.join(OUT, 'orbit.webm')], { stdio: 'inherit' });
 execFileSync('python3', ['-c', `from PIL import Image; Image.open(${JSON.stringify(path.join(seq, `${String(TOTAL - 1).padStart(4, '0')}.png`))}).convert('RGB').save(${JSON.stringify(path.join(OUT, 'orbit-poster.webp'))}, quality=82, method=6)`]);
 console.log(`wrote ${path.relative(root, mp4)} (${(fs.statSync(mp4).size / 1e6).toFixed(1)} MB)`);

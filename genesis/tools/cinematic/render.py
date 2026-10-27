@@ -173,7 +173,19 @@ def ground_material():
     bump = N('ShaderNodeBump'); bump.inputs['Strength'].default_value = 0.25; bump.inputs['Distance'].default_value = 0.02
     L(noise.outputs['Fac'], bump.inputs['Height'])
     L(bump.outputs['Normal'], bsdf.inputs['Normal'])
-    L(mix.outputs['Result'], bsdf.inputs['Base Color'])
+    # Mid-scale variation (moisture, wear) breaks up the flat bake.
+    var = N('ShaderNodeTexNoise'); var.inputs['Scale'].default_value = 0.35; var.inputs['Detail'].default_value = 10.0; var.inputs['Roughness'].default_value = 0.62
+    L(tc.outputs['Object'], var.inputs['Vector'])
+    vr = N('ShaderNodeMapRange'); vr.inputs['To Min'].default_value = 0.8; vr.inputs['To Max'].default_value = 1.15
+    L(var.outputs['Fac'], vr.inputs['Value'])
+    vmul = N('ShaderNodeMix'); vmul.data_type = 'RGBA'; vmul.blend_type = 'MULTIPLY'
+    vmul.inputs['Factor'].default_value = 1.0
+    vcomb = N('ShaderNodeCombineXYZ')
+    for k in range(3):
+        L(vr.outputs['Result'], vcomb.inputs[k])
+    L(mix.outputs['Result'], vmul.inputs['A'])
+    L(vcomb.outputs[0], vmul.inputs['B'])
+    L(vmul.outputs['Result'], bsdf.inputs['Base Color'])
     L(bsdf.outputs['BSDF'], outn.inputs['Surface'])
     return mat, tn
 
@@ -183,28 +195,80 @@ if terrain:
     gmat, near_tex = ground_material()
     terrain.data.materials.clear()
     terrain.data.materials.append(gmat)
-    # Pool basin: cut the terrain where the near bake is transparent inside the window.
-    # (Handled geometrically: delete terrain faces under the hole.)
-    hole_img = near_tex.image
-    px = np.array(hole_img.pixels[:], dtype=np.float32).reshape(hole_img.size[1], hole_img.size[0], 4)
-    make_single_user(terrain)
-    bm = bmesh.new()
-    bm.from_mesh(terrain.data)
-    mw = terrain.matrix_world
-    kill = []
+    # Pool excavation: where the near bake is transparent the terrain turns
+    # transparent too (pixel-exact outline), and a rectangular pit fitted to
+    # that hole sits below it; the pool shell, once built, lines the pit.
+    img = near_tex.image
+    IW, IH = img.size
+    px = np.empty(IW * IH * 4, dtype=np.float32)
+    img.pixels.foreach_get(px)
+    px = px.reshape(IH, IW, 4)
     S = near['size']
-    for f in bm.faces:
-        c = mw @ f.calc_center_median()
-        u = (c.x - near['cx']) / S + 0.5
-        v = (c.y + near['cz']) / S + 0.5
-        if 0 <= u < 1 and 0 <= v < 1:
-            a = px[int(v * hole_img.size[1]), int(u * hole_img.size[0]), 3]
-            if a < 0.5:
-                kill.append(f)
-    if kill:
-        bmesh.ops.delete(bm, geom=kill, context='FACES')
-    bm.to_mesh(terrain.data)
-    bm.free()
+    gx = near['cx'] + ((np.arange(IW) + 0.5) / IW - 0.5) * S
+    gy = -near['cz'] + ((np.arange(IH) + 0.5) / IH - 0.5) * S
+    lcx, lcy = shot['lot']['centroid']['x'], -shot['lot']['centroid']['z']
+    close = ((gx[None, :] - lcx) ** 2 + (gy[:, None] - lcy) ** 2) < 30.0 ** 2
+    hole = (px[..., 3] < 0.5) & close
+    if hole.sum() > 50:
+        hm = bpy.data.images.new('pool-hole', IW, IH, alpha=False)
+        hm.colorspace_settings.name = 'Non-Color'
+        h4 = np.repeat(hole[..., None].astype(np.float32), 4, axis=2)
+        h4[..., 3] = 1.0
+        hm.pixels.foreach_set(h4.ravel())
+        hm.update()
+        hm.pack()
+        nt = gmat.node_tree
+        ht = nt.nodes.new('ShaderNodeTexImage')
+        ht.image = hm
+        ht.extension = 'CLIP'
+        ht.interpolation = 'Linear'
+        nt.links.new(near_tex.inputs['Vector'].links[0].from_socket, ht.inputs['Vector'])
+        gt = nt.nodes.new('ShaderNodeMath')
+        gt.operation = 'GREATER_THAN'
+        gt.inputs[1].default_value = 0.5
+        nt.links.new(ht.outputs['Color'], gt.inputs[0])
+        tr = nt.nodes.new('ShaderNodeBsdfTransparent')
+        ms = nt.nodes.new('ShaderNodeMixShader')
+        gout = next(n for n in nt.nodes if n.type == 'OUTPUT_MATERIAL')
+        surf = gout.inputs['Surface'].links[0].from_socket
+        nt.links.new(gt.outputs[0], ms.inputs['Fac'])
+        nt.links.new(surf, ms.inputs[1])
+        nt.links.new(tr.outputs[0], ms.inputs[2])
+        nt.links.new(ms.outputs[0], gout.inputs['Surface'])
+        # Rectangle fitted to the hole (principal axes), slightly oversized so
+        # no gap shows at the rim.
+        ys_, xs_ = np.nonzero(hole)
+        P = np.stack([gx[xs_], gy[ys_]], axis=1)
+        c0 = P.mean(axis=0)
+        _, vecs = np.linalg.eigh(np.cov((P - c0).T))
+        ax = vecs.T  # rows: axes
+        q = (P - c0) @ ax.T
+        lo_, hi2 = q.min(axis=0) - 0.03, q.max(axis=0) + 0.03
+        corners = [c0 + ax[0] * a + ax[1] * b for a, b in ((lo_[0], lo_[1]), (hi2[0], lo_[1]), (hi2[0], hi2[1]), (lo_[0], hi2[1]))]
+        from mathutils.bvhtree import BVHTree
+        tree = BVHTree.FromObject(terrain, bpy.context.evaluated_depsgraph_get())
+        tinv = terrain.matrix_world.inverted()
+        hit = tree.ray_cast(tinv @ Vector((c0[0] + ax[0][0] * (hi2[0] + 0.5), c0[1] + ax[0][1] * (hi2[0] + 0.5), 50.0)), Vector((0, 0, -1)))
+        z0 = (terrain.matrix_world @ hit[0]).z if hit[0] is not None else 0.0
+        depth = 1.5
+        pbm = bmesh.new()
+        top = [pbm.verts.new((c[0], c[1], z0 + 0.02)) for c in corners]
+        bot = [pbm.verts.new((c[0], c[1], z0 - depth)) for c in corners]
+        pbm.faces.new(bot)
+        for i in range(4):
+            j = (i + 1) % 4
+            pbm.faces.new([top[i], top[j], bot[j], bot[i]])
+        pme = bpy.data.meshes.new('pool-pit')
+        pbm.to_mesh(pme)
+        pbm.free()
+        pit = bpy.data.materials.new('pit-soil')
+        pb = pit.node_tree.nodes['Principled BSDF']
+        pb.inputs['Base Color'].default_value = (0.16, 0.035, 0.015, 1)  # red laterite
+        pb.inputs['Roughness'].default_value = 0.95
+        pme.materials.append(pit)
+        pob = bpy.data.objects.new('pool-pit', pme)
+        scene.collection.objects.link(pob)
+        print(f'pool pit {hi2[0] - lo_[0]:.1f} x {hi2[1] - lo_[1]:.1f} m', flush=True)
 
 # ----------------------------------------------------------- material fixes
 for mat in bpy.data.materials:

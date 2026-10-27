@@ -3213,6 +3213,7 @@ textarea {
 }
 .lightbox figcaption {
   display: flex;
+  align-items: baseline;
   gap: 18px;
   font-size: 13px;
   color: rgba(244, 239, 230, 0.8);
@@ -3588,4 +3589,8 @@ body.is-locked .fab {
   .fab {
     transition: opacity var(--dur-base) var(--ease);
   }
+}
+
+.lightbox__caption {
+  margin: 0;
 }

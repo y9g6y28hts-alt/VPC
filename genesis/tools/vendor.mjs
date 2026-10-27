@@ -42,6 +42,8 @@ const addonEntries = [
   'lines/LineSegments2.js',
   'lines/LineMaterial.js',
   'lines/LineSegmentsGeometry.js',
+  // Offline tools only (tools/cinematic): never loaded by the page.
+  'exporters/GLTFExporter.js',
 ];
 const addonsSrc = path.join(threeDir, 'examples', 'jsm');
 const seen = new Set();

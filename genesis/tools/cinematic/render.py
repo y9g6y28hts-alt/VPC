@@ -1,0 +1,451 @@
+"""Path-traces a construction stage of the concept residence with Blender Cycles.
+
+Input is the output of export-scene.mjs (world.glb, house-<t>.glb, baked ground
+textures, shot-<name>.json). The geometry, materials, sun and camera are the
+experience's own; Cycles adds what real-time rendering cannot: global
+illumination, soft area shadows, glossy reflections and an atmospheric sky.
+Half-built components are cut by their construction planes and capped.
+
+The render is written as linear EXR and tone-mapped here (ACES fitted, as on
+the site) to an 8-bit PNG, so the look does not depend on Blender's colour
+management configuration.
+
+usage: python3 tools/cinematic/render.py --dir <export dir> --t 1.000 --shot hero
+       [--size 1600x900] [--samples 128] [--out frame.png] [--grass]
+"""
+import argparse
+import json
+import math
+import os
+import sys
+
+import bpy  # noqa: I001 — bpy must load before bmesh/mathutils
+import bmesh
+import numpy as np
+from mathutils import Vector
+
+ap = argparse.ArgumentParser()
+ap.add_argument('--dir', required=True)
+ap.add_argument('--t', default='1.000')
+ap.add_argument('--shot', default='hero')
+ap.add_argument('--size', default='1600x900')
+ap.add_argument('--samples', type=int, default=128)
+ap.add_argument('--out', default=None)
+ap.add_argument('--exposure', type=float, default=0.0)
+ap.add_argument('--grass', action='store_true', help='scatter real grass blades near the camera')
+ap.add_argument('--threads', type=int, default=0)
+args = ap.parse_args(sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else sys.argv[1:])
+
+D = os.path.abspath(args.dir)
+W, H = map(int, args.size.split('x'))
+shot = json.load(open(os.path.join(D, f'shot-{args.shot}.json')))
+out_png = os.path.abspath(args.out or os.path.join(D, f'render-{args.shot}-{args.t}.png'))
+
+
+def b(v):
+    """three.js (Y up) → Blender (Z up)."""
+    return Vector((v[0], -v[2], v[1]))
+
+
+bpy.ops.wm.read_factory_settings(use_empty=True)
+scene = bpy.context.scene
+
+# ------------------------------------------------------------------ import
+before = set(bpy.data.objects)
+bpy.ops.import_scene.gltf(filepath=os.path.join(D, 'world.glb'))
+world_objs = set(bpy.data.objects) - before
+before = set(bpy.data.objects)
+bpy.ops.import_scene.gltf(filepath=os.path.join(D, f'house-{args.t}.glb'))
+house_objs = set(bpy.data.objects) - before
+
+
+def make_single_user(ob):
+    if ob.data.users > 1:
+        ob.data = ob.data.copy()
+
+
+# ------------------------------------------------- construction cut planes
+def apply_clip(ob, planes):
+    """Keeps the side n·p + c >= 0 of each (three.js world) plane and caps the cut."""
+    make_single_user(ob)
+    bm = bmesh.new()
+    bm.from_mesh(ob.data)
+    mw = ob.matrix_world
+    inv = mw.inverted()
+    for nx, ny, nz, c in planes:
+        n_w = b((nx, ny, nz)).normalized()
+        p_w = n_w * (-c)
+        co = inv @ p_w
+        no = mw.to_3x3().transposed() @ n_w  # plane normals transform by Aᵀ
+        geom = bm.verts[:] + bm.edges[:] + bm.faces[:]
+        res = bmesh.ops.bisect_plane(bm, geom=geom, plane_co=co, plane_no=no.normalized(), clear_inner=True)
+        cut_edges = [e for e in res['geom_cut'] if isinstance(e, bmesh.types.BMEdge)]
+        if cut_edges:
+            bmesh.ops.holes_fill(bm, edges=cut_edges, sides=0)
+    bm.to_mesh(ob.data)
+    bm.free()
+
+
+clipped = 0
+for ob in house_objs:
+    if ob.type == 'MESH' and 'clip' in ob.keys():
+        apply_clip(ob, [list(p) for p in ob['clip']])
+        clipped += 1
+
+# ---------------------------------------------------------------- terrain
+near, far = shot['near'], shot['far']
+
+
+def ground_material():
+    mat = bpy.data.materials.new('ground')
+    nt = mat.node_tree
+    nt.nodes.clear()
+    N = nt.nodes.new
+    L = nt.links.new
+    outn = N('ShaderNodeOutputMaterial')
+    bsdf = N('ShaderNodeBsdfPrincipled')
+    bsdf.inputs['Roughness'].default_value = 0.93
+    tc = N('ShaderNodeTexCoord')
+    sep = N('ShaderNodeSeparateXYZ')
+    L(tc.outputs['Object'], sep.inputs[0])
+
+    def uv_for(win):
+        # u = (X - cx)/S + .5 ; v = (Y + cz)/S + .5  (Blender Y = -three z)
+        mu = N('ShaderNodeMath'); mu.operation = 'MULTIPLY_ADD'
+        mu.inputs[1].default_value = 1 / win['size']
+        mu.inputs[2].default_value = 0.5 - win['cx'] / win['size']
+        L(sep.outputs['X'], mu.inputs[0])
+        mv = N('ShaderNodeMath'); mv.operation = 'MULTIPLY_ADD'
+        mv.inputs[1].default_value = 1 / win['size']
+        mv.inputs[2].default_value = 0.5 + win['cz'] / win['size']
+        L(sep.outputs['Y'], mv.inputs[0])
+        comb = N('ShaderNodeCombineXYZ')
+        L(mu.outputs[0], comb.inputs[0])
+        L(mv.outputs[0], comb.inputs[1])
+        return comb
+
+    def tex(path, win):
+        t = N('ShaderNodeTexImage')
+        t.image = bpy.data.images.load(path)
+        t.extension = 'CLIP'
+        t.interpolation = 'Cubic'
+        L(uv_for(win).outputs[0], t.inputs['Vector'])
+        return t
+
+    tn = tex(os.path.join(D, f'ground-near-{args.t}.png'), near)
+    tf = tex(os.path.join(D, 'ground-far.png'), far)
+    # Inside the near window the near bake wins: the texture is CLIP-extended,
+    # so its alpha is 0 outside the window (and in the pool cut-out).
+    mix = N('ShaderNodeMix'); mix.data_type = 'RGBA'
+    L(tn.outputs['Alpha'], mix.inputs['Factor'])
+    L(tf.outputs['Color'], mix.inputs['A'])
+    L(tn.outputs['Color'], mix.inputs['B'])
+    # Subtle relief so grazing light catches the lawn.
+    noise = N('ShaderNodeTexNoise'); noise.inputs['Scale'].default_value = 140.0; noise.inputs['Detail'].default_value = 6.0
+    bump = N('ShaderNodeBump'); bump.inputs['Strength'].default_value = 0.25; bump.inputs['Distance'].default_value = 0.02
+    L(noise.outputs['Fac'], bump.inputs['Height'])
+    L(bump.outputs['Normal'], bsdf.inputs['Normal'])
+    L(mix.outputs['Result'], bsdf.inputs['Base Color'])
+    L(bsdf.outputs['BSDF'], outn.inputs['Surface'])
+    return mat, tn
+
+
+terrain = next((o for o in world_objs if o.name.startswith('terrain')), None)
+if terrain:
+    gmat, near_tex = ground_material()
+    terrain.data.materials.clear()
+    terrain.data.materials.append(gmat)
+    # Pool basin: cut the terrain where the near bake is transparent inside the window.
+    # (Handled geometrically: delete terrain faces under the hole.)
+    hole_img = near_tex.image
+    px = np.array(hole_img.pixels[:], dtype=np.float32).reshape(hole_img.size[1], hole_img.size[0], 4)
+    make_single_user(terrain)
+    bm = bmesh.new()
+    bm.from_mesh(terrain.data)
+    mw = terrain.matrix_world
+    kill = []
+    S = near['size']
+    for f in bm.faces:
+        c = mw @ f.calc_center_median()
+        u = (c.x - near['cx']) / S + 0.5
+        v = (c.y + near['cz']) / S + 0.5
+        if 0 <= u < 1 and 0 <= v < 1:
+            a = px[int(v * hole_img.size[1]), int(u * hole_img.size[0]), 3]
+            if a < 0.5:
+                kill.append(f)
+    if kill:
+        bmesh.ops.delete(bm, geom=kill, context='FACES')
+    bm.to_mesh(terrain.data)
+    bm.free()
+
+# ----------------------------------------------------------- material fixes
+for mat in bpy.data.materials:
+    if not mat.use_nodes:
+        continue
+    bsdf = mat.node_tree.nodes.get('Principled BSDF')
+    if not bsdf:
+        continue
+    name = mat.name.lower()
+    if 'glass' in name and 'rail' not in name:
+        # Architectural glazing: clear, reflective, slightly tinted, with the
+        # warm interior light read through it.
+        bsdf.inputs['Roughness'].default_value = 0.02
+        bsdf.inputs['IOR'].default_value = 1.52
+        bsdf.inputs['Coat Weight'].default_value = 0.0
+    if 'poolwater' in name or 'water' in name:
+        bsdf.inputs['Transmission Weight'].default_value = 0.85
+        bsdf.inputs['Roughness'].default_value = 0.02
+        bsdf.inputs['IOR'].default_value = 1.33
+    # Rendered walls: real lime render sits near 0.6 albedo, not paper white.
+    if name.startswith('plaster'):
+        bc = bsdf.inputs['Base Color']
+        if bc.is_linked:
+            mul = mat.node_tree.nodes.new('ShaderNodeMix')
+            mul.data_type = 'RGBA'
+            mul.blend_type = 'MULTIPLY'
+            mul.inputs['Factor'].default_value = 1.0
+            mul.inputs['B'].default_value = (0.8, 0.79, 0.77, 1)
+            src = bc.links[0].from_socket
+            mat.node_tree.links.new(src, mul.inputs['A'])
+            mat.node_tree.links.new(mul.outputs['Result'], bc)
+    # Leaves and cards: light passes through foliage.
+    if bsdf.inputs['Base Color'].is_linked and mat.blend_method != 'OPAQUE':
+        bsdf.inputs['Subsurface Weight'].default_value = 0.0
+        bsdf.inputs['Transmission Weight'].default_value = 0.12
+
+# ------------------------------------------------------------ sky and sun
+sun_w = b(shot['sun']).normalized()
+elev = math.asin(max(-1.0, min(1.0, sun_w.z)))
+rot = math.atan2(sun_w.x, -sun_w.y)  # Blender sky: rotation measured from -Y towards +X
+world = bpy.data.worlds.new('sky')
+scene.world = world
+nt = world.node_tree
+nt.nodes.clear()
+sky = nt.nodes.new('ShaderNodeTexSky')
+sky.sky_type = 'MULTIPLE_SCATTERING'
+sky.sun_disc = False  # the sun lamp is the sun
+sky.sun_elevation = elev
+sky.sun_rotation = rot
+sky.altitude = 200.0
+sky.air_density = 1.0
+sky.aerosol_density = 1.4
+bg = nt.nodes.new('ShaderNodeBackground')
+bg.inputs['Strength'].default_value = 0.11
+wout = nt.nodes.new('ShaderNodeOutputWorld')
+nt.links.new(sky.outputs['Color'], bg.inputs['Color'])
+nt.links.new(bg.outputs['Background'], wout.inputs['Surface'])
+
+sun_data = bpy.data.lights.new('sun', 'SUN')
+sun_data.energy = 4.2
+sun_data.angle = math.radians(0.6)
+sun_data.color = (1.0, 0.86, 0.68)
+sun = bpy.data.objects.new('sun', sun_data)
+scene.collection.objects.link(sun)
+sun.rotation_euler = (-sun_w).to_track_quat('-Z', 'Y').to_euler()
+
+# ---------------------------------------------------------------- camera
+cam_data = bpy.data.cameras.new('cam')
+cam_data.sensor_fit = 'VERTICAL'
+cam_data.angle_y = math.radians(shot['fov'])
+cam_data.clip_start = 0.1
+cam_data.clip_end = 6000
+cam = bpy.data.objects.new('cam', cam_data)
+scene.collection.objects.link(cam)
+cam.location = b(shot['position'])
+direction = b(shot['target']) - cam.location
+cam.rotation_euler = direction.to_track_quat('-Z', 'Y').to_euler()
+scene.camera = cam
+
+# -------------------------------------------------------- optional grass
+def scatter_grass(window_m=70.0, per_m2=900, res=0.1):
+    """Real grass blades on the lawn around the lot.
+
+    Density comes from a mask: lawn-coloured ground in the near bake, minus the
+    footprint of every exported surface at ground level (roads, paving, slabs,
+    deck, pool, site works), so blades never poke through hard surfaces."""
+    from PIL import Image, ImageDraw
+
+    cx, cz = shot['lot']['centroid']['x'], shot['lot']['centroid']['z']
+    n = int(window_m / res)
+    x0, y0 = cx - window_m / 2, -cz - window_m / 2  # Blender XY of the window corner
+
+    # 1. Lawn mask from the near bake (green dominates, alpha present).
+    img = near_tex.image
+    px = np.array(img.pixels[:], dtype=np.float32).reshape(img.size[1], img.size[0], 4)
+    xs = x0 + (np.arange(n) + 0.5) * res
+    ys = y0 + (np.arange(n) + 0.5) * res
+    u = ((xs - near['cx']) / near['size'] + 0.5) * img.size[0]
+    v = ((ys + near['cz']) / near['size'] + 0.5) * img.size[1]
+    ui = np.clip(u.astype(int), 0, img.size[0] - 1)
+    vi = np.clip(v.astype(int), 0, img.size[1] - 1)
+    samp = px[vi[:, None], ui[None, :]]  # rows: y, cols: x
+    r, g, bl, a = samp[..., 0], samp[..., 1], samp[..., 2], samp[..., 3]
+    lawn = ((g > r * 1.05) & (g > bl * 1.2) & (a > 0.5)).astype(np.float32)
+
+    # 2. Hard surfaces: rasterise ground-level triangles of every unique mesh
+    #    (instanced meshes are trees, tufts, impostors and markers).
+    block = Image.new('L', (n, n), 0)
+    draw = ImageDraw.Draw(block)
+    for ob in list(world_objs) + list(house_objs):
+        if ob.type != 'MESH' or ob is terrain or ob.data.users > 1:
+            continue
+        me = ob.data
+        nv = len(me.vertices)
+        if nv == 0 or nv > 300000:
+            continue
+        co = np.empty(nv * 3, dtype=np.float32)
+        me.vertices.foreach_get('co', co)
+        co = co.reshape(-1, 3)
+        mw = np.array(ob.matrix_world, dtype=np.float32)
+        co = co @ mw[:3, :3].T + mw[:3, 3]
+        if co[:, 2].min() > 0.45:
+            continue
+        me.calc_loop_triangles()
+        tri = np.empty(len(me.loop_triangles) * 3, dtype=np.int32)
+        me.loop_triangles.foreach_get('vertices', tri)
+        p3 = co[tri.reshape(-1, 3)]  # (T, 3, 3)
+        keep = p3[:, :, 2].min(1) < 0.45
+        px2 = (p3[keep][:, :, 0] - x0) / res
+        py2 = n - 1 - (p3[keep][:, :, 1] - y0) / res
+        inside = (px2.max(1) > -2) & (px2.min(1) < n + 2) & (py2.max(1) > -2) & (py2.min(1) < n + 2)
+        for xs3, ys3 in zip(px2[inside], py2[inside]):
+            draw.polygon(list(zip(xs3.tolist(), ys3.tolist())), fill=255)
+    hard = np.asarray(block, dtype=np.float32)[::-1, :] / 255.0
+    density = np.clip(lawn * (1.0 - hard), 0, 1)
+    dimg = bpy.data.images.new('grass-density', n, n, alpha=False, float_buffer=True)
+    rgba = np.dstack([density, density, density, np.ones_like(density)]).astype(np.float32)
+    dimg.pixels.foreach_set(rgba.ravel())
+
+    # 3. Emitter plane over the window, UV 0..1 = mask.
+    bpy.ops.mesh.primitive_plane_add(size=window_m, location=(cx, -cz, 0.0))
+    plane = bpy.context.active_object
+    plane.name = 'grass-emitter'
+    plane.hide_render = False
+    plane.data.materials.append(bpy.data.materials.new('emitter-invisible'))
+    em = plane.data.materials[0]
+    em.node_tree.nodes.clear()
+    em_out = em.node_tree.nodes.new('ShaderNodeOutputMaterial')
+    em_tr = em.node_tree.nodes.new('ShaderNodeBsdfTransparent')
+    em.node_tree.links.new(em_tr.outputs[0], em_out.inputs['Surface'])
+    bpy.ops.object.modifier_add(type='SUBSURF')
+    plane.modifiers[-1].levels = 0
+    ps = plane.modifiers.new('grass', 'PARTICLE_SYSTEM').particle_system
+    st = ps.settings
+    st.type = 'HAIR'
+    st.count = int(window_m * window_m * per_m2 / 8)
+    st.hair_length = 0.11
+    st.use_advanced_hair = True
+    st.emit_from = 'FACE'
+    st.distribution = 'RAND'
+    st.child_type = 'INTERPOLATED'
+    st.child_percent = 8
+    st.rendered_child_count = 8
+    st.child_length = 1.0
+    st.child_length_threshold = 0.35
+    st.roughness_1 = 0.02
+    st.roughness_endpoint = 0.035
+    st.roughness_2 = 0.03
+    st.clump_factor = 0.05
+    st.root_radius = 1.0
+    st.tip_radius = 0.0
+    st.radius_scale = 0.0035
+    st.hair_step = 4
+    st.render_step = 4
+    st.use_hair_bspline = True
+    st.factor_random = 0.25
+    st.normal_factor = 1.0
+    st.brownian_factor = 0.0
+    # Density from the mask.
+    tex = bpy.data.textures.new('grass-density', 'IMAGE')
+    tex.image = dimg
+    slot = st.texture_slots.add()
+    slot.texture = tex
+    slot.texture_coords = 'UV'
+    slot.use_map_time = False
+    slot.use_map_density = True
+    slot.density_factor = 1.0
+    slot.use_map_length = True
+    slot.length_factor = 0.6
+    # Blade material: ground colour under each blade, varied per strand.
+    gm = bpy.data.materials.new('grass-blades')
+    nt = gm.node_tree
+    nt.nodes.clear()
+    o = nt.nodes.new('ShaderNodeOutputMaterial')
+    bsdf = nt.nodes.new('ShaderNodeBsdfPrincipled')
+    bsdf.inputs['Roughness'].default_value = 0.6
+    bsdf.inputs['Transmission Weight'].default_value = 0.1
+    hi = nt.nodes.new('ShaderNodeHairInfo')
+    ramp = nt.nodes.new('ShaderNodeValToRGB')
+    ramp.color_ramp.elements[0].color = (0.13, 0.19, 0.045, 1)
+    ramp.color_ramp.elements[1].color = (0.33, 0.39, 0.12, 1)
+    nt.links.new(hi.outputs['Random'], ramp.inputs['Fac'])
+    tip = nt.nodes.new('ShaderNodeMix'); tip.data_type = 'RGBA'; tip.blend_type = 'MULTIPLY'
+    tipv = nt.nodes.new('ShaderNodeMapRange')
+    tipv.inputs['To Min'].default_value = 0.55
+    tipv.inputs['To Max'].default_value = 1.15
+    nt.links.new(hi.outputs['Intercept'], tipv.inputs['Value'])
+    comb = nt.nodes.new('ShaderNodeCombineXYZ')
+    for k in range(3):
+        nt.links.new(tipv.outputs['Result'], comb.inputs[k])
+    tip.inputs['Factor'].default_value = 1.0
+    nt.links.new(ramp.outputs['Color'], tip.inputs['A'])
+    nt.links.new(comb.outputs[0], tip.inputs['B'])
+    nt.links.new(tip.outputs['Result'], bsdf.inputs['Base Color'])
+    nt.links.new(bsdf.outputs['BSDF'], o.inputs['Surface'])
+    plane.data.materials.append(gm)
+    st.material = 2
+    print(f'grass: {st.count} parents x {st.rendered_child_count} children over {window_m:.0f} m', flush=True)
+
+
+if args.grass and terrain:
+    scatter_grass()
+
+# ---------------------------------------------------------------- render
+r = scene.render
+r.engine = 'CYCLES'
+r.resolution_x, r.resolution_y = W, H
+r.resolution_percentage = 100
+r.film_transparent = False
+cy = scene.cycles
+cy.device = 'CPU'
+cy.samples = args.samples
+cy.use_adaptive_sampling = True
+cy.adaptive_threshold = 0.02
+cy.use_denoising = True
+cy.denoiser = 'OPENIMAGEDENOISE'
+cy.max_bounces = 6
+cy.diffuse_bounces = 3
+cy.glossy_bounces = 3
+cy.transmission_bounces = 6
+cy.transparent_max_bounces = 24
+cy.caustics_reflective = False
+cy.caustics_refractive = False
+cy.sample_clamp_indirect = 8.0
+if args.threads:
+    r.threads_mode = 'FIXED'
+    r.threads = args.threads
+r.image_settings.file_format = 'OPEN_EXR'
+r.image_settings.color_depth = '32'
+exr = out_png.rsplit('.', 1)[0] + '.exr'
+r.filepath = exr
+print(f'clipped {clipped} components; rendering {W}x{H} @ {args.samples} spp', flush=True)
+bpy.ops.render.render(write_still=True)
+
+# ------------------------------------------------------ tone map to PNG
+img = bpy.data.images.load(exr)
+w, h = img.size
+rgb = np.array(img.pixels[:], dtype=np.float32).reshape(h, w, 4)[::-1, :, :3]
+rgb *= 2.0 ** args.exposure
+
+
+def aces(x):
+    a, b_, c, d, e = 2.51, 0.03, 2.43, 0.59, 0.14
+    return np.clip((x * (a * x + b_)) / (x * (c * x + d) + e), 0, 1)
+
+
+mapped = aces(rgb * 0.85)
+srgb = np.where(mapped <= 0.0031308, 12.92 * mapped, 1.055 * np.power(mapped, 1 / 2.4) - 0.055)
+from PIL import Image  # noqa: E402
+
+Image.fromarray((np.clip(srgb, 0, 1) * 255 + 0.5).astype(np.uint8)).save(out_png)
+print('wrote', out_png, flush=True)

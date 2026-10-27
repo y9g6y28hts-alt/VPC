@@ -573,6 +573,10 @@ export async function createExperience(container, options = {}) {
       }
       director.update(dt);
     },
+    /** Scene handles for offline tools (tools/cinematic): never used by the page. */
+    internals() {
+      return { scene, camera, renderer, sunDir: env.sunDir.clone(), lot: currentLot, terrain, lots, residence, vegetation };
+    },
     /** Triangle budget per top-level group (instanced meshes count every instance). */
     sceneStats() {
       const stats = {};

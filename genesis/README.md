@@ -111,9 +111,20 @@ In the explorer (`js/ui/cinema.js`), the real-time camera lands exactly on the f
 
 ## What Génesis still needs to supply
 
-1. **Contact channel**: WhatsApp number, sales e-mail and/or an HTTPS inquiry endpoint → `js/config/contact.js`.
-2. **Availability per lot** (if it should be public) → `KNOWN_AVAILABILITY`, with its source.
-3. Optionally, a professionally designed residence as a GLB with components split by trade, to replace the concept model.
+Every item below is a one-line change; until it is set the page adapts on its own (nothing fake is shown).
+
+| What | Where | Effect once set |
+| --- | --- | --- |
+| WhatsApp number (digits, with 595), sales e-mail, or an HTTPS inquiry endpoint | `js/config/contact.js` | The floating button becomes a WhatsApp button with a prepared message; the form sends (endpoint) or hands over to WhatsApp / e-mail |
+| Public address once the domain is live | `SITE.siteUrl` in `js/config/site.js` | Absolute `og:image`, `og:url` and canonical link (link previews in WhatsApp and social networks, search engines) |
+| Google Analytics 4 measurement ID | `SITE.analyticsId` | Loads GA4 (IP anonymised; off with Do Not Track / GPC). Events: `select_lot`, `inquiry` (status, lot, channel, topic), `open_explorer`, `contact_button`, `open_map`, `gallery_fullscreen`, `spec_action`, `brochure_download`; never names, phones or messages |
+| Brochure PDF (e.g. `assets/docs/viva-lago-brochure.pdf`) | `SITE.brochureUrl` | “Descargar brochure (PDF)” appears in the development sheet |
+| Availability per lot, with its source | `KNOWN_AVAILABILITY` in `js/data/viva-lago.js` | Lot browser and 3D show sold / reserved / available |
+| Legal review | `privacidad.html` | The privacy policy is a draft for Génesis' legal adviser |
+
+Optionally: drone photos or video of the site, Génesis' track record for “Nosotros”, and a professionally designed residence as a GLB with components split by trade, to replace the concept model.
+
+Publishing: the site is static. Copy `index.html`, `privacidad.html`, `manifest.webmanifest`, `robots.txt`, `css/`, `js/`, `vendor/` and `assets/` (without `assets/trees/source`) to any web host with HTTPS; `.exr` must be served as a binary file.
 
 ## Assets and licences
 

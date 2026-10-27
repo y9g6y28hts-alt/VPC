@@ -9,6 +9,8 @@ import { mountStageViewer } from './ui/stage-viewer.js';
 import { mountFilmVideo } from './ui/film-video.js';
 import { mountGallery } from './ui/gallery.js';
 import { mountFab } from './ui/fab.js';
+import { SITE as SITE_CONFIG } from './config/site.js';
+import { initAnalytics, track } from './core/track.js';
 import { initHeroSequence } from './hero-sequence.js';
 import { findLot, DEVELOPMENT, SITE_LOCATION, COMMON_AREA_TABLE } from './data/viva-lago.js';
 import { formatDms, formatDecimal } from './core/geo.js';
@@ -130,6 +132,35 @@ let pendingLot = null;
 whenNear(document.querySelector('[data-lot-browser]'), (host) => {
   lotBrowser = mountLotBrowser(host, { onExplore: (id) => open(id), onInquire: inquireAbout, reducedMotion });
   if (pendingLot) lotBrowser.select(pendingLot);
+});
+
+// Launch settings (js/config/site.js): measurement, absolute preview URLs, brochure.
+initAnalytics();
+if (SITE_CONFIG.siteUrl) {
+  for (const [sel, attr] of [['meta[property="og:image"]', 'content']]) {
+    const el = document.querySelector(sel);
+    if (el) el.setAttribute(attr, new URL(el.getAttribute(attr), SITE_CONFIG.siteUrl).href);
+  }
+  const og = document.createElement('meta');
+  og.setAttribute('property', 'og:url');
+  og.content = SITE_CONFIG.siteUrl;
+  const canonical = document.createElement('link');
+  canonical.rel = 'canonical';
+  canonical.href = SITE_CONFIG.siteUrl;
+  document.head.append(og, canonical);
+}
+document.querySelectorAll('[data-brochure]').forEach((a) => {
+  if (!SITE_CONFIG.brochureUrl) return;
+  a.href = SITE_CONFIG.brochureUrl;
+  a.hidden = false;
+  a.addEventListener('click', () => track('brochure_download'));
+});
+// Which buttons people use (no personal data).
+document.addEventListener('click', (e) => {
+  const el = e.target.closest('[data-open-explorer], .fab, [data-maps-link], .showcase__open, .spec .btn');
+  if (!el) return;
+  const name = el.matches('[data-open-explorer]') ? 'open_explorer' : el.matches('.fab') ? 'contact_button' : el.matches('[data-maps-link]') ? 'open_map' : el.matches('.showcase__open') ? 'gallery_fullscreen' : 'spec_action';
+  track(name, { label: el.textContent.trim().slice(0, 40) });
 });
 
 // Contact always within reach.

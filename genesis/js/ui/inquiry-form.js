@@ -2,6 +2,7 @@
 // a message was sent unless the configured endpoint confirms it.
 import { h } from './dom.js';
 import { CONTACT } from '../config/contact.js';
+import { track } from '../core/track.js';
 import { DEVELOPMENT, LOTS, findLot } from '../data/viva-lago.js';
 import { hasAnyChannel, submitInquiry, validateInquiry, CONTACT_PREFERENCES, INQUIRY_TOPICS } from '../core/inquiry.js';
 import { lotLabel } from '../core/format.js';
@@ -58,6 +59,7 @@ export function mountInquiryForm(container, { lotId = null, compact = false, onS
     h('div', { class: 'row' }, preferredGroup, field('topic', 'Motivo de la consulta', topic)),
     field('message', 'Mensaje', message),
     h('div', {}, submit),
+    h('p', { class: 'form-privacy' }, 'Usamos tus datos solo para responder tu consulta. ', h('a', { href: 'privacidad.html' }, 'Política de privacidad'), '.'),
     status,
   );
 
@@ -84,6 +86,8 @@ export function mountInquiryForm(container, { lotId = null, compact = false, onS
     status.removeAttribute('data-tone');
     status.textContent = configured ? 'Enviando…' : '';
     const result = await submitInquiry(payload, CONTACT, { developmentName: DEVELOPMENT.name });
+    // Outcome and lot only: no names, phones or messages.
+    track('inquiry', { status: result.status, lot: payload.lotId || 'none', channel: payload.preferred || 'none', topic: payload.topic || 'none' });
     submit.disabled = false;
     status.replaceChildren();
     if (result.status === 'sent') {

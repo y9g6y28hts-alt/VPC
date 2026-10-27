@@ -12,6 +12,7 @@ import { DEVELOPMENT, CONCEPT_RESIDENCE, LOTS, findLot } from './data/viva-lago.
 import { CONSTRUCTION_STAGES } from './core/timeline.js';
 import { lotDetailRows, lotLabel, formatArea } from './core/format.js';
 import { Cinema, loadCinemaManifest, filmFor } from './ui/cinema.js';
+import { track } from './core/track.js';
 
 const root = () => document.getElementById('explorer');
 let ui = null;
@@ -340,6 +341,7 @@ function onHover(lot, pos) {
 }
 
 function selectLot(id) {
+  track('select_lot', { lot: id });
   if (xp) {
     if (!xp.select(id)) toastMsg('Terminá de ver la construcción o volvé al desarrollo para elegir otro lote.');
   } else {

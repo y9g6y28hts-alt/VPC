@@ -362,7 +362,9 @@ sky.sun_elevation = elev
 sky.sun_rotation = rot
 sky.altitude = 200.0
 sky.air_density = 1.0
-sky.aerosol_density = 1.4
+# Golden hour: the lower the sun, the warmer its light and the hazier the air.
+golden = max(0.0, min(1.0, (16.0 - math.degrees(elev)) / 10.0))
+sky.aerosol_density = 1.4 + 1.4 * golden
 # The sky seen by the camera stays at its strength; as fill light it counts
 # double, so shade under a clear sky reads open and blue rather than black
 # (the usual architectural-photography fill).
@@ -391,9 +393,9 @@ nt.links.new(bg.outputs['Background'], mixw.inputs[2])
 nt.links.new(mixw.outputs['Shader'], wout.inputs['Surface'])
 
 sun_data = bpy.data.lights.new('sun', 'SUN')
-sun_data.energy = 4.2
+sun_data.energy = 4.2 - 0.6 * golden
 sun_data.angle = math.radians(0.6)
-sun_data.color = (1.0, 0.8, 0.6)  # late-afternoon sun
+sun_data.color = (1.0, 0.8 - 0.16 * golden, 0.6 - 0.24 * golden)  # late afternoon → sunset
 sun = bpy.data.objects.new('sun', sun_data)
 scene.collection.objects.link(sun)
 sun.rotation_euler = (-sun_w).to_track_quat('-Z', 'Y').to_euler()
@@ -708,7 +710,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from grade import grade, load_exr, save  # noqa: E402
 
 def finish(exr, png):
-    save(grade(load_exr(exr), exposure=-1.0 + args.exposure, warmth=0.06), png)
+    save(grade(load_exr(exr), exposure=-1.0 + 0.45 * golden + args.exposure, warmth=0.06 + 0.1 * golden), png)
 
 
 print(f'clipped {clipped} components; rendering {W}x{H} @ {args.samples} spp', flush=True)

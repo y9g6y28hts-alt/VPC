@@ -1,0 +1,14 @@
+{
+  "name": "Viva Lago Country · Génesis",
+  "short_name": "Viva Lago",
+  "description": "Viva Lago Country, Ciudad del Este: 32 lotes sobre el río Acaray. Comercializa Génesis Negocios Inmobiliarios.",
+  "lang": "es-PY",
+  "start_url": "./",
+  "display": "browser",
+  "background_color": "#faf7f2",
+  "theme_color": "#1f1425",
+  "icons": [
+    { "src": "assets/social/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "assets/social/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

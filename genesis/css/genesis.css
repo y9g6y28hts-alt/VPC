@@ -3594,3 +3594,78 @@ body.is-locked .fab {
 .lightbox__caption {
   margin: 0;
 }
+
+/* Privacy note under the inquiry form */
+.form-privacy {
+  margin: 10px 0 0;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+}
+.form-privacy a,
+.site-footer .legal a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.on-dark .form-privacy,
+.xp-sheet .form-privacy {
+  color: rgba(244, 239, 230, 0.6);
+}
+
+/* Legal page */
+.legal-page {
+  background: var(--paper);
+}
+.legal-header {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: rgba(250, 247, 242, 0.94);
+  backdrop-filter: blur(10px);
+  border-bottom: var(--hairline);
+}
+.legal-header .inner {
+  max-width: var(--max);
+  margin: 0 auto;
+  padding: 0 var(--gutter);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 72px;
+}
+.legal-header img {
+  height: 22px;
+  width: auto;
+  display: block;
+}
+.legal-page main {
+  padding-top: clamp(48px, 7vw, 96px);
+}
+.legal-doc {
+  max-width: 760px;
+}
+.legal-doc h1 {
+  margin-bottom: 18px;
+}
+.legal-doc h2 {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: clamp(24px, 2.4vw, 30px);
+  margin: 44px 0 10px;
+}
+.legal-doc p,
+.legal-doc li {
+  color: var(--ink-soft);
+  line-height: 1.65;
+  max-width: 65ch;
+}
+.legal-doc ul {
+  padding-left: 1.2em;
+}
+.legal-doc li + li {
+  margin-top: 8px;
+}
+.legal-doc strong {
+  color: var(--ink);
+  font-weight: 500;
+}

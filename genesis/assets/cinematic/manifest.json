@@ -1,0 +1,160 @@
+{
+  "films": [
+    {
+      "id": "E-07",
+      "dir": "E-07",
+      "lot": "E-07",
+      "lots": [
+        "E-07"
+      ],
+      "mobile": true,
+      "caption": "Render de la residencia conceptual sobre el lote E-07 · Cycles",
+      "shots": {
+        "desktop": [
+          24,
+          3.4,
+          -11.5,
+          -6.5,
+          4.2,
+          14
+        ],
+        "mobile": [
+          18,
+          3.2,
+          -16,
+          -2,
+          4.6,
+          15
+        ]
+      },
+      "frames": [
+        {
+          "t": 0,
+          "file": "f00.webp"
+        },
+        {
+          "t": 0.06,
+          "file": "f01.webp"
+        },
+        {
+          "t": 0.17,
+          "file": "f02.webp"
+        },
+        {
+          "t": 0.27,
+          "file": "f03.webp"
+        },
+        {
+          "t": 0.36,
+          "file": "f04.webp"
+        },
+        {
+          "t": 0.47,
+          "file": "f05.webp"
+        },
+        {
+          "t": 0.55,
+          "file": "f06.webp"
+        },
+        {
+          "t": 0.64,
+          "file": "f07.webp"
+        },
+        {
+          "t": 0.74,
+          "file": "f08.webp"
+        },
+        {
+          "t": 0.84,
+          "file": "f09.webp"
+        },
+        {
+          "t": 0.92,
+          "file": "f10.webp"
+        },
+        {
+          "t": 1,
+          "file": "f11.webp"
+        }
+      ]
+    },
+    {
+      "id": "B-05",
+      "dir": "B-05",
+      "lot": "B-05",
+      "lots": [
+        "B-05"
+      ],
+      "mobile": true,
+      "caption": "Render de la residencia conceptual sobre el lote B-05 · Cycles",
+      "shots": {
+        "desktop": [
+          24,
+          3.4,
+          -11.5,
+          -6.5,
+          4.2,
+          14
+        ],
+        "mobile": [
+          18,
+          3.2,
+          -16,
+          -2,
+          4.6,
+          15
+        ]
+      },
+      "frames": [
+        {
+          "t": 0,
+          "file": "f00.webp"
+        },
+        {
+          "t": 0.06,
+          "file": "f01.webp"
+        },
+        {
+          "t": 0.17,
+          "file": "f02.webp"
+        },
+        {
+          "t": 0.27,
+          "file": "f03.webp"
+        },
+        {
+          "t": 0.36,
+          "file": "f04.webp"
+        },
+        {
+          "t": 0.47,
+          "file": "f05.webp"
+        },
+        {
+          "t": 0.55,
+          "file": "f06.webp"
+        },
+        {
+          "t": 0.64,
+          "file": "f07.webp"
+        },
+        {
+          "t": 0.74,
+          "file": "f08.webp"
+        },
+        {
+          "t": 0.84,
+          "file": "f09.webp"
+        },
+        {
+          "t": 0.92,
+          "file": "f10.webp"
+        },
+        {
+          "t": 1,
+          "file": "f11.webp"
+        }
+      ]
+    }
+  ]
+}

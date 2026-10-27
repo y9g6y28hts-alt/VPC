@@ -229,11 +229,22 @@ sky.sun_rotation = rot
 sky.altitude = 200.0
 sky.air_density = 1.0
 sky.aerosol_density = 1.4
+# The sky seen by the camera stays at its strength; as fill light it counts
+# double, so shade under a clear sky reads open and blue rather than black
+# (the usual architectural-photography fill).
 bg = nt.nodes.new('ShaderNodeBackground')
 bg.inputs['Strength'].default_value = 0.1
+fill = nt.nodes.new('ShaderNodeBackground')
+fill.inputs['Strength'].default_value = 0.2
+lp = nt.nodes.new('ShaderNodeLightPath')
+mixw = nt.nodes.new('ShaderNodeMixShader')
 wout = nt.nodes.new('ShaderNodeOutputWorld')
 nt.links.new(sky.outputs['Color'], bg.inputs['Color'])
-nt.links.new(bg.outputs['Background'], wout.inputs['Surface'])
+nt.links.new(sky.outputs['Color'], fill.inputs['Color'])
+nt.links.new(lp.outputs['Is Camera Ray'], mixw.inputs['Fac'])
+nt.links.new(fill.outputs['Background'], mixw.inputs[1])
+nt.links.new(bg.outputs['Background'], mixw.inputs[2])
+nt.links.new(mixw.outputs['Shader'], wout.inputs['Surface'])
 
 sun_data = bpy.data.lights.new('sun', 'SUN')
 sun_data.energy = 4.2
@@ -257,7 +268,7 @@ cam.rotation_euler = direction.to_track_quat('-Z', 'Y').to_euler()
 scene.camera = cam
 
 # -------------------------------------------------------- optional grass
-def scatter_grass(window_m=34.0, per_m2=420, res=0.08, children=6):
+def scatter_grass(window_m=34.0, per_m2=560, res=0.08, children=8):
     """Real grass blades on the lawn around the lot.
 
     Density comes from a mask: lawn-coloured ground in the near bake, minus the
@@ -357,17 +368,19 @@ def scatter_grass(window_m=34.0, per_m2=420, res=0.08, children=6):
     st.child_radius = 0.06
     st.child_roundness = 1.0
     st.child_length = 1.0
-    st.roughness_1 = 0.012
-    st.roughness_endpoint = 0.02
-    st.roughness_2 = 0.015
+    st.roughness_1 = 0.005
+    st.roughness_endpoint = 0.008
+    st.roughness_2 = 0.004
     st.clump_factor = 0.05
     st.root_radius = 1.0
     st.tip_radius = 0.0
-    st.radius_scale = 0.006
+    st.radius_scale = 0.0045
     st.hair_step = 4
     st.render_step = 4
     st.use_hair_bspline = True
-    st.factor_random = 0.25
+    # Random emission velocity is in metres, like the length: keep it a
+    # fraction of the blade so the lawn reads as mown, not overgrown.
+    st.factor_random = 0.012
     st.brownian_factor = 0.0
     # Set last: Blender derives the emission velocity from it (and vice versa).
     st.hair_length = 0.055  # a mown lawn
@@ -378,11 +391,11 @@ def scatter_grass(window_m=34.0, per_m2=420, res=0.08, children=6):
     o = nt.nodes.new('ShaderNodeOutputMaterial')
     bsdf = nt.nodes.new('ShaderNodeBsdfPrincipled')
     bsdf.inputs['Roughness'].default_value = 0.6
-    bsdf.inputs['Transmission Weight'].default_value = 0.1
+    bsdf.inputs['Transmission Weight'].default_value = 0.2
     hi = nt.nodes.new('ShaderNodeHairInfo')
     ramp = nt.nodes.new('ShaderNodeValToRGB')
-    ramp.color_ramp.elements[0].color = (0.13, 0.19, 0.045, 1)
-    ramp.color_ramp.elements[1].color = (0.33, 0.39, 0.12, 1)
+    ramp.color_ramp.elements[0].color = (0.10, 0.20, 0.04, 1)
+    ramp.color_ramp.elements[1].color = (0.24, 0.38, 0.08, 1)
     nt.links.new(hi.outputs['Random'], ramp.inputs['Fac'])
     tip = nt.nodes.new('ShaderNodeMix'); tip.data_type = 'RGBA'; tip.blend_type = 'MULTIPLY'
     tipv = nt.nodes.new('ShaderNodeMapRange')

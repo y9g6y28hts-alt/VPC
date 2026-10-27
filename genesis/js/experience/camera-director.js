@@ -49,7 +49,8 @@ export function lotShots(lot, side, aspect) {
     buildEnd: shot(s * 20, 6.5, -21, s * -0.5, 3.0, 14.5),
     hero: shot(s * 19, 2.6, -9, s * -1.2, 3.6, 13),
     front: shot(s * 19, 2.6, -9, s * -1.2, 3.6, 13),
-    garden: shot(-s * 13, 2.4, 45, 0, 2.6, 18),
+    // From the back corner, beside the planting: facade, deck and pool in view.
+    garden: shot(-s * 22, 2.4, 33, -s * 1, 2.8, 18),
     aerial: shot(s * 34, 30, -24, 0, 1.5, 17),
     orbitTarget: lotPoint(lot, 0, 3.0, 15),
   };

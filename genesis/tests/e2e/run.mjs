@@ -92,6 +92,23 @@ const gpuArgs = ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ig
     await snap(page, '01c-location');
   });
 
+  await check('stage viewer: buttons and scrubber move through the eight stages; closing image is labelled', async () => {
+    await page.locator('#obra').scrollIntoViewIfNeeded();
+    await page.waitForSelector('.stage-rail button', { timeout: 10000 });
+    assert.equal(await page.locator('.stage-rail button').count(), 8);
+    assert.match(await page.locator('.stage-caption').innerText(), /Residencia terminada/);
+    await page.click('.stage-rail button >> nth=2');
+    await page.waitForFunction(() => /Estructura de hormigón/.test(document.querySelector('.stage-caption').textContent));
+    assert.equal(await page.getAttribute('.stage-rail button >> nth=2', 'aria-pressed'), 'true');
+    await page.locator('.stage-range').focus();
+    await page.keyboard.press('Home');
+    await page.waitForFunction(() => /Terreno y replanteo/.test(document.querySelector('.stage-caption').textContent));
+    assert.match(await page.getAttribute('.stage-range', 'aria-valuetext'), /Terreno y replanteo/);
+    assert.match(await page.locator('.obra-note').textContent(), /no una obra existente/);
+    assert.match(await page.locator('.closing__caption').textContent(), /Visualización conceptual/);
+    await snap(page, '01e-stages');
+  });
+
   await check('lot browser: filter, plan and list select the same lot, sheet shows plan data, inquiry keeps the lot', async () => {
     await page.locator('#lotes').scrollIntoViewIfNeeded();
     assert.equal(await page.locator('[data-lot-browser] polygon.lot').count(), 32);
@@ -145,10 +162,18 @@ const gpuArgs = ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ig
     await page.fill('[data-contact-form] input[name="name"]', 'Ana Benítez');
     await page.click('[data-contact-form] button[type="submit"]');
     assert.match(await page.locator('[data-contact-form] .error').allTextContents().then((t) => t.join(' ')), /teléfono o un correo/);
+    // Choosing e-mail as the channel requires an address.
     await page.fill('[data-contact-form] input[name="phone"]', '0981 000 000');
+    await page.check('[data-contact-form] input[type="radio"][value="email"]', { force: true });
+    await page.click('[data-contact-form] button[type="submit"]');
+    assert.match(await page.locator('[data-contact-form] .error').allTextContents().then((t) => t.join(' ')), /correo/);
+    await page.check('[data-contact-form] input[type="radio"][value="whatsapp"]', { force: true });
+    await page.selectOption('[data-contact-form] select[name="topic"]', 'visit');
     await page.selectOption('[data-contact-form] select[name="lot"]', 'B-05');
     await page.click('[data-contact-form] button[type="submit"]');
     const status = await page.locator('[data-contact-form] .form-status').textContent();
+    assert.match(status, /coordinar una visita al predio/);
+    assert.match(status, /contacten por whatsapp/);
     assert.match(status, /no fue enviada/);
     assert.match(status, /lote B-05/);
     assert.doesNotMatch(status, /Recibimos/);

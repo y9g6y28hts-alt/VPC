@@ -3,7 +3,7 @@
 import { h } from './dom.js';
 import { CONTACT } from '../config/contact.js';
 import { DEVELOPMENT, LOTS, findLot } from '../data/viva-lago.js';
-import { hasAnyChannel, submitInquiry, validateInquiry } from '../core/inquiry.js';
+import { hasAnyChannel, submitInquiry, validateInquiry, CONTACT_PREFERENCES, INQUIRY_TOPICS } from '../core/inquiry.js';
 import { lotLabel } from '../core/format.js';
 
 let counter = 0;
@@ -34,6 +34,14 @@ export function mountInquiryForm(container, { lotId = null, compact = false, onS
   const name = h('input', { id: `${uid}-name`, name: 'name', autocomplete: 'name', required: true, 'aria-describedby': `${uid}-name-err` });
   const phone = h('input', { id: `${uid}-phone`, name: 'phone', type: 'tel', autocomplete: 'tel', inputmode: 'tel', 'aria-describedby': `${uid}-contact-err` });
   const email = h('input', { id: `${uid}-email`, name: 'email', type: 'email', autocomplete: 'email', 'aria-describedby': `${uid}-email-err` });
+  // Preferred channel: a radio group, so it reads as one choice with a label.
+  const preferredGroup = h(
+    'fieldset',
+    { class: 'field field--choice' },
+    h('legend', {}, 'Preferís que te contactemos por (opcional)'),
+    h('div', { class: 'choices' }, ...Object.entries(CONTACT_PREFERENCES).map(([value, label]) => h('label', { class: 'choice' }, h('input', { type: 'radio', name: `${uid}-preferred`, value }), h('span', {}, label)))),
+  );
+  const topic = h('select', { id: `${uid}-topic`, name: 'topic' }, ...Object.entries(INQUIRY_TOPICS).map(([value, label]) => h('option', { value }, label)));
   const message = h('textarea', { id: `${uid}-message`, name: 'message', rows: compact ? 3 : 4, placeholder: 'Contanos qué te interesa saber (opcional)' });
   const status = h('div', { class: 'form-status', role: 'status', 'aria-live': 'polite' });
   const submit = h('button', { class: 'btn', type: 'submit' }, configured ? 'Enviar consulta' : 'Preparar consulta', h('span', { class: 'arrow', 'aria-hidden': 'true' }, '→'));
@@ -47,6 +55,7 @@ export function mountInquiryForm(container, { lotId = null, compact = false, onS
     h('div', { class: 'row' }, field('name', 'Nombre', name), field('lot', 'Lote de interés', lotSelect)),
     h('div', { class: 'row' }, field('phone', 'Teléfono o WhatsApp', phone), field('email', 'Correo electrónico', email)),
     h('div', { class: 'error', id: `${uid}-contact-err`, 'aria-live': 'polite' }),
+    h('div', { class: 'row' }, preferredGroup, field('topic', 'Motivo de la consulta', topic)),
     field('message', 'Mensaje', message),
     h('div', {}, submit),
     status,
@@ -63,7 +72,8 @@ export function mountInquiryForm(container, { lotId = null, compact = false, onS
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const payload = { name: name.value, phone: phone.value, email: email.value, message: message.value, lotId: currentLot };
+    const preferred = form.querySelector(`input[name="${uid}-preferred"]:checked`)?.value || null;
+    const payload = { name: name.value, phone: phone.value, email: email.value, message: message.value, lotId: currentLot, preferred, topic: topic.value };
     const { valid, errors } = validateInquiry(payload);
     showErrors(errors);
     if (!valid) {

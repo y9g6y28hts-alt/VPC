@@ -103,3 +103,17 @@ test('property rows never invent values', () => {
   assert.equal(formatPrice(-1), PENDING);
   assert.equal(lotLabel({ block: 'A', number: 7 }), 'Manzana A · Lote 7');
 });
+
+test('contact preference and topic travel with the inquiry and shape validation', () => {
+  const text = composeInquiryMessage({ developmentName: 'Viva Lago Country', lotId: 'B-05', name: 'Ana', preferred: 'whatsapp', topic: 'visit' });
+  assert.match(text, /lote B-05/);
+  assert.match(text, /Motivo: coordinar una visita al predio\./);
+  assert.match(text, /contacten por whatsapp\./);
+  // Unknown values are ignored rather than echoed.
+  assert.doesNotMatch(composeInquiryMessage({ developmentName: 'X', name: 'Ana', preferred: 'fax', topic: 'x' }), /Motivo|contacten/);
+  assert.equal(validateInquiry({ name: 'Ana', email: 'ana@example.com', preferred: 'whatsapp' }).valid, false);
+  assert.match(validateInquiry({ name: 'Ana', email: 'ana@example.com', preferred: 'call' }).errors.contact, /teléfono/);
+  assert.equal(validateInquiry({ name: 'Ana', phone: '0981 123 456', preferred: 'email' }).valid, false);
+  assert.equal(validateInquiry({ name: 'Ana', phone: '0981 123 456', preferred: 'whatsapp' }).valid, true);
+});
+

@@ -5,11 +5,31 @@ import { h, prefersReducedMotion } from './ui/dom.js';
 import { mountInquiryForm } from './ui/inquiry-form.js';
 import { mountLotBrowser } from './ui/lot-browser.js';
 import { locationSvg, keyPlanSvg } from './ui/site-maps.js';
+import { mountStageViewer } from './ui/stage-viewer.js';
 import { initHeroSequence } from './hero-sequence.js';
 import { findLot, DEVELOPMENT, SITE_LOCATION, COMMON_AREA_TABLE } from './data/viva-lago.js';
 import { formatDms, formatDecimal } from './core/geo.js';
 
 const reducedMotion = prefersReducedMotion();
+
+/**
+ * Builds a below-the-fold section when it approaches the viewport (or when the
+ * browser is idle), keeping that work off the first paint.
+ */
+function whenNear(host, build) {
+  if (!host) return;
+  let done = false;
+  const run = () => {
+    if (done) return;
+    done = true;
+    io?.disconnect();
+    build(host);
+  };
+  const io = 'IntersectionObserver' in window ? new IntersectionObserver((e) => e.some((x) => x.isIntersecting) && run(), { rootMargin: '900px 0px' }) : null;
+  if (io) io.observe(host);
+  if ('requestIdleCallback' in window) requestIdleCallback(run, { timeout: 4000 });
+  else setTimeout(run, 1500);
+}
 
 // Official wordmark replaces the typeset name: ivory over dark grounds, colour
 // once the header turns solid (CSS picks the visible one).
@@ -81,7 +101,7 @@ const dec = document.querySelector('[data-coords-decimal]');
 if (dms) dms.textContent = formatDms(SITE_LOCATION);
 if (dec) dec.textContent = formatDecimal(SITE_LOCATION);
 document.querySelector('[data-maps-link]')?.setAttribute('href', DEVELOPMENT.mapsUrl);
-document.querySelector('[data-location-map]')?.append(locationSvg());
+whenNear(document.querySelector('[data-location-map]'), (host) => host.append(locationSvg()));
 const copyBtn = document.querySelector('[data-copy-coords]');
 const copyStatus = document.querySelector('[data-copy-status]');
 copyBtn?.addEventListener('click', async () => {
@@ -102,12 +122,19 @@ copyBtn?.addEventListener('click', async () => {
 });
 
 // Lot browser (plan, list and lot sheet; no WebGL needed).
-const browserHost = document.querySelector('[data-lot-browser]');
-const lotBrowser = browserHost ? mountLotBrowser(browserHost, { onExplore: (id) => open(id), onInquire: inquireAbout, reducedMotion }) : null;
+let lotBrowser = null;
+let pendingLot = null;
+whenNear(document.querySelector('[data-lot-browser]'), (host) => {
+  lotBrowser = mountLotBrowser(host, { onExplore: (id) => open(id), onInquire: inquireAbout, reducedMotion });
+  if (pendingLot) lotBrowser.select(pendingLot);
+});
+
+// Construction stages under the visitor's control.
+whenNear(document.querySelector('[data-stage-viewer]'), (host) => mountStageViewer(host, { reducedMotion }));
 
 // Common areas, each with a key plan.
 const infraHost = document.querySelector('[data-infra]');
-if (infraHost) {
+whenNear(infraHost, () => {
   infraHost.replaceChildren(
     ...COMMON_AREA_TABLE.map((c, i) =>
       h(
@@ -124,7 +151,7 @@ if (infraHost) {
       ),
     ),
   );
-}
+});
 
 // Year.
 document.querySelectorAll('[data-year]').forEach((n) => (n.textContent = String(new Date().getFullYear())));
@@ -157,7 +184,8 @@ function handleHash() {
   if (m && findLot(m[1])) {
     open(m[1]);
     contactForm?.setLot(m[1]);
-    lotBrowser?.select(m[1]);
+    if (lotBrowser) lotBrowser.select(m[1]);
+    else pendingLot = m[1];
   }
 }
 addEventListener('hashchange', handleHash);

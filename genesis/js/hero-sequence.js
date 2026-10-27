@@ -1,7 +1,9 @@
 // Scroll-driven hero: a sequence of frames rendered by the experience engine
 // (tools/capture-renders.mjs) in which the residence is built as the visitor
-// scrolls. Frames load progressively after the poster; the nearest loaded
-// frame is always drawn, so scrolling never waits on the network.
+// scrolls. Only the poster loads with the page; the other frames stream in once
+// the browser is idle or the visitor starts scrolling, are decoded off the main
+// thread, and the nearest loaded frame is always drawn, so scrolling never
+// waits on the network.
 
 const base = new URL('../assets/renders/hero/', import.meta.url);
 
@@ -27,8 +29,12 @@ export async function initHeroSequence(section, { reducedMotion = false } = {}) 
   const portrait = () => innerWidth / innerHeight < 0.85;
   let variant = portrait() ? 'mobile' : 'desktop';
   const frameUrl = (v, i) => new URL(`${v}/f${String(i).padStart(2, '0')}.webp`, base).href;
-  // The sequence opens on the empty lot; without scroll-scrubbing, show the result.
-  poster.src = frameUrl(variant, reducedMotion ? manifest.frames - 1 : 0);
+  // The sequence opens on the empty lot (already in the markup, chosen per
+  // orientation by <picture>); without scroll-scrubbing, show the result.
+  if (reducedMotion) {
+    poster.closest('picture')?.querySelectorAll('source').forEach((s) => s.remove());
+    poster.src = frameUrl(variant, manifest.frames - 1);
+  }
 
   if (reducedMotion) {
     if (stageLabel) stageLabel.textContent = manifest.stages.at(-1).label;
@@ -59,14 +65,17 @@ export async function initHeroSequence(section, { reducedMotion = false } = {}) 
       const i = order[k++];
       const img = new Image();
       img.decoding = 'async';
-      img.onload = () => {
-        if (v !== variant) return;
-        images[i] = img;
-        if (current < 0 || Math.abs(i - target) < Math.abs(current - target)) draw();
-        next();
-      };
-      img.onerror = next;
       img.src = frameUrl(v, i);
+      // decode() keeps image decoding off the main thread before first draw.
+      img
+        .decode()
+        .then(() => {
+          if (v !== variant) return;
+          images[i] = img;
+          if (current < 0 || Math.abs(i - target) < Math.abs(current - target)) draw();
+        })
+        .catch(() => {})
+        .finally(next);
     };
     // A few parallel lanes.
     next();
@@ -120,17 +129,44 @@ export async function initHeroSequence(section, { reducedMotion = false } = {}) 
     if (cue) cue.style.opacity = p > 0.04 ? '0' : '';
   }
 
-  load(variant);
+  // Start streaming frames when the page is idle or on the first scroll.
+  let started = false;
+  const start = () => {
+    if (started) return;
+    started = true;
+    load(variant);
+  };
+  // With Data Saver on, frames are only fetched once the visitor scrolls.
+  const saveData = navigator.connection?.saveData === true;
+  if (!saveData) {
+    if ('requestIdleCallback' in window) requestIdleCallback(start, { timeout: 2500 });
+    else setTimeout(start, 1200);
+  }
+  images = new Array(manifest.frames).fill(null);
   resize();
   onScroll();
-  addEventListener('scroll', () => requestAnimationFrame(onScroll), { passive: true });
+  let scheduled = false;
+  addEventListener(
+    'scroll',
+    () => {
+      start();
+      if (scheduled) return;
+      scheduled = true;
+      requestAnimationFrame(() => {
+        scheduled = false;
+        onScroll();
+      });
+    },
+    { passive: true },
+  );
   addEventListener('resize', () => {
     const v = portrait() ? 'mobile' : 'desktop';
     if (v !== variant) {
       variant = v;
+      poster.closest('picture')?.querySelectorAll('source').forEach((s) => s.remove());
       poster.src = frameUrl(variant, 0);
       poster.style.visibility = '';
-      load(variant);
+      if (started) load(variant);
     }
     resize();
     onScroll();

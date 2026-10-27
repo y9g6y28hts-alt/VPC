@@ -3,7 +3,8 @@
 //   assets/renders/hero/{desktop,mobile}/fNN.webp  – construction sequence (scroll hero)
 //   assets/renders/hero/manifest.json               – frame count and stage labels
 //   assets/renders/overview.webp                    – development overview poster
-//   node tools/capture-renders.mjs [--only=hero|overview] [--variant=desktop|mobile] [--frames=30]
+//   assets/renders/closing-{desktop,mobile}.webp     – finished residence from the garden
+//   node tools/capture-renders.mjs [--only=hero|overview|closing] [--variant=desktop|mobile] [--frames=30]
 import { createRequire } from 'node:module';
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -92,6 +93,24 @@ async function captureHero(browser, port) {
   );
 }
 
+async function captureClosing(browser, port) {
+  for (const [variant, size] of [['desktop', [1600, 900]], ['mobile', [720, 1280]]]) {
+    const page = await openHarness(browser, size, port);
+    await page.evaluate((lot) => {
+      window.xp.select(lot);
+      window.xp.machine.send('ARRIVED');
+      window.xp.debug.setProgress(1);
+      window.xp.debug.setPose('garden');
+      window.xp.debug.renderNow();
+    }, LOT);
+    const png = out(`closing-${variant}.png`);
+    await page.screenshot({ path: png, timeout: 600000 });
+    toWebp(png, out(`closing-${variant}.webp`), variant === 'mobile' ? 76 : 80);
+    await page.close();
+  }
+  console.log('closing: done');
+}
+
 async function captureOverview(browser, port) {
   const page = await openHarness(browser, [1600, 820], port);
   await page.evaluate(() => {
@@ -112,6 +131,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   fs.mkdirSync(out(), { recursive: true });
   if (!args.only || args.only === 'overview') await captureOverview(browser, port);
   if (!args.only || args.only === 'hero') await captureHero(browser, port);
+  if (!args.only || args.only === 'closing') await captureClosing(browser, port);
   await browser.close();
   server.close();
 }

@@ -49,7 +49,10 @@
     <section class="hero" id="inicio" aria-label="Presentación">
       <div class="hero__stage">
         <div class="hero__media" data-hero-media>
-          <img src="assets/renders/hero/desktop/f00.webp" alt="" data-hero-poster fetchpriority="high" />
+          <picture>
+            <source media="(max-aspect-ratio: 85/100)" srcset="assets/renders/hero/mobile/f00.webp" />
+            <img src="assets/renders/hero/desktop/f00.webp" alt="" width="1600" height="900" data-hero-poster fetchpriority="high" />
+          </picture>
         </div>
         <div class="hero__shade"></div>
         <div class="hero__content">
@@ -142,6 +145,21 @@
       </div>
     </section>
 
+    <!-- From site to residence: the construction sequence under the visitor's control. -->
+    <section class="section section--ivory" id="obra" aria-labelledby="obra-title">
+      <div class="inner">
+        <div class="obra-head reveal">
+          <div>
+            <p class="eyebrow">De la obra a la casa</p>
+            <h2 class="display h2" id="obra-title">Ocho etapas, <em>un mismo encuadre.</em></h2>
+          </div>
+          <p class="lede">Del terreno marcado con hilos a la casa con las luces encendidas, sobre el lote B-05 y con la cámara quieta. Elegí una etapa o recorré la obra con el control.</p>
+        </div>
+        <div class="stage-viewer reveal" data-stage-viewer></div>
+        <p class="small obra-note">Visualización conceptual generada con la escena 3D: muestra una residencia posible adaptada a un lote de 12 × 32 m, no una obra existente ni un proyecto aprobado.</p>
+      </div>
+    </section>
+
     <!-- Experience -->
     <section class="section section--dark on-dark" id="experiencia" aria-labelledby="xp-title">
       <div class="inner">
@@ -159,11 +177,6 @@
             <span class="xp-poster__note">Funciona en computadoras y celulares actuales. Si tu dispositivo no admite 3D, verás el plano con las mismas fichas.</span>
           </div>
         </div>
-        <ol class="steps reveal">
-          <li><span class="n">01</span><h3>Recorré el loteo</h3><p>Desde el aire: la avenida, las dos calles, el club náutico y la ribera del Acaray.</p></li>
-          <li><span class="n">02</span><h3>Elegí un lote</h3><p>Tocá una parcela. La cámara se acerca sin cortes ni pantallas intermedias.</p></li>
-          <li><span class="n">03</span><h3>Mirá cómo se construye</h3><p>Ocho etapas de obra, que podés pausar, recorrer o repetir.</p></li>
-        </ol>
       </div>
     </section>
 
@@ -184,6 +197,24 @@
             <li><strong>Imágenes.</strong> Recreaciones generadas con la escena 3D; la residencia es un concepto, no un proyecto aprobado.</li>
           </ul>
         </div>
+      </div>
+    </section>
+
+    <!-- Closing statement -->
+    <section class="closing on-dark" aria-labelledby="closing-title">
+      <picture>
+        <source media="(max-aspect-ratio: 85/100)" srcset="assets/renders/closing-mobile.webp" />
+        <img class="closing__img" src="assets/renders/closing-desktop.webp" alt="Residencia conceptual terminada, vista desde el jardín con el deck y la piscina, sobre un lote de Viva Lago Country" loading="lazy" width="1600" height="900" />
+      </picture>
+      <div class="closing__shade"></div>
+      <div class="closing__content">
+        <p class="eyebrow on-dark">Viva Lago Country</p>
+        <h2 class="display h2" id="closing-title">El terreno ya está.<br /><em>El resto es tu historia.</em></h2>
+        <div class="closing__actions">
+          <a class="btn btn--light" href="#contacto">Hablar con un asesor <span class="arrow" aria-hidden="true">→</span></a>
+          <a class="btn btn--text on-dark-text" href="#lotes">Volver a los lotes</a>
+        </div>
+        <p class="closing__caption">Visualización conceptual.</p>
       </div>
     </section>
 

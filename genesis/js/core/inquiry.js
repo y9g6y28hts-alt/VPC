@@ -33,22 +33,30 @@ export function mailtoUrl(email, subject, body) {
   return `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 }
 
-export function composeInquiryMessage({ developmentName, lotId, name, message }) {
+/** How the visitor wants to be contacted, and what the conversation is for. */
+export const CONTACT_PREFERENCES = Object.freeze({ whatsapp: 'WhatsApp', call: 'Llamada', email: 'Correo electrónico' });
+export const INQUIRY_TOPICS = Object.freeze({ info: 'Recibir información del lote', visit: 'Coordinar una visita al predio', advisor: 'Conversar con un asesor' });
+
+export function composeInquiryMessage({ developmentName, lotId, name, message, preferred, topic }) {
   const lines = [];
   lines.push(`Hola, soy ${name?.trim() || '(sin nombre)'}.`);
   if (lotId) lines.push(`Me interesa el lote ${lotId} de ${developmentName}.`);
   else lines.push(`Me interesa ${developmentName}.`);
+  if (INQUIRY_TOPICS[topic]) lines.push(`Motivo: ${INQUIRY_TOPICS[topic].toLowerCase()}.`);
+  if (CONTACT_PREFERENCES[preferred]) lines.push(`Prefiero que me contacten por ${CONTACT_PREFERENCES[preferred].toLowerCase()}.`);
   if (message?.trim()) lines.push(message.trim());
   lines.push('Quisiera recibir información verificada sobre superficie, precio, disponibilidad y financiación.');
   return lines.join('\n');
 }
 
-export function validateInquiry({ name, phone, email }) {
+export function validateInquiry({ name, phone, email, preferred }) {
   const errors = {};
   if (!name || name.trim().length < 2) errors.name = 'Ingresá tu nombre.';
   const hasPhone = typeof phone === 'string' && phone.replace(/\D/g, '').length >= 6;
   const hasEmail = typeof email === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
   if (!hasPhone && !hasEmail) errors.contact = 'Dejanos un teléfono o un correo para responderte.';
+  else if ((preferred === 'whatsapp' || preferred === 'call') && !hasPhone) errors.contact = 'Para contactarte por WhatsApp o llamada necesitamos tu teléfono.';
+  else if (preferred === 'email' && !hasEmail) errors.contact = 'Para responderte por correo necesitamos tu dirección de correo.';
   if (email && email.trim() && !hasEmail) errors.email = 'Revisá el formato del correo.';
   return { valid: Object.keys(errors).length === 0, errors };
 }

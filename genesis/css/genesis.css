@@ -508,6 +508,16 @@ textarea {
 .hero__title {
   max-width: 9.5em;
 }
+/* Type over a photograph: a soft local shadow keeps small text legible on
+   foliage and water without a panel behind it. */
+.hero .eyebrow {
+  color: rgba(244, 239, 230, 0.86);
+}
+.hero .eyebrow,
+.hero__lede,
+.hero__meta {
+  text-shadow: 0 1px 14px rgba(23, 15, 27, 0.6), 0 0 2px rgba(23, 15, 27, 0.35);
+}
 .hero__title .soft {
   color: rgba(244, 239, 230, 0.62);
 }
@@ -573,6 +583,62 @@ textarea {
   width: 28px;
   height: 1px;
   background: currentColor;
+}
+
+/* Opening: the image comes up from dark with a slight settle of the "camera",
+   then the type arrives in reading order. Opacity and transform only; controls
+   are usable from the first frame. */
+.hero__media {
+  animation: hero-expose 2.2s var(--ease-out) both;
+}
+.hero__content > *,
+.hero__meta {
+  animation: hero-rise 1.1s var(--ease-out) both;
+}
+.hero__content > :nth-child(1) {
+  animation-delay: 0.35s;
+}
+.hero__content > :nth-child(2) {
+  animation-delay: 0.5s;
+}
+.hero__content > :nth-child(3) {
+  animation-delay: 0.68s;
+}
+.hero__content > :nth-child(4) {
+  animation-delay: 0.82s;
+}
+.hero__meta {
+  animation-delay: 1s;
+}
+.site-header {
+  animation: fade-in 0.9s var(--ease-out) 0.25s both;
+}
+@keyframes hero-expose {
+  /* Starts dark but visible: the image paints (and counts as LCP) at once. */
+  from {
+    opacity: 0.25;
+    transform: scale(1.045);
+  }
+}
+@keyframes hero-rise {
+  /* Never fully transparent: the headline paints at once (LCP). */
+  from {
+    opacity: 0.2;
+    transform: translateY(14px);
+  }
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero__media,
+  .hero__content > *,
+  .hero__meta,
+  .site-header {
+    animation: none;
+  }
 }
 
 @media (max-width: 760px) {
@@ -745,43 +811,7 @@ textarea {
   }
 }
 
-.steps {
-  list-style: none;
-  margin: clamp(40px, 6vw, 72px) 0 0;
-  padding: 0;
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  border-top: var(--hairline-light);
-}
-.steps li {
-  padding: 26px 28px 0 0;
-}
-.steps .n {
-  font-family: var(--mono);
-  font-size: 11px;
-  letter-spacing: 0.14em;
-  color: var(--lime);
-}
-.steps h3 {
-  font-family: var(--serif);
-  font-weight: 400;
-  font-size: 28px;
-  line-height: 1.1;
-  margin: 12px 0 10px;
-}
-.steps p {
-  margin: 0;
-  color: rgba(244, 239, 230, 0.66);
-  font-size: 15px;
-}
 @media (max-width: 760px) {
-  .steps {
-    grid-template-columns: 1fr;
-  }
-  .steps li {
-    padding: 22px 0;
-    border-bottom: var(--hairline-light);
-  }
 }
 
 /* Brand section */
@@ -2371,5 +2401,251 @@ textarea {
   .lot-row {
     transition: none;
   }
+}
+
+/* From site to residence: stage viewer */
+.obra-head {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  gap: clamp(32px, 6vw, 96px);
+  align-items: end;
+  margin-bottom: clamp(40px, 5vw, 64px);
+}
+.stage-figure {
+  margin: 0;
+}
+.stage-media {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  max-width: 100%;
+  overflow: hidden;
+  background: var(--stone-200);
+}
+.stage-media img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: opacity var(--dur-slow) var(--ease-out);
+}
+.stage-media img.is-quick {
+  transition-duration: var(--dur-fast);
+}
+.stage-media img.is-back {
+  opacity: 0;
+}
+.stage-caption {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr);
+  align-items: baseline;
+  gap: 6px 20px;
+  padding: var(--space-2) 0;
+  border-bottom: var(--hairline);
+  min-height: 56px;
+}
+.stage-caption__n {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.stage-caption strong {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: 24px;
+  line-height: 1.1;
+}
+.stage-caption > span:last-child {
+  color: var(--ink-soft);
+  font-size: 15px;
+}
+.stage-controls {
+  display: grid;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+.stage-rail {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 6px;
+}
+.stage-rail button {
+  width: 100%;
+  min-height: 64px;
+  display: grid;
+  align-content: start;
+  gap: 4px;
+  padding: 10px 0 0;
+  border: 0;
+  border-top: 2px solid rgba(38, 34, 42, 0.16);
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  color: var(--ink-soft);
+  transition: border-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+}
+.stage-rail button:hover {
+  color: var(--ink);
+  border-top-color: rgba(38, 34, 42, 0.45);
+}
+.stage-rail button[aria-pressed='true'] {
+  color: var(--ink);
+  border-top-color: var(--brand-purple);
+}
+.stage-rail .n {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+}
+.stage-rail .l {
+  font-size: 13px;
+  line-height: 1.3;
+}
+.stage-range {
+  width: 100%;
+  accent-color: var(--brand-purple);
+  min-height: 32px;
+}
+.obra-note {
+  margin: var(--space-3) 0 0;
+  max-width: 60ch;
+}
+@media (max-width: 900px) {
+  .obra-head {
+    grid-template-columns: 1fr;
+  }
+  .stage-rail {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .stage-caption {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 760px) {
+  .stage-media {
+    aspect-ratio: 4 / 5;
+  }
+  /* Portrait frames: keep the house, crop the street in front. */
+  .stage-media img {
+    object-position: 50% 22%;
+  }
+}
+@media (max-width: 480px) {
+  .stage-rail .l {
+    display: none;
+  }
+  .stage-rail button {
+    min-height: 44px;
+  }
+}
+
+/* Closing statement */
+.closing {
+  position: relative;
+  min-height: min(92vh, 900px);
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+  background: var(--plum-950);
+  color: var(--ivory);
+}
+.closing__img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.closing__shade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(0deg, rgba(23, 15, 27, 0.82) 0%, rgba(23, 15, 27, 0.3) 45%, rgba(23, 15, 27, 0) 70%);
+}
+.closing__content {
+  position: relative;
+  width: 100%;
+  max-width: var(--max);
+  margin: 0 auto;
+  padding: 0 var(--gutter) clamp(48px, 9vh, 104px);
+}
+.closing__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px 22px;
+  align-items: center;
+  margin-top: var(--space-4);
+}
+.closing__caption {
+  margin: var(--space-3) 0 0;
+  font-size: 11px;
+  color: rgba(244, 239, 230, 0.5);
+}
+
+/* Contact preference (radio group inside the inquiry form) */
+.field--choice {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+.field--choice legend {
+  padding: 0;
+  margin-bottom: 8px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.on-dark .field--choice legend {
+  color: rgba(244, 239, 230, 0.6);
+}
+.choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.field .choice {
+  position: relative;
+  font-family: var(--sans);
+  font-size: 14px;
+  letter-spacing: 0;
+  text-transform: none;
+  color: inherit;
+  cursor: pointer;
+}
+.field .choice input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+.choice span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid color-mix(in srgb, currentColor 28%, transparent);
+  border-radius: var(--radius);
+  transition: background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+}
+.choice input:checked + span {
+  background: var(--charcoal);
+  border-color: var(--charcoal);
+  color: var(--ivory);
+}
+.on-dark .choice input:checked + span {
+  background: var(--ivory);
+  border-color: var(--ivory);
+  color: var(--charcoal);
+}
+.choice input:focus-visible + span {
+  outline: 2px solid var(--lime);
+  outline-offset: 2px;
 }
 

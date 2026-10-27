@@ -305,6 +305,32 @@ for mat in bpy.data.materials:
         bsdf.inputs['Subsurface Weight'].default_value = 0.0
         bsdf.inputs['Transmission Weight'].default_value = 0.12
 
+# Asphalt (the road parcel's unnamed material): the engine's dark albedo lets
+# the blue sky's reflection dominate at grazing angles, so the road reads navy.
+# Real asphalt is a weathered grey around 0.1 albedo and very rough.
+for ob in world_objs:
+    if ob.type != 'MESH' or not ob.name.startswith('roads'):
+        continue
+    for mat in ob.data.materials:
+        if not mat or not mat.name.lower().startswith('material'):
+            continue
+        bsdf = mat.node_tree.nodes.get('Principled BSDF')
+        bc = bsdf.inputs['Base Color'] if bsdf else None
+        if not bc or not bc.is_linked or bc.links[0].from_node.type != 'TEX_IMAGE':
+            continue  # factor-tinted materials (red earth) stay as they are
+        mul = mat.node_tree.nodes.new('ShaderNodeMix')
+        mul.data_type = 'RGBA'
+        mul.blend_type = 'MULTIPLY'
+        mul.inputs['Factor'].default_value = 1.0
+        mul.inputs['B'].default_value = (1.9, 1.88, 1.85, 1)
+        mat.node_tree.links.new(bc.links[0].from_socket, mul.inputs['A'])
+        mat.node_tree.links.new(mul.outputs['Result'], bc)
+        bsdf.inputs['Roughness'].default_value = 0.96
+        if bsdf.inputs['Roughness'].is_linked:
+            mat.node_tree.links.remove(bsdf.inputs['Roughness'].links[0])
+        bsdf.inputs['Specular IOR Level'].default_value = 0.35
+        print('asphalt:', mat.name, flush=True)
+
 # ------------------------------------------------------------ sky and sun
 sun_w = b(shot['sun']).normalized()
 elev = math.asin(max(-1.0, min(1.0, sun_w.z)))
@@ -332,7 +358,17 @@ lp = nt.nodes.new('ShaderNodeLightPath')
 mixw = nt.nodes.new('ShaderNodeMixShader')
 wout = nt.nodes.new('ShaderNodeOutputWorld')
 nt.links.new(sky.outputs['Color'], bg.inputs['Color'])
-nt.links.new(sky.outputs['Color'], fill.inputs['Color'])
+# The fill is half desaturated: it stands in for the light bounced off the
+# surroundings (red earth, lawn, neighbouring houses) that the scene does not
+# model, so shade reads blue-grey rather than saturated navy.
+bw = nt.nodes.new('ShaderNodeRGBToBW')
+nt.links.new(sky.outputs['Color'], bw.inputs['Color'])
+desat = nt.nodes.new('ShaderNodeMix')
+desat.data_type = 'RGBA'
+desat.inputs['Factor'].default_value = 0.5
+nt.links.new(sky.outputs['Color'], desat.inputs['A'])
+nt.links.new(bw.outputs['Val'], desat.inputs['B'])
+nt.links.new(desat.outputs['Result'], fill.inputs['Color'])
 nt.links.new(lp.outputs['Is Camera Ray'], mixw.inputs['Fac'])
 nt.links.new(fill.outputs['Background'], mixw.inputs[1])
 nt.links.new(bg.outputs['Background'], mixw.inputs[2])

@@ -11,7 +11,12 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
-const args = Object.fromEntries(process.argv.slice(2).map((a) => a.replace(/^--/, '').split(/=(.*)/s).slice(0, 2)));
+const args = Object.fromEntries(
+  process.argv.slice(2).map((a) => {
+    const [k, v] = a.replace(/^--/, '').split(/=(.*)/s);
+    return [k, v ?? true]; // a bare flag (--hero) is true
+  }),
+);
 const LOT = args.lot || 'B-05';
 const VARIANTS = (args.variants || 'desktop,mobile').split(',');
 const SAMPLES = Number(args.samples || 64);

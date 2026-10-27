@@ -23,15 +23,19 @@ def aces(x):
     return np.clip((x * (a * x + b)) / (x * (c * x + d) + e), 0, 1)
 
 
-def grade(rgb, exposure=-1.0, warmth=0.04, contrast=1.06, saturation=1.04):
+def grade(rgb, exposure=-1.0, warmth=0.04, contrast=1.06, saturation=1.08, balance=(1.0, 1.0, 1.0), shadow_sat=0.85):
     x = rgb * (2.0 ** exposure)
-    # Late-afternoon balance: a touch warmer highlights, cooler shadows.
+    # Optional white balance (the render's fill light is already near neutral).
+    x = x * np.array(balance, np.float32)
+    # Late-afternoon warmth in the highlights only.
     lum = (x * np.array([0.2126, 0.7152, 0.0722], np.float32)).sum(-1, keepdims=True)
     t = np.clip(lum / (lum + 0.6), 0, 1)
-    x = x * (1 + warmth * (t * np.array([1.0, 0.35, -0.9], np.float32) + (1 - t) * np.array([-0.5, -0.1, 0.6], np.float32)))
+    x = x * (1 + warmth * t * np.array([1.0, 0.35, -0.9], np.float32))
     m = aces(np.maximum(x, 0))
     lum = (m * np.array([0.2126, 0.7152, 0.0722], np.float32)).sum(-1, keepdims=True)
-    m = np.clip(lum + (m - lum) * saturation, 0, 1)
+    # Shadows carry less colour than midtones (as on film), highlights keep it.
+    sat = shadow_sat + (saturation - shadow_sat) * np.clip(lum / 0.35, 0, 1)
+    m = np.clip(lum + (m - lum) * sat, 0, 1)
     m = np.clip(0.5 + (m - 0.5) * contrast, 0, 1)
     return np.where(m <= 0.0031308, 12.92 * m, 1.055 * np.power(m, 1 / 2.4) - 0.055)
 

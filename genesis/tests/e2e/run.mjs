@@ -109,6 +109,30 @@ const gpuArgs = ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ig
     await snap(page, '01e-stages');
   });
 
+  await check('club showcase: arrows, thumbnails and the full-screen viewer; contact button is honest', async () => {
+    await page.locator('#club').scrollIntoViewIfNeeded();
+    await page.waitForSelector('.showcase__thumbs button', { state: 'attached' });
+    assert.equal(await page.locator('.showcase__thumbs button').count(), 9);
+    const first = await page.textContent('.showcase__caption');
+    await page.click('.showcase__nav--next');
+    assert.notEqual(await page.textContent('.showcase__caption'), first);
+    assert.match(await page.textContent('.showcase__count'), /02 \/ 09/);
+    await page.click('.showcase__thumbs button >> nth=2');
+    assert.match(await page.textContent('.showcase__kind'), /Fotografía/);
+    await page.click('.showcase__open');
+    await page.waitForSelector('dialog.lightbox[open]');
+    assert.match(await page.textContent('.lightbox__caption'), /Sombrillas de paja.*Fotografía/);
+    await page.keyboard.press('ArrowRight');
+    assert.match(await page.textContent('.lightbox__count'), /4 \/ 9/);
+    await page.keyboard.press('Escape');
+    await page.waitForSelector('dialog.lightbox:not([open])', { state: 'attached' });
+    assert.match(await page.textContent('.club-note'), /renders son ilustrativos/);
+    // No WhatsApp number is configured: the button goes to the form, never to a made-up channel.
+    assert.equal(await page.getAttribute('.fab', 'href'), '#contacto');
+    assert.match(await page.textContent('.spec'), /Precio, disponibilidad y financiación/);
+    assert.doesNotMatch(await page.textContent('.spec'), /USD|Gs\b|\$/);
+  });
+
   await check('construction orbit video: poster, a playable source, labelled as a render; static with reduced motion', async () => {
     await page.locator('[data-film-video]').scrollIntoViewIfNeeded();
     await page.waitForSelector('[data-film-video] video source', { state: 'attached', timeout: 10000 });

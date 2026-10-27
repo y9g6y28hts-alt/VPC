@@ -8,6 +8,7 @@ import { locationSvg, keyPlanSvg } from './ui/site-maps.js';
 import { mountStageViewer } from './ui/stage-viewer.js';
 import { mountFilmVideo } from './ui/film-video.js';
 import { mountGallery } from './ui/gallery.js';
+import { mountFab } from './ui/fab.js';
 import { initHeroSequence } from './hero-sequence.js';
 import { findLot, DEVELOPMENT, SITE_LOCATION, COMMON_AREA_TABLE } from './data/viva-lago.js';
 import { formatDms, formatDecimal } from './core/geo.js';
@@ -131,9 +132,12 @@ whenNear(document.querySelector('[data-lot-browser]'), (host) => {
   if (pendingLot) lotBrowser.select(pendingLot);
 });
 
+// Contact always within reach.
+mountFab();
+
 // The club: Génesis' images, with a lightbox.
 const galleryHost = document.querySelector('[data-club-gallery]');
-if (galleryHost) mountGallery(galleryHost);
+if (galleryHost) mountGallery(galleryHost, { reducedMotion });
 
 // The construction orbit (a path-traced video; loads only near the viewport).
 const filmHost = document.querySelector('[data-film-video]');

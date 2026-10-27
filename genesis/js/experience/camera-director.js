@@ -7,9 +7,12 @@ import { lotToWorld } from '../core/lot-layout.js';
 
 /** Places worth a closer look from the overview (world coordinates). */
 export const PLACES = Object.freeze({
-  // On the bank south of the club: people fishing in the foreground, jet
-  // skis and boats on the Acaray beyond.
-  club: Object.freeze({ position: new THREE.Vector3(148, 3.4, 66), target: new THREE.Vector3(198, 0.6, 4) }),
+  // From the water off the club: beach, deck and pool, quinchos behind.
+  club: Object.freeze({ position: new THREE.Vector3(166, 7.5, 18), target: new THREE.Vector3(138, 0.8, 40) }),
+  // On the bank south of the club: people fishing, jet skis and boats beyond.
+  rio: Object.freeze({ position: new THREE.Vector3(148, 3.4, 66), target: new THREE.Vector3(198, 0.6, 4) }),
+  // Outside the entrance, on the public street: the portal and its sign.
+  portal: Object.freeze({ position: new THREE.Vector3(-101, 2.3, 60), target: new THREE.Vector3(-109, 3.4, 26) }),
 });
 
 export const OVERVIEW_POSE = Object.freeze({

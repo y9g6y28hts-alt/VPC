@@ -316,6 +316,15 @@ function bakeImpostor(renderer, branches, leaves, barkMat, leafMat, size = 256) 
 
 // ---------------------------------------------------------------- placement
 
+/** The club's waterfront and beach (club frame: a along the bank, b inland). */
+function inClubBeach(x, z) {
+  const dx = x - 132.3;
+  const dz = z - 22.6;
+  const a = dx * 0.6716 + dz * 0.7408;
+  const b = dx * -0.7408 + dz * 0.6716;
+  return a > -10 && a < 44 && b > -45 && b < 14;
+}
+
 export class Vegetation {
   constructor({ assets, renderer, settings, terrain, lots, lake }) {
     this.assets = assets;
@@ -404,14 +413,20 @@ export class Vegetation {
       const shore = this.terrain.lakeDistance(x, z);
       if (shore < 1.5 || shore > 16) continue;
       if (this.terrain.devDistance(x, z) < 1.5) continue;
+      if (inClubBeach(x, z)) continue; // the club's beach stays open to the water
       if (rnd() > 0.5 + 0.5 * density) continue;
       tryPlace(pickBroadleaf(rnd()), x, z, 2.5);
     }
 
     // 2. Common areas: the club grounds and the administration parcel, with
     //    yellow lapachos as accents (their final design is not yet defined).
+    // The club is built (js/experience/world/club.js): planting only at its
+    // inland edge, behind the quinchos and around the playground.
     const club = COMMON_AREAS.find((c) => c.id === 'club');
-    if (club) scatter(club.polygon, Math.round(9 + 5 * density), (r) => (r < 0.25 ? 'lapacho' : r < 0.7 ? pickBroadleaf(rnd()) : 'shrubB'), 4);
+    if (club) {
+      const edge = club.polygon.filter((p) => p.x < 120);
+      scatter(edge.length >= 3 ? edge : club.polygon, Math.round(4 + 3 * density), (r) => (r < 0.35 ? 'lapacho' : 'shrubB'), 3);
+    }
     const admin = COMMON_AREAS.find((c) => c.id === 'administracion');
     if (admin) scatter(admin.polygon, 3, (r) => (r < 0.5 ? 'lapacho' : 'shrub'), 2);
     // Pindó palms flank the entrance from the west street.

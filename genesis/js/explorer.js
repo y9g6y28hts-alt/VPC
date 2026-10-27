@@ -127,16 +127,27 @@ function buildUI() {
     if (lotSelect.value) selectLot(lotSelect.value);
     lotSelect.value = '';
   });
-  // A closer look at the river: the club's bank, jet skis, boats, fishing.
-  const placeBtn = h('button', { class: 'xp-chip xp-place', type: 'button', 'aria-pressed': 'false' }, 'Club náutico y río');
-  placeBtn.addEventListener('click', () => {
-    const atClub = placeBtn.getAttribute('aria-pressed') === 'true';
-    if (xp?.place(atClub ? 'overview' : 'club')) {
-      placeBtn.setAttribute('aria-pressed', String(!atClub));
-      placeBtn.textContent = atClub ? 'Club náutico y río' : 'Volver a la vista general';
-    }
+  // Closer looks from the overview: the club, the river, the entrance.
+  const PLACE_LABELS = [
+    ['club', 'Club náutico'],
+    ['rio', 'Río y pesca'],
+    ['portal', 'Portal de acceso'],
+  ];
+  const placeBtns = PLACE_LABELS.map(([key, label]) => {
+    const b = h('button', { class: 'xp-chip xp-place', type: 'button', 'aria-pressed': 'false', dataset: { place: key } }, label);
+    b.addEventListener('click', () => {
+      const here = b.getAttribute('aria-pressed') === 'true';
+      if (xp?.place(here ? 'overview' : key)) setPlace(here ? null : key);
+    });
+    return b;
   });
-  const placeRow = h('div', { class: 'xp-places' }, placeBtn);
+  const backBtn = h('button', { class: 'xp-chip xp-place-back', type: 'button', hidden: true }, 'Vista general');
+  backBtn.addEventListener('click', () => xp?.place('overview') && setPlace(null));
+  function setPlace(key) {
+    placeBtns.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.place === key)));
+    backBtn.hidden = !key;
+  }
+  const placeRow = h('div', { class: 'xp-places', role: 'group', 'aria-label': 'Lugares' }, ...placeBtns, backBtn);
   const overview = h(
     'section',
     { class: 'xp-panel xp-overview', 'aria-label': 'Elegir un lote' },
@@ -240,7 +251,7 @@ function buildUI() {
   return {
     viewToggle,
     el, stage, bar, lotLabelEl, disclosure, disclosureBtn, closeBtn, loading, loadBar, loadPct, loadLabel,
-    overview, placeBtn, lotSelect, build, stageName, stageCount, segments, pauseBtn, setPauseIcon,
+    overview, setPlace, lotSelect, build, stageName, stageCount, segments, pauseBtn, setPauseIcon,
     details, detailsLot, detailsRows, viewButtons, tooltip, toast, sheet, form, fallback,
   };
 }
@@ -277,11 +288,8 @@ function onState(state, ctx) {
   ui.el.dataset.state = state; // styling hook, also observed by the end-to-end tests
   ui.lotLabelEl.textContent = lot && state !== 'overview' ? lotLabel(lot) : '';
   show(ui.overview, state === 'overview');
-  if (state !== 'overview') {
-    // Leaving the overview (a lot was chosen): the next return starts from the general view.
-    ui.placeBtn.setAttribute('aria-pressed', 'false');
-    ui.placeBtn.textContent = 'Club náutico y río';
-  }
+  // Leaving the overview (a lot was chosen): the next return starts from the general view.
+  if (state !== 'overview') ui.setPlace(null);
   show(ui.build, state === 'building');
   show(ui.details, state === 'complete' || state === 'exploring');
   if (state === 'approaching') {

@@ -17,6 +17,7 @@ import { TerrainModel, buildTerrain, buildRoads, buildLake, createTerrainMateria
 import { LotLayer } from './world/lots.js';
 import { Vegetation } from './world/vegetation.js';
 import { Ambient } from './world/ambient.js';
+import { Club } from './world/club.js';
 import { createMaterials, disposeMaterials } from './materials.js';
 import { buildResidence, installGlassGlow } from './house/residence.js';
 import { ConstructionAnimator } from './house/construction.js';
@@ -112,6 +113,10 @@ export async function createExperience(container, options = {}) {
   // only; with reduced motion they hold a still pose.
   const ambient = new Ambient({ terrain: terrainModel, settings, reducedMotion: reducedMotion || settings.tier === 'low' });
   scene.add(ambient.group);
+
+  // The club and the access portal, after Génesis' images (illustrative).
+  const club = new Club({ terrain: terrainModel, materials, assets, palmMaterials: vegetation.plantKit().palmMaterials, onChange: () => invalidate(0.3) });
+  scene.add(club.group);
 
   report('house', 0, 'Residencia');
   const residence = buildResidence(materials, vegetation.plantKit(), { lawnDetail: settings.grassDetail });
@@ -555,6 +560,7 @@ export async function createExperience(container, options = {}) {
       residence.dispose();
       vegetation.dispose();
       ambient.dispose();
+      club.dispose();
       lots.dispose();
       scene.traverse((o) => {
         if (o.isMesh && o !== terrain) {

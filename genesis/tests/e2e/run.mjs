@@ -212,13 +212,15 @@ const gpuArgs = ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ig
 
   await check('overview: the club and river view flies there and back; life in the scene is labelled illustrative', async () => {
     const cam = () => page.evaluate(async () => (await import('./js/explorer.js'))._debugExperience().debug.info().camera);
-    await page.click('.xp-place');
-    assert.equal(await page.getAttribute('.xp-place', 'aria-pressed'), 'true');
+    await page.click('.xp-place[data-place="club"]');
+    assert.equal(await page.getAttribute('.xp-place[data-place="club"]', 'aria-pressed'), 'true');
     await page.waitForFunction(async () => (await import('./js/explorer.js'))._debugExperience().debug.info().camera[0] > 120, null, { timeout: 60000 });
-    assert.ok((await cam())[0] > 120, 'camera at the club bank');
-    await page.click('.xp-place');
-    await page.waitForFunction(async () => (await import('./js/explorer.js'))._debugExperience().debug.info().camera[0] < 0, null, { timeout: 60000 });
-    assert.match(await page.textContent('.xp-place'), /Club náutico y río/);
+    assert.ok((await cam())[0] > 120, 'camera off the club');
+    await page.click('.xp-place[data-place="portal"]');
+    await page.waitForFunction(async () => (await import('./js/explorer.js'))._debugExperience().debug.info().camera[0] < -100, null, { timeout: 60000 });
+    await page.click('.xp-place-back');
+    await page.waitForFunction(async () => (await import('./js/explorer.js'))._debugExperience().debug.info().camera[0] < 0 && (await import('./js/explorer.js'))._debugExperience().debug.info().camera[1] > 40, null, { timeout: 60000 });
+    assert.equal(await page.locator('.xp-place[aria-pressed="true"]').count(), 0);
     await page.click('.xp-chip:has-text("Sobre esta escena")');
     assert.match(await page.textContent('#xp-disclosure'), /personas, vehículos y embarcaciones que se ven en la escena son ilustrativos/i);
     await page.click('.xp-chip:has-text("Sobre esta escena")');

@@ -90,7 +90,7 @@ if (galleryHost) mountGallery(galleryHost, { reducedMotion });
 
 // The construction orbit (a path-traced video; loads only near the viewport).
 const filmHost = document.querySelector('[data-film-video]');
-if (filmHost) mountFilmVideo(filmHost, { reducedMotion });
+if (filmHost && !filmHost.closest('[hidden]')) mountFilmVideo(filmHost, { reducedMotion });
 
 // Construction stages under the visitor's control.
 whenNear(document.querySelector('[data-stage-viewer]'), (host) => mountStageViewer(host, { reducedMotion }));

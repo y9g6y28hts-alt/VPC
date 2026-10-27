@@ -166,6 +166,12 @@ const gpuArgs = ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ig
   });
 
   await check('construction orbit video: poster, a playable source, labelled as a render; static with reduced motion', async () => {
+    // Until the orbit is rendered the figure stays hidden and requests nothing.
+    if (await page.locator('.film-video[hidden]').count()) {
+      assert.equal(fs.existsSync(new URL('../../assets/cinematic/B-05/orbit.mp4', import.meta.url)), false, 'orbit exists: unhide the figure');
+      assert.equal(await page.locator('[data-film-video] video').count(), 0);
+      return;
+    }
     await page.locator('[data-film-video]').scrollIntoViewIfNeeded();
     await page.waitForSelector('[data-film-video] video source', { state: 'attached', timeout: 10000 });
     const v = await page.evaluate(() => {

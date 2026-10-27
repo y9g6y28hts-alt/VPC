@@ -1,0 +1,9 @@
+# Only the static site is deployed (no build step).
+node_modules/
+tests/
+tools/
+.film-work/
+assets/trees/source/
+package.json
+package-lock.json
+README.md

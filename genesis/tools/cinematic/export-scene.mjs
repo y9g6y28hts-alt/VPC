@@ -223,12 +223,12 @@ const [dlw] = await Promise.all([
   page.waitForEvent('download', { timeout: 900000 }),
   page.evaluate(() => {
     const { residence } = window.xp.debug.internals();
-    const skipNames = new Set(['lot-ground', 'lake-sky']);
+    const skipNames = new Set(['lot-ground', 'lake-sky', 'wake']);
     return window.__cine.exportGlb((o) => {
       for (let p = o; p; p = p.parent) if (p === residence.group || p.name === 'lot-pick') return false;
       if (skipNames.has(o.name)) return false;
       if (o.isLineSegments2 || o.material?.isLineMaterial) return false;
-      if (o.geometry?.type === 'SphereGeometry' || o.material?.isShaderMaterial) return false; // sky dome
+      if ((o.geometry?.type === 'SphereGeometry' && o.geometry.parameters.radius > 100) || o.material?.isShaderMaterial) return false; // sky dome
       return true;
     }, 'world.glb');
   }),

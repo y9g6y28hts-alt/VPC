@@ -84,6 +84,7 @@ function buildUI() {
     { class: 'xp-disclosure', hidden: true, id: 'xp-disclosure' },
     h('p', {}, h('strong', {}, 'Plano georreferenciado. '), `Lotes, calles, numeración y superficies provienen del ${DEVELOPMENT.planSource}. La vegetación, el entorno y el relieve son una recreación.`),
     h('p', {}, 'La residencia es un concepto arquitectónico, ajustado a las medidas de cada lote, para visualizar el potencial del terreno. No está aprobada para construcción ni incluida en el precio del lote.'),
+    h('p', {}, 'Las personas, vehículos y embarcaciones que se ven en la escena son ilustrativos: muestran usos posibles del entorno, no servicios ni equipamientos confirmados.'),
     h('p', {}, 'Precios, disponibilidad y financiación se informan únicamente a través de un asesor de Génesis.'),
   );
   const disclosureBtn = h('button', { class: 'xp-chip', type: 'button', 'aria-expanded': 'false', 'aria-controls': 'xp-disclosure' }, 'Sobre esta escena');
@@ -126,6 +127,16 @@ function buildUI() {
     if (lotSelect.value) selectLot(lotSelect.value);
     lotSelect.value = '';
   });
+  // A closer look at the river: the club's bank, jet skis, boats, fishing.
+  const placeBtn = h('button', { class: 'xp-chip xp-place', type: 'button', 'aria-pressed': 'false' }, 'Club náutico y río');
+  placeBtn.addEventListener('click', () => {
+    const atClub = placeBtn.getAttribute('aria-pressed') === 'true';
+    if (xp?.place(atClub ? 'overview' : 'club')) {
+      placeBtn.setAttribute('aria-pressed', String(!atClub));
+      placeBtn.textContent = atClub ? 'Club náutico y río' : 'Volver a la vista general';
+    }
+  });
+  const placeRow = h('div', { class: 'xp-places' }, placeBtn);
   const overview = h(
     'section',
     { class: 'xp-panel xp-overview', 'aria-label': 'Elegir un lote' },
@@ -134,6 +145,7 @@ function buildUI() {
     h('p', {}, 'Tocá una parcela para ver cómo podría construirse una residencia en ella. Podés recorrer la escena arrastrando y acercarte con la rueda o con dos dedos.'),
     h('div', { class: 'field' }, lotSelect),
     h('p', { class: 'note' }, `${LOTS.length} lotes · numeración del plano georreferenciado.`),
+    placeRow,
   );
 
   // Construction controls
@@ -228,7 +240,7 @@ function buildUI() {
   return {
     viewToggle,
     el, stage, bar, lotLabelEl, disclosure, disclosureBtn, closeBtn, loading, loadBar, loadPct, loadLabel,
-    overview, lotSelect, build, stageName, stageCount, segments, pauseBtn, setPauseIcon,
+    overview, placeBtn, lotSelect, build, stageName, stageCount, segments, pauseBtn, setPauseIcon,
     details, detailsLot, detailsRows, viewButtons, tooltip, toast, sheet, form, fallback,
   };
 }
@@ -265,6 +277,11 @@ function onState(state, ctx) {
   ui.el.dataset.state = state; // styling hook, also observed by the end-to-end tests
   ui.lotLabelEl.textContent = lot && state !== 'overview' ? lotLabel(lot) : '';
   show(ui.overview, state === 'overview');
+  if (state !== 'overview') {
+    // Leaving the overview (a lot was chosen): the next return starts from the general view.
+    ui.placeBtn.setAttribute('aria-pressed', 'false');
+    ui.placeBtn.textContent = 'Club náutico y río';
+  }
   show(ui.build, state === 'building');
   show(ui.details, state === 'complete' || state === 'exploring');
   if (state === 'approaching') {

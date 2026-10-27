@@ -3056,3 +3056,14 @@ textarea {
   }
 }
 
+
+/* Overview: places worth a closer look */
+.xp-places {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+.xp-place[aria-pressed='true'] {
+  background: rgba(244, 239, 230, 0.12);
+}

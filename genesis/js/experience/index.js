@@ -16,10 +16,11 @@ import { Environment } from './world/environment.js';
 import { TerrainModel, buildTerrain, buildRoads, buildLake, createTerrainMaterial } from './world/terrain.js';
 import { LotLayer } from './world/lots.js';
 import { Vegetation } from './world/vegetation.js';
+import { Ambient } from './world/ambient.js';
 import { createMaterials, disposeMaterials } from './materials.js';
 import { buildResidence, installGlassGlow } from './house/residence.js';
 import { ConstructionAnimator } from './house/construction.js';
-import { CameraDirector, OVERVIEW_POSE, lotShots, sunnySide, lotPoint } from './camera-director.js';
+import { CameraDirector, OVERVIEW_POSE, PLACES, lotShots, sunnySide, lotPoint } from './camera-director.js';
 
 export class WebGLUnavailableError extends Error {
   constructor() {
@@ -106,6 +107,11 @@ export async function createExperience(container, options = {}) {
   await vegetation.build((f) => report('vegetation', f, 'Vegetación'));
   scene.add(vegetation.group);
   if (disposed) return null;
+
+  // Residents, carts and boats (illustrative). They move on capable devices
+  // only; with reduced motion they hold a still pose.
+  const ambient = new Ambient({ terrain: terrainModel, settings, reducedMotion: reducedMotion || settings.tier === 'low' });
+  scene.add(ambient.group);
 
   report('house', 0, 'Residencia');
   const residence = buildResidence(materials, vegetation.plantKit(), { lawnDetail: settings.grassDetail });
@@ -377,7 +383,7 @@ export async function createExperience(container, options = {}) {
     const fading = sceneRenderer.render(dt);
     adaptResolution(dt);
 
-    const busy = moving || fading || director.busy || (machine.state === State.BUILDING && timeline.playing);
+    const busy = moving || fading || director.busy || ambient.animating || (machine.state === State.BUILDING && timeline.playing);
     if (busy) activeUntil = Math.max(activeUntil, now + 300);
     if (now < activeUntil) rafId = requestAnimationFrame(frame);
   }
@@ -388,6 +394,7 @@ export async function createExperience(container, options = {}) {
     env.updateFog(viewDir);
     lots.update(dt);
     lake.userData.tick(elapsed);
+    ambient.update(dt);
     if (materials.water.normalMap) materials.water.normalMap.offset.set(elapsed * 0.01, elapsed * 0.006);
     // Boundaries recede when the camera is close to a house.
     const dist = camera.position.distanceTo(director.controls.target);
@@ -488,6 +495,18 @@ export async function createExperience(container, options = {}) {
     seekStage(index) {
       return api.seek(CONSTRUCTION_STAGES[index]?.start ?? 0);
     },
+    /** From the overview, fly to a place (e.g. 'club') or back ('overview'). */
+    place(name) {
+      if (machine.state !== State.OVERVIEW) return false;
+      const pose = name === 'overview' ? OVERVIEW_POSE : PLACES[name];
+      if (!pose) return false;
+      director.setMode('cinematic');
+      director.flyTo(pose, { duration: 3.2, arc: 0.12 }).then((landed) => {
+        if (landed && machine.state === State.OVERVIEW) director.setMode(name === 'overview' ? 'overview' : 'place');
+      });
+      invalidate(1);
+      return true;
+    },
     view(name) {
       if (!currentShots || ![State.COMPLETE, State.EXPLORING].includes(machine.state)) return false;
       const pose = currentShots[name];
@@ -535,6 +554,7 @@ export async function createExperience(container, options = {}) {
       animator.dispose();
       residence.dispose();
       vegetation.dispose();
+      ambient.dispose();
       lots.dispose();
       scene.traverse((o) => {
         if (o.isMesh && o !== terrain) {
@@ -579,9 +599,10 @@ export async function createExperience(container, options = {}) {
       return api.debug.setCamera(p.toArray(), t.toArray());
     },
     setPose(name) {
-      const pose = name === 'overview' ? OVERVIEW_POSE : currentShots?.[name];
+      const pose = name === 'overview' ? OVERVIEW_POSE : PLACES[name] || currentShots?.[name];
       if (!pose) return false;
       director.stop();
+      if (PLACES[name]) director.setMode('place');
       camera.position.copy(pose.position);
       director.controls.target.copy(pose.target);
       camera.lookAt(pose.target);

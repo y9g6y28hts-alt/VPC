@@ -5,6 +5,13 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { easeInOutCubic, easeInOutSine, clamp, lerp } from '../core/easing.js';
 import { lotToWorld } from '../core/lot-layout.js';
 
+/** Places worth a closer look from the overview (world coordinates). */
+export const PLACES = Object.freeze({
+  // On the bank south of the club: people fishing in the foreground, jet
+  // skis and boats on the Acaray beyond.
+  club: Object.freeze({ position: new THREE.Vector3(148, 3.4, 66), target: new THREE.Vector3(198, 0.6, 4) }),
+});
+
 export const OVERVIEW_POSE = Object.freeze({
   position: new THREE.Vector3(-112, 64, 150),
   target: new THREE.Vector3(26, 0, -6),
@@ -111,6 +118,13 @@ export class CameraDirector {
       c.minPolarAngle = THREE.MathUtils.degToRad(18);
       c.maxPolarAngle = THREE.MathUtils.degToRad(80);
       this.bounds = { min: new THREE.Vector3(-200, 0, -150), max: new THREE.Vector3(240, 0, 170) };
+    } else if (mode === 'place') {
+      c.enablePan = true;
+      c.minDistance = 6;
+      c.maxDistance = 220;
+      c.minPolarAngle = THREE.MathUtils.degToRad(20);
+      c.maxPolarAngle = THREE.MathUtils.degToRad(88);
+      this.bounds = { min: new THREE.Vector3(-200, 0.5, -260), max: new THREE.Vector3(420, 60, 200) };
     } else if (mode === 'lot') {
       c.enablePan = true;
       c.minDistance = 8;

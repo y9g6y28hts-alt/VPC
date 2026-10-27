@@ -96,6 +96,32 @@ for ob in house_objs:
 near, far = shot['near'], shot['far']
 
 
+def even_lawn(image, block=48, amount=0.85):
+    """Evens out the lawn of a bake: lot tints, hairline boundaries and mowing
+    edges are viewer aids of the real-time scene, not things a camera would
+    see. Lawn pixels move towards a low-pass of the lawn (large-scale variation
+    stays)."""
+    from PIL import Image
+    w, h = image.size
+    px = np.empty(w * h * 4, dtype=np.float32)
+    image.pixels.foreach_get(px)
+    px = px.reshape(h, w, 4)
+    rgb = px[..., :3]
+    lawn = (rgb[..., 1] > rgb[..., 0] * 1.05) & (rgb[..., 1] > rgb[..., 2] * 1.2) & (px[..., 3] > 0.5)
+    hb, wb = h // block, w // block
+    m = lawn[: hb * block, : wb * block].reshape(hb, block, wb, block).astype(np.float32)
+    c = rgb[: hb * block, : wb * block].reshape(hb, block, wb, block, 3)
+    cnt = m.sum(axis=(1, 3))
+    mean = (c * m[..., None]).sum(axis=(1, 3)) / np.maximum(cnt, 1)[..., None]
+    fallback = rgb[lawn].mean(axis=0) if lawn.any() else np.zeros(3)
+    mean[cnt < 1] = fallback
+    low = np.dstack([np.asarray(Image.fromarray(mean[..., k].astype(np.float32), mode='F').resize((w, h), Image.BILINEAR)) for k in range(3)])
+    rgb[lawn] = rgb[lawn] * (1 - amount) + low[lawn] * amount
+    px[..., :3] = rgb
+    image.pixels.foreach_set(px.ravel())
+    image.update()
+
+
 def ground_material():
     mat = bpy.data.materials.new('ground')
     nt = mat.node_tree
@@ -134,6 +160,8 @@ def ground_material():
 
     tn = tex(os.path.join(D, f'ground-near-{args.t}.png'), near)
     tf = tex(os.path.join(D, 'ground-far.png'), far)
+    even_lawn(tn.image)
+    even_lawn(tf.image)
     # Inside the near window the near bake wins: the texture is CLIP-extended,
     # so its alpha is 0 outside the window (and in the pool cut-out).
     mix = N('ShaderNodeMix'); mix.data_type = 'RGBA'
@@ -268,7 +296,7 @@ cam.rotation_euler = direction.to_track_quat('-Z', 'Y').to_euler()
 scene.camera = cam
 
 # -------------------------------------------------------- optional grass
-def scatter_grass(window_m=34.0, per_m2=560, res=0.08, children=8):
+def scatter_grass(window_m=40.0, per_m2=560, res=0.08, children=8):
     """Real grass blades on the lawn around the lot.
 
     Density comes from a mask: lawn-coloured ground in the near bake, minus the
@@ -276,10 +304,10 @@ def scatter_grass(window_m=34.0, per_m2=560, res=0.08, children=8):
     deck, pool, site works), so blades never poke through hard surfaces."""
     from PIL import Image, ImageDraw
 
-    # Window centred between the camera and the lot: that is the lawn in view.
+    # Window centred halfway from the camera to the lot: the lawn in view.
     cam_p = shot['position']
-    cx = (shot['lot']['centroid']['x'] * 2 + cam_p[0]) / 3
-    cz = (shot['lot']['centroid']['z'] * 2 + cam_p[2]) / 3
+    cx = (shot['lot']['centroid']['x'] + cam_p[0]) / 2
+    cz = (shot['lot']['centroid']['z'] + cam_p[2]) / 2
     n = int(window_m / res)
     x0, y0 = cx - window_m / 2, -cz - window_m / 2  # Blender XY of the window corner
 
@@ -294,7 +322,22 @@ def scatter_grass(window_m=34.0, per_m2=560, res=0.08, children=8):
     vi = np.clip(v.astype(int), 0, img.size[1] - 1)
     samp = px[vi[:, None], ui[None, :]]  # rows: y, cols: x
     r, g, bl, a = samp[..., 0], samp[..., 1], samp[..., 2], samp[..., 3]
-    lawn = ((g > r * 1.05) & (g > bl * 1.2) & (a > 0.5)).astype(np.float32)
+    lawn = (g > r * 1.05) & (g > bl * 1.2) & (a > 0.5)
+    # Average lawn albedo of the bake (sRGB bytes → linear): the blades take
+    # the ground's own colour so the grass meets the far terrain seamlessly.
+    lawn_srgb = samp[..., :3][lawn].mean(axis=0) if lawn.any() else np.array([0.3, 0.45, 0.2])
+    lawn_lin = np.where(lawn_srgb <= 0.04045, lawn_srgb / 12.92, ((lawn_srgb + 0.055) / 1.055) ** 2.4)
+    # Close hairline gaps (lot tints and mowing edges in the bake), ~25 cm.
+    def shift_any(m, rad, op):
+        out = m.copy()
+        for dy in range(-rad, rad + 1):
+            for dx in range(-rad, rad + 1):
+                if dx * dx + dy * dy > rad * rad:
+                    continue
+                sh = np.roll(np.roll(m, dy, 0), dx, 1)
+                out = (out | sh) if op == 'or' else (out & sh)
+        return out
+    lawn = shift_any(shift_any(lawn, 3, 'or'), 3, 'and').astype(np.float32)
 
     # 2. Hard surfaces: rasterise ground-level triangles of every unique mesh
     #    (instanced meshes are trees, tufts, impostors and markers).
@@ -326,6 +369,12 @@ def scatter_grass(window_m=34.0, per_m2=560, res=0.08, children=8):
             draw.polygon(list(zip(xs3.tolist(), ys3.tolist())), fill=255)
     hard = np.asarray(block, dtype=np.float32)[::-1, :] / 255.0
     density = np.clip(lawn * (1.0 - hard), 0, 1)
+    # Feather the window: blades thin out over its outer 7 m (random per cell),
+    # so the hair grass dissolves into the textured terrain instead of ending
+    # on a straight line.
+    idx = (np.arange(n) + 0.5) * res
+    edge = np.minimum(np.minimum(idx, window_m - idx)[:, None], np.minimum(idx, window_m - idx)[None, :])
+    keep = np.clip(edge / 7.0, 0, 1) ** 1.5
     if os.environ.get('CINE_DEBUG'):
         Image.fromarray((np.dstack([lawn, hard, density]) * 255).astype(np.uint8)[::-1]).save(os.path.join(D, 'grass-mask.png'))
     # 3. Emitter: only the lawn cells of the mask (particle texture influence
@@ -333,13 +382,31 @@ def scatter_grass(window_m=34.0, per_m2=560, res=0.08, children=8):
     cell = 0.15
     k = max(1, int(round(cell / res)))
     m = density[: (n // k) * k, : (n // k) * k].reshape(n // k, k, n // k, k).mean(axis=(1, 3))
-    rows, cols = np.nonzero(m > 0.5)
+    kk = keep[: (n // k) * k, : (n // k) * k].reshape(n // k, k, n // k, k).mean(axis=(1, 3))
+    rng = np.random.default_rng(7)
+    rows, cols = np.nonzero((m > 0.5) & (rng.random(m.shape) < kk))
+    cell = k * res  # the mask's own cell size
+    # The emitter lies on the terrain (which is not flat), so blades are never
+    # buried where the ground rises a few centimetres.
+    from mathutils.bvhtree import BVHTree
+    deps = bpy.context.evaluated_depsgraph_get()
+    tree = BVHTree.FromObject(terrain, deps)
+    tmw = terrain.matrix_world
+    tinv = tmw.inverted()
+    verts = {}
     bm = bmesh.new()
+
+    def vert(i, j):
+        key = (i, j)
+        if key not in verts:
+            x_, y_ = x0 + j * cell, y0 + i * cell
+            hit = tree.ray_cast(tinv @ Vector((x_, y_, 50.0)), (tinv.to_3x3() @ Vector((0, 0, -1))).normalized())
+            z_ = (tmw @ hit[0]).z if hit[0] is not None else 0.0
+            verts[key] = bm.verts.new((x_, y_, z_ + 0.004))
+        return verts[key]
+
     for r_, c_ in zip(rows.tolist(), cols.tolist()):
-        x_ = x0 + c_ * cell
-        y_ = y0 + r_ * cell
-        vs = [bm.verts.new((x_, y_, 0.0)), bm.verts.new((x_ + cell, y_, 0.0)), bm.verts.new((x_ + cell, y_ + cell, 0.0)), bm.verts.new((x_, y_ + cell, 0.0))]
-        bm.faces.new(vs)
+        bm.faces.new([vert(r_, c_), vert(r_, c_ + 1), vert(r_ + 1, c_ + 1), vert(r_ + 1, c_)])
     me = bpy.data.meshes.new('grass-emitter')
     bm.to_mesh(me)
     bm.free()
@@ -394,8 +461,9 @@ def scatter_grass(window_m=34.0, per_m2=560, res=0.08, children=8):
     bsdf.inputs['Transmission Weight'].default_value = 0.2
     hi = nt.nodes.new('ShaderNodeHairInfo')
     ramp = nt.nodes.new('ShaderNodeValToRGB')
-    ramp.color_ramp.elements[0].color = (0.10, 0.20, 0.04, 1)
-    ramp.color_ramp.elements[1].color = (0.24, 0.38, 0.08, 1)
+    lo, hi_ = lawn_lin * 0.7, lawn_lin * 1.35
+    ramp.color_ramp.elements[0].color = (*lo.tolist(), 1)
+    ramp.color_ramp.elements[1].color = (*hi_.tolist(), 1)
     nt.links.new(hi.outputs['Random'], ramp.inputs['Fac'])
     tip = nt.nodes.new('ShaderNodeMix'); tip.data_type = 'RGBA'; tip.blend_type = 'MULTIPLY'
     tipv = nt.nodes.new('ShaderNodeMapRange')
@@ -412,7 +480,7 @@ def scatter_grass(window_m=34.0, per_m2=560, res=0.08, children=8):
     nt.links.new(bsdf.outputs['BSDF'], o.inputs['Surface'])
     plane.data.materials.append(gm)
     st.material = 2
-    print(f'grass: {st.count} parents x {st.rendered_child_count} children on {lawn_area:.0f} m² of lawn', flush=True)
+    print(f'grass: {st.count} parents x {st.rendered_child_count} children on {lawn_area:.0f} m² of lawn, albedo {np.round(lawn_lin, 3).tolist()}', flush=True)
 
 
 if args.grass and terrain:

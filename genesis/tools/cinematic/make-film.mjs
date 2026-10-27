@@ -47,7 +47,9 @@ for (const v of VARIANTS) {
   fs.mkdirSync(dir, { recursive: true });
   TS.forEach((t, i) => {
     const webp = path.join(dir, `f${String(i).padStart(2, '0')}.webp`);
-    if (fs.existsSync(webp)) return;
+    // Done unless the scene was exported again after this frame was made.
+    const glb = path.join(WORK, `house-${tag(t)}.glb`);
+    if (fs.existsSync(webp) && fs.statSync(webp).mtimeMs > fs.statSync(glb).mtimeMs) return;
     const png = path.join(WORK, `${v}-${tag(t)}.png`);
     const t0 = Date.now();
     const r = spawnSync('python3', [path.join(root, 'tools/cinematic/render.py'), '--dir', WORK, '--t', tag(t), '--shot', v, '--size', SHOTS[v].size, '--samples', String(SAMPLES), '--grass', '--fog', '0.0007', '--out', png], { encoding: 'utf8', maxBuffer: 1 << 28 });

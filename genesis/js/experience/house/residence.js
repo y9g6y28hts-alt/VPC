@@ -1,8 +1,8 @@
 // Conceptual two-storey residence, built from the components a real site would
 // produce, each with its own place in the construction sequence:
 //
-//   ground beams and pads → contrapiso slab → RC columns → formwork + slab →
-//   upper columns → roof slab → brick infill (ladrillo común) → render, stone
+//   ground beams and pads → contrapiso slab → steel columns and beams →
+//   formwork + slab → upper steel columns → roof slab → brick infill (ladrillo común) → render, stone
 //   and timber skins → copings and soffits → windows and doors → landscaping.
 //
 // Massing (lot design coordinates, see geometry.js):
@@ -40,7 +40,7 @@ function wallSchedule() {
       id: 'gf-front-living',
       finish: 'timber',
       spec: gf({ plane: 'd', face: 8.0, inward: 1, from: -7.2, to: 2.5, openings: [
-        { a0: -6.7, a1: -4.8, y0: 0.75, y1: 3.0, win: { mullions: 0, glow: 0.8 } },
+        { a0: -6.7, a1: -4.8, y0: L.floor, y1: 3.0, win: { mullions: 0, glow: 0.8 } },
         { a0: -1.0, a1: 1.6, y0: L.floor, y1: 3.0, win: { door: true, doorSplit: 0.45, glow: 1.0 } },
       ] }),
     },
@@ -80,8 +80,8 @@ function wallSchedule() {
       id: 'ff-front',
       finish: 'plaster',
       spec: ff({ plane: 'd', face: 6.0, inward: 1, from: -4.5, to: 7.5, openings: [
-        { a0: -3.9, a1: 3.7, y0: 4.35, y1: 6.05, win: { mullions: 4, glow: 0.9 } },
-        { a0: 4.3, a1: 6.9, y0: 3.95, y1: 6.35, win: { mullions: 1, glow: 0.6 } },
+        { a0: -3.9, a1: 3.7, y0: L.slabTop, y1: 6.35, win: { mullions: 4, glow: 0.9 } },
+        { a0: 4.3, a1: 6.9, y0: L.slabTop, y1: 6.35, win: { mullions: 1, glow: 0.6 } },
       ] }),
     },
     {
@@ -89,7 +89,7 @@ function wallSchedule() {
       finish: 'plaster',
       spec: ff({ plane: 'd', face: 16.0, inward: -1, from: -4.5, to: 7.5, openings: [
         { a0: -3.9, a1: -0.3, y0: L.slabTop, y1: 6.3, win: { mullions: 1, glow: 1.0 } },
-        { a0: 0.6, a1: 4.6, y0: 4.3, y1: 6.3, win: { mullions: 1, glow: 0.85 } },
+        { a0: 0.6, a1: 4.6, y0: L.slabTop, y1: 6.3, win: { mullions: 1, glow: 0.85 } },
         { a0: 5.4, a1: 6.8, y0: 4.6, y1: 6.0, win: { glow: 0.5 } },
       ] }),
     },
@@ -143,6 +143,18 @@ const BEAMS = [
   [-7.5, -7.2, 8.0, 23.5], [2.3, 2.5, 6.0, 20.0], [7.3, 7.5, 6.0, 13.5],
   [-4.5, -4.3, 8.0, 16.0], [-4.5, 2.5, 15.8, 16.0],
 ];
+
+/** An I-section along the longer side of [x0, x1] × [d0, d1], from y0 to y1. */
+function iBeam(x0, x1, d0, d1, y0, y1) {
+  const t = 0.018; // flange
+  const w = 0.011; // web
+  if (x1 - x0 >= d1 - d0) {
+    const dc = (d0 + d1) / 2;
+    return [box(x0, x1, y0, y0 + t, d0, d1), box(x0, x1, y1 - t, y1, d0, d1), box(x0, x1, y0 + t, y1 - t, dc - w / 2, dc + w / 2)].map(applyBoxUV);
+  }
+  const xc = (x0 + x1) / 2;
+  return [box(x0, x1, y0, y0 + t, d0, d1), box(x0, x1, y1 - t, y1, d0, d1), box(xc - w / 2, xc + w / 2, y0 + t, y1 - t, d0, d1)].map(applyBoxUV);
+}
 const GROUND_BEAMS = [
   // strip ground beams under the masonry lines [x0, x1, d0, d1], flush with the walls above
   [-7.5, -7.2, 3.5, 24.0], [-7.2, 2.5, 8.0, 8.2], [-7.2, 2.5, 19.8, 20.0], [2.3, 2.5, 6.0, 20.0],
@@ -324,13 +336,15 @@ export function buildResidence(lib, plantKit, { lawnDetail = true } = {}) {
     },
   ], { build: { type: 'clip', axis: 'y', keep: 'below', from: -0.1, to: L.floor, window: [0.1, 0.15] }, cure: { window: [0.15, 0.22] } });
 
-  add('starter-bars', 'foundation', [
+  // Base plates and anchor bolts cast into the pads, ready for the steel columns.
+  add('column-bases', 'foundation', [
+    { geometry: merge(GF_COLUMNS.map(([x, d]) => applyBoxUV(box(x - 0.17, x + 0.17, L.floor, L.floor + 0.025, d - 0.17, d + 0.17)))), material: 'steelStructural' },
     {
-      geometry: merge(GF_COLUMNS.flatMap(([x, d]) => [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([sx, sd]) => cylinderY(x + sx * 0.08, d + sd * 0.08, L.floor, 1.35, 0.008, 5)))),
-      material: 'rebar',
+      geometry: merge(GF_COLUMNS.flatMap(([x, d]) => [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([sx, sd]) => cylinderY(x + sx * 0.13, d + sd * 0.13, L.floor, L.floor + 0.09, 0.012, 6)))),
+      material: 'steelGalv',
       cast: false,
     },
-  ], { build: { type: 'clip', axis: 'y', keep: 'below', from: L.floor, to: 1.35, window: [0.13, 0.17] }, remove: { type: 'hide', window: [0.222, 0.225] } });
+  ], { build: { type: 'clip', axis: 'd', keep: 'below', from: 5.9, to: 23.6, window: [0.14, 0.17] } });
 
   add('ground-slab', 'foundation', [
     { geometry: merge(GROUND_SLAB.map(([x0, x1, d0, d1]) => applyBoxUV(box(x0, x1, 0.0, L.floor - 0.005, d0, d1)))), material: 'concrete' },
@@ -355,8 +369,13 @@ export function buildResidence(lib, plantKit, { lawnDetail = true } = {}) {
 
   // ------------------------------------------------------------ structure
   add('gf-columns', 'structure', [
-    { geometry: merge(GF_COLUMNS.map(([x, d]) => applyBoxUV(box(x - 0.1, x + 0.1, L.floor, L.slabBottom, d - 0.1, d + 0.1)))), material: 'concrete' },
-  ], { build: { type: 'clip', axis: 'y', keep: 'below', from: L.floor, to: L.slabBottom, window: [0.222, 0.262] }, cure: { window: [0.262, 0.32] } });
+    { geometry: merge(GF_COLUMNS.map(([x, d]) => applyBoxUV(box(x - 0.1, x + 0.1, L.floor, L.slabBottom, d - 0.1, d + 0.1)))), material: 'steelStructural' },
+  ], { build: { type: 'clip', axis: 'y', keep: 'below', from: L.floor, to: L.slabBottom, window: [0.222, 0.262] } });
+
+  // Steel beams (I-sections) erected on the columns before the slab is poured.
+  add('ff-beams', 'structure', [
+    { geometry: merge(BEAMS.flatMap(([x0, x1, d0, d1]) => iBeam(x0, x1, d0, d1, 2.85, L.slabBottom))), material: 'steelStructural' },
+  ], { build: { type: 'clip', axis: 'd', keep: 'below', from: 5.9, to: 23.6, window: [0.262, 0.292] } });
 
   add('gallery-posts', 'structure', [
     { geometry: merge(GALLERY_POSTS.map(([x, d]) => applyBoxUV(box(x - 0.06, x + 0.06, L.floor, L.slabBottom, d - 0.06, d + 0.06)))), material: 'steelPainted' },
@@ -383,23 +402,14 @@ export function buildResidence(lib, plantKit, { lawnDetail = true } = {}) {
     {
       geometry: merge([
         ...FF_SLAB.map(([x0, x1, d0, d1]) => applyBoxUV(box(x0, x1, L.slabBottom, L.slabTop, d0, d1))),
-        ...BEAMS.map(([x0, x1, d0, d1]) => applyBoxUV(box(x0, x1, 2.85, L.slabBottom + 0.01, d0, d1))),
       ]),
       material: 'concrete',
     },
   ], { build: { type: 'clip', axis: 'd', keep: 'below', from: 5.9, to: 23.6, window: [0.295, 0.34] }, cure: { window: [0.34, 0.42] } });
 
   add('ff-columns', 'structure', [
-    { geometry: merge(FF_COLUMNS.map(([x, d]) => applyBoxUV(box(x - 0.1, x + 0.1, L.slabTop, L.roofBottom, d - 0.1, d + 0.1)))), material: 'concrete' },
-  ], { build: { type: 'clip', axis: 'y', keep: 'below', from: L.slabTop, to: L.roofBottom, window: [0.34, 0.372] }, cure: { window: [0.372, 0.43] } });
-
-  add('ff-starter-bars', 'structure', [
-    {
-      geometry: merge(FF_COLUMNS.flatMap(([x, d]) => [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([sx, sd]) => cylinderY(x + sx * 0.08, d + sd * 0.08, L.roofBottom, 7.35, 0.008, 5)))),
-      material: 'rebar',
-      cast: false,
-    },
-  ], { build: { type: 'clip', axis: 'y', keep: 'below', from: L.roofBottom, to: 7.35, window: [0.365, 0.385] }, remove: { type: 'hide', window: [0.412, 0.415] } });
+    { geometry: merge(FF_COLUMNS.map(([x, d]) => applyBoxUV(box(x - 0.1, x + 0.1, L.slabTop, L.roofBottom, d - 0.1, d + 0.1)))), material: 'steelStructural' },
+  ], { build: { type: 'clip', axis: 'y', keep: 'below', from: L.slabTop, to: L.roofBottom, window: [0.34, 0.372] } });
 
   shoring(ROOF_SLAB, L.slabTop, L.roofBottom, 'roof-shoring', [0.372, 0.4], [0.53, 0.56]);
 

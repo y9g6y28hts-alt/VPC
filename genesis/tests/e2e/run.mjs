@@ -98,7 +98,7 @@ const gpuArgs = ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ig
     assert.equal(await page.locator('.stage-rail button').count(), 8);
     assert.match(await page.locator('.stage-caption').innerText(), /Residencia terminada/);
     await page.click('.stage-rail button >> nth=2');
-    await page.waitForFunction(() => /Estructura de hormigón/.test(document.querySelector('.stage-caption').textContent));
+    await page.waitForFunction(() => /Estructura metálica/.test(document.querySelector('.stage-caption').textContent));
     assert.equal(await page.getAttribute('.stage-rail button >> nth=2', 'aria-pressed'), 'true');
     await page.locator('.stage-range').focus();
     await page.keyboard.press('Home');

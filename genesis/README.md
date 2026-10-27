@@ -44,9 +44,9 @@ Design tokens live at the top of `css/genesis.css` (colour, type, spacing, motio
 
 Construction runs on **one continuous clock** (`js/core/timeline.js`) shared by ~50 components of the actual model (`js/experience/house/residence.js`), each with its own window in that clock:
 
-1. Site clearing (grass gives way to red laterite in the terrain shader), batter boards and string lines, sand delivery
-2. Ground beams and pads with starter bars, the *contrapiso* slab poured front-to-back, the pool shell
-3. RC columns rising, formwork props and plywood decks, slabs poured and curing (wet concrete darkens then dries), scaffolding rising with the frame, rebar at the column heads
+1. Site clearing (grass gives way to dark, damp topsoil in the terrain shader), batter boards and string lines, sand delivery
+2. Excavation in damp dark earth, ground beams and pads with steel base plates and anchor bolts, the *contrapiso* slab poured front-to-back, the pool shell
+3. Steel columns and I-beams erected on base plates, formwork props and plywood decks, slabs poured and curing (wet concrete darkens then dries), scaffolding rising with the frame
 4. Brick infill (*ladrillo común*) laid course by course, a brick delivery that is used up
 5. Render applied top-down, stone cladding laid bottom-up, timber cladding, gravel roof and terrace pavers, timber soffits, metal copings, timber screen
 6. Windows and doors set in from inside, the garage door lowered, glass balustrades

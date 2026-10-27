@@ -6,7 +6,7 @@ import { clamp } from './easing.js';
 export const CONSTRUCTION_STAGES = Object.freeze([
   { id: 'site', label: 'Terreno y replanteo', start: 0.0, end: 0.1 },
   { id: 'foundation', label: 'Fundaciones', start: 0.1, end: 0.22 },
-  { id: 'structure', label: 'Estructura de hormigón', start: 0.22, end: 0.44 },
+  { id: 'structure', label: 'Estructura metálica', start: 0.22, end: 0.44 },
   { id: 'masonry', label: 'Mampostería y volúmenes', start: 0.4, end: 0.56 },
   { id: 'envelope', label: 'Fachadas y cubierta', start: 0.56, end: 0.71 },
   { id: 'openings', label: 'Aberturas y detalles', start: 0.7, end: 0.82 },

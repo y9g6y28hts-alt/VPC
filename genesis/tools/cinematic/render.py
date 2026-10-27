@@ -34,6 +34,10 @@ ap.add_argument('--out', default=None)
 ap.add_argument('--exposure', type=float, default=0.0)
 ap.add_argument('--grass', action='store_true', help='scatter real grass blades near the camera')
 ap.add_argument('--threads', type=int, default=0)
+ap.add_argument('--haze', type=float, default=0.0, help='atmospheric volume density (1/m), e.g. 0.0008')
+ap.add_argument('--cams', default=None, help='JSON camera path (three coords): renders every pose in one session')
+ap.add_argument('--outdir', default=None, help='with --cams: graded frames are written here as NNNN.png')
+ap.add_argument('--grass-window', type=float, default=40.0)
 args = ap.parse_args(sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else sys.argv[1:])
 
 D = os.path.abspath(args.dir)
@@ -263,8 +267,8 @@ if terrain:
         pbm.free()
         pit = bpy.data.materials.new('pit-soil')
         pb = pit.node_tree.nodes['Principled BSDF']
-        pb.inputs['Base Color'].default_value = (0.16, 0.035, 0.015, 1)  # red laterite
-        pb.inputs['Roughness'].default_value = 0.95
+        pb.inputs['Base Color'].default_value = (0.05, 0.032, 0.02, 1)  # damp dark topsoil
+        pb.inputs['Roughness'].default_value = 0.72
         pme.materials.append(pit)
         pob = bpy.data.objects.new('pool-pit', pme)
         scene.collection.objects.link(pob)
@@ -281,9 +285,19 @@ for mat in bpy.data.materials:
     if 'glass' in name and 'rail' not in name:
         # Architectural glazing: clear, reflective, slightly tinted, with the
         # warm interior light read through it.
-        bsdf.inputs['Roughness'].default_value = 0.02
-        bsdf.inputs['IOR'].default_value = 1.52
+        bsdf.inputs['Roughness'].default_value = 0.015
+        # Coated (low-e) glazing reflects ~12 % head-on: sky, trees and lawn
+        # read in the panes; the interior is only a soft warm presence.
+        bsdf.inputs['IOR'].default_value = 2.0
         bsdf.inputs['Coat Weight'].default_value = 0.0
+        bsdf.inputs['Base Color'].default_value = (0.012, 0.016, 0.018, 1)
+        if bsdf.inputs['Base Color'].is_linked:
+            mat.node_tree.links.remove(bsdf.inputs['Base Color'].links[0])
+        es = bsdf.inputs['Emission Strength']
+        es.default_value = es.default_value * 0.22
+        ec = bsdf.inputs['Emission Color']
+        if not ec.is_linked:
+            ec.default_value = (1.0, 0.78, 0.55, 1)
     if 'poolwater' in name or 'water' in name:
         bsdf.inputs['Transmission Weight'].default_value = 0.85
         bsdf.inputs['Roughness'].default_value = 0.02
@@ -382,6 +396,33 @@ sun = bpy.data.objects.new('sun', sun_data)
 scene.collection.objects.link(sun)
 sun.rotation_euler = (-sun_w).to_track_quat('-Z', 'Y').to_euler()
 
+# ------------------------------------------------- atmosphere (volumetric)
+if args.haze > 0:
+    # A large box of thin forward-scattering haze: aerial perspective on the
+    # far shore and visible sun shafts through the trees at golden hour. A box
+    # (not a world volume) so rays leaving it still see the sky.
+    hb = bmesh.new()
+    bmesh.ops.create_cube(hb, size=1.0)
+    hme = bpy.data.meshes.new('haze')
+    hb.to_mesh(hme)
+    hb.free()
+    haze = bpy.data.objects.new('haze', hme)
+    lc = shot['lot']['centroid']
+    haze.location = (lc['x'], -lc['z'], 60.0)
+    haze.scale = (1600.0, 1600.0, 140.0)
+    scene.collection.objects.link(haze)
+    hm = bpy.data.materials.new('haze')
+    hnt = hm.node_tree
+    hnt.nodes.clear()
+    hout = hnt.nodes.new('ShaderNodeOutputMaterial')
+    pv = hnt.nodes.new('ShaderNodeVolumePrincipled')
+    pv.inputs['Density'].default_value = args.haze
+    pv.inputs['Anisotropy'].default_value = 0.55
+    pv.inputs['Color'].default_value = (0.92, 0.94, 1.0, 1)
+    hnt.links.new(pv.outputs['Volume'], hout.inputs['Volume'])
+    hme.materials.append(hm)
+    haze.visible_shadow = False
+
 # ---------------------------------------------------------------- camera
 cam_data = bpy.data.cameras.new('cam')
 cam_data.sensor_fit = 'VERTICAL'
@@ -404,8 +445,9 @@ def scatter_grass(window_m=40.0, per_m2=560, res=0.08, children=8):
     deck, pool, site works), so blades never poke through hard surfaces."""
     from PIL import Image, ImageDraw
 
-    # Window centred halfway from the camera to the lot: the lawn in view.
-    cam_p = shot['position']
+    # Window centred halfway from the camera to the lot: the lawn in view
+    # (for a camera path, the lot itself).
+    cam_p = shot['position'] if not args.cams else [shot['lot']['centroid']['x'], 0, shot['lot']['centroid']['z']]
     cx = (shot['lot']['centroid']['x'] + cam_p[0]) / 2
     cz = (shot['lot']['centroid']['z'] + cam_p[2]) / 2
     n = int(window_m / res)
@@ -584,7 +626,7 @@ def scatter_grass(window_m=40.0, per_m2=560, res=0.08, children=8):
 
 
 if args.grass and terrain:
-    scatter_grass()
+    scatter_grass(window_m=args.grass_window, per_m2=560 if args.grass_window <= 40 else 480)
 
 # ---------------------------------------------------------------- render
 r = scene.render
@@ -612,14 +654,33 @@ if args.threads:
     r.threads = args.threads
 r.image_settings.file_format = 'OPEN_EXR'
 r.image_settings.color_depth = '32'
-exr = out_png.rsplit('.', 1)[0] + '.exr'
-r.filepath = exr
-print(f'clipped {clipped} components; rendering {W}x{H} @ {args.samples} spp', flush=True)
-bpy.ops.render.render(write_still=True)
-
-# ------------------------------------------------------ tone map to PNG
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from grade import grade, load_exr, save  # noqa: E402
 
-save(grade(load_exr(exr), exposure=-1.0 + args.exposure, warmth=0.06), out_png)
-print('wrote', out_png, flush=True)
+print(f'clipped {clipped} components; rendering {W}x{H} @ {args.samples} spp', flush=True)
+if args.cams:
+    # Camera path: the scene (and its BVH) is built once, every pose renders
+    # in this session. Frames that already exist are skipped (resumable).
+    import time
+    path = json.load(open(args.cams))
+    cam_data.angle_y = math.radians(path.get('fov', shot['fov']))
+    os.makedirs(args.outdir, exist_ok=True)
+    for f in path['frames']:
+        png = os.path.join(args.outdir, f"{f['i']:04d}.png")
+        if os.path.exists(png):
+            continue
+        t0 = time.time()
+        cam.location = b(f['position'])
+        cam.rotation_euler = (b(f['target']) - cam.location).to_track_quat('-Z', 'Y').to_euler()
+        exr = png[:-4] + '.exr'
+        r.filepath = exr
+        bpy.ops.render.render(write_still=True)
+        save(grade(load_exr(exr), exposure=-1.0 + args.exposure, warmth=0.06), png)
+        os.remove(exr)
+        print(f"frame {f['i']} in {time.time() - t0:.1f} s", flush=True)
+else:
+    exr = out_png.rsplit('.', 1)[0] + '.exr'
+    r.filepath = exr
+    bpy.ops.render.render(write_still=True)
+    save(grade(load_exr(exr), exposure=-1.0 + args.exposure, warmth=0.06), out_png)
+    print('wrote', out_png, flush=True)

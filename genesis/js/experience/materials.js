@@ -47,6 +47,8 @@ export function createMaterials(assets) {
     rebar: new THREE.MeshStandardMaterial({ name: 'rebar', color: '#5e3a26', roughness: 0.75, metalness: 0.55 }),
     // Painted steel column / structural details.
     steelPainted: new THREE.MeshStandardMaterial({ name: 'steelPainted', color: '#2f2c2a', roughness: 0.5, metalness: 0.4 }),
+    // Structural steel, shop-primed in graphite micaceous paint.
+    steelStructural: new THREE.MeshStandardMaterial({ name: 'steelStructural', color: '#3b3e42', roughness: 0.42, metalness: 0.55 }),
     poolTile: new THREE.MeshStandardMaterial({ name: 'poolTile', color: '#8fbfc0', roughness: 0.35 }),
     stringLine: new THREE.MeshBasicMaterial({ name: 'stringLine', color: '#f1e9da', transparent: true, opacity: 0.9 }),
     stake: new THREE.MeshStandardMaterial({ name: 'stake', color: '#a07a52', roughness: 0.85 }),

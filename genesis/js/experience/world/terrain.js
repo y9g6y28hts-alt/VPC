@@ -3,7 +3,7 @@
 // The terrain is one warped grid (dense near the development, coarse towards the
 // horizon). Heights are flat inside the development so lots and slabs sit level,
 // roll gently beyond it and drop under the lake. A custom MeshStandardMaterial
-// shader blends lawn and red laterite soil with anti-tiling and drives the
+// shader blends lawn, red laterite fields and the dug site's dark topsoil with anti-tiling and drives the
 // "site preparation" and "lawn returns" construction stages for the selected lot.
 import * as THREE from 'three';
 import { fbm } from '../../core/noise.js';
@@ -257,7 +257,11 @@ export function createTerrainMaterial(assets, { shared, lotTint = false } = {}) 
         // Lawn returns patchily during landscaping.
         float lawnAmt = smoothstep(0.0, 0.12, uSiteLawn * 1.3 - n1 * 0.3);
         soilAmt *= 1.0 - lawnAmt;
-        vec3 groundColor = mix(ground, soil, soilAmt);
+        // The cleared site is dug, damp topsoil: dark brown rather than the
+        // dry red of the surrounding fields.
+        float soilLum = dot(soil, vec3(0.3, 0.59, 0.11));
+        vec3 siteSoil = soilLum * vec3(0.9, 0.66, 0.48) * (0.85 + 0.25 * n1);
+        vec3 groundColor = mix(ground, siteSoil, soilAmt);
         diffuseColor.rgb *= groundColor;
         float vSoilAmt = soilAmt;
         `,

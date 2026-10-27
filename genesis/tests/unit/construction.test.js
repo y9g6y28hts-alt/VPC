@@ -34,11 +34,12 @@ test('every component has a valid place on the construction clock', () => {
 test('trades follow a buildable order', () => {
   const start = (id) => byId(id).build.window[0];
   const end = (id) => byId(id).build.window[1];
-  const order = ['ground-beams', 'ground-slab', 'gf-columns', 'ff-slab', 'ff-columns', 'roof-slab', 'gf-brick', 'ff-brick', 'ff-render', 'copings', 'garage-door', 'driveway', 'lawn'];
+  const order = ['ground-beams', 'column-bases', 'ground-slab', 'gf-columns', 'ff-beams', 'ff-slab', 'ff-columns', 'roof-slab', 'gf-brick', 'ff-brick', 'ff-render', 'copings', 'garage-door', 'driveway', 'lawn'];
   for (let i = 1; i < order.length; i++) assert.ok(start(order[i]) >= start(order[i - 1]), `${order[i - 1]} before ${order[i]}`);
   assert.ok(start('ff-slab') >= end('ff-shoring') - 1e-9, 'slab is poured on its formwork');
   assert.ok(byId('ff-shoring').remove.window[0] >= byId('ff-slab').cure.window[0], 'props are struck after curing starts');
-  assert.ok(start('gf-columns') >= byId('starter-bars').build.window[1], 'columns rise around their starter bars');
+  assert.ok(start('gf-columns') >= end('column-bases'), 'steel columns stand on their base plates');
+  assert.ok(start('ff-slab') >= end('ff-beams'), 'the slab is poured on erected steel beams');
   assert.ok(byId('scaffold').remove.window[0] >= end('ff-render'), 'scaffold stays until the render is done');
   assert.ok(start('pool-water') >= end('pool-finish'), 'pool is tiled before it is filled');
 });
@@ -51,7 +52,7 @@ test('nothing is built at t=0; at t=1 the house is complete and site equipment i
   animator.apply(0);
   for (const c of residence.components) if (!c.effect) assert.equal(visible(c), false, `${c.id} hidden at t=0`);
   animator.apply(1);
-  const temporary = new Set(['setout', 'sand', 'bricks-delivered', 'starter-bars', 'ff-starter-bars', 'ff-shoring', 'roof-shoring', 'scaffold']);
+  const temporary = new Set(['setout', 'sand', 'bricks-delivered', 'ff-shoring', 'roof-shoring', 'scaffold']);
   for (const c of residence.components) {
     if (c.effect) continue;
     assert.equal(visible(c), !temporary.has(c.id), `${c.id} ${temporary.has(c.id) ? 'removed' : 'present'} at t=1`);

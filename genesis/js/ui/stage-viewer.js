@@ -10,8 +10,8 @@ const base = new URL('../../assets/renders/hero/', import.meta.url);
 // What the concept model shows at each stage (see js/experience/house/).
 const NOTES = {
   site: 'Se limpia el terreno, se marcan ejes con caballetes e hilos y llega la arena.',
-  foundation: 'Vigas de fundación y bases con sus hierros de espera; se hormigona el contrapiso.',
-  structure: 'Columnas, encofrados y losas; el andamio sube con la estructura y el hormigón fragua.',
+  foundation: 'Excavación, vigas de fundación y bases con placas y pernos de anclaje; se hormigona el contrapiso.',
+  structure: 'Columnas y vigas de acero; las losas se hormigonan sobre encofrado y el andamio sube con la estructura.',
   masonry: 'Mampostería de ladrillo común, hilada por hilada, cerrando los volúmenes.',
   envelope: 'Revoques, revestimiento de piedra y madera, cubierta, aleros y babetas.',
   openings: 'Ventanas y puertas desde adentro, portón del garaje y barandas de vidrio.',

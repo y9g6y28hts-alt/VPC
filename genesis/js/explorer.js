@@ -175,6 +175,8 @@ function buildUI() {
   ].map(([key, label]) => {
     const b = h('button', { type: 'button', 'aria-pressed': 'false', dataset: { view: key } }, label);
     b.addEventListener('click', () => {
+      // Camera views belong to the live scene: hand it back from the film.
+      setFilmVisible(false);
       if (xp?.view(key)) viewButtons.forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
     });
     return b;

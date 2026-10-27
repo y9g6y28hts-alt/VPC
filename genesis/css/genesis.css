@@ -2712,8 +2712,12 @@ textarea {
     padding-inline: 10px;
   }
   .xp-cinema__caption {
+    /* Below the explorer bar and its toasts (the wordmark is tall on phones). */
     bottom: auto;
-    top: 64px;
+    top: calc(env(safe-area-inset-top, 0px) + 158px);
+    right: var(--gutter);
+    font-size: 10.5px;
+    line-height: 1.4;
   }
 }
 @media (prefers-reduced-motion: reduce) {

@@ -245,6 +245,8 @@ const gpuArgs = ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ig
 
   await check('views and replay work from the completed residence', async () => {
     await page.click('.segmented button:has-text("Jardín")');
+    // A camera view hands the live scene back from the film.
+    await page.waitForSelector('.xp-cinema:not(.is-visible)', { state: 'attached' });
     await snap(page, '07-garden');
     await page.click('.xp-details .actions button:has-text("Repetir construcción")');
     await waitState(page, 'building');
@@ -259,6 +261,9 @@ const gpuArgs = ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ig
     await page.fill('.xp-sheet input[name="name"]', 'Ana Benítez');
     await page.fill('.xp-sheet input[name="email"]', 'ana@example.com');
     await page.click('.xp-sheet button[type="submit"]');
+    // The submit handler is async; with the scene software-rendered behind the
+    // sheet, give it time to write its status.
+    await page.waitForFunction(() => document.querySelector('.xp-sheet .form-status')?.textContent.trim().length > 0, null, { timeout: 30000 });
     assert.match(await page.locator('.xp-sheet .form-status').textContent(), /no fue enviada/);
     await snap(page, '08-inquiry');
     await page.keyboard.press('Escape');
@@ -270,9 +275,11 @@ const gpuArgs = ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ig
     await waitState(page, 'overview');
     assert.ok(await page.locator('.xp-overview.is-visible').isVisible());
     await snap(page, '09-back-overview');
-    await page.click('.xp-close');
-    // One software-rendered frame (SwiftShader) can take ~6 s; allow it to finish.
-    await page.waitForSelector('#explorer', { state: 'hidden', timeout: 20000 });
+    await page.click('.xp-close', { timeout: 180000 });
+    // Disposal waits for the GPU to finish queued work. Under SwiftShader that
+    // includes compositing the film's image layers (seconds per frame), so the
+    // backlog can reach a minute; on hardware it is a few milliseconds.
+    await page.waitForSelector('#explorer', { state: 'hidden', timeout: 180000 });
     assert.equal(await page.evaluate(() => document.body.classList.contains('is-locked')), false);
     assert.equal(await xpState(page), null, 'experience disposed on close');
   });

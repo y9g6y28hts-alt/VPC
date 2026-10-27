@@ -20,12 +20,24 @@ test('analytics does nothing without a measurement id', () => {
 });
 
 test('tracked events never carry personal data', () => {
-  const src = ['js/ui/inquiry-form.js', 'js/explorer.js', 'js/main.js'].map((f) => readFileSync(new URL(`../../${f}`, import.meta.url), 'utf8')).join('\n');
+  const src = ['js/ui/inquiry-form.js', 'js/explorer.js', 'js/main.js', 'js/ui/shell.js', 'js/site.js'].map((f) => readFileSync(new URL(`../../${f}`, import.meta.url), 'utf8')).join('\n');
   for (const call of src.match(/track\([^)]*\)/g) || []) assert.doesNotMatch(call, /name\.value|phone|email|message/, call);
 });
 
-test('the page links the privacy policy and it exists', () => {
-  const html = readFileSync(new URL('../../index.html', import.meta.url), 'utf8');
-  assert.match(html, /href="privacidad\.html"/);
+test('every page links the privacy policy and it exists', () => {
+  for (const page of ['index.html', 'barrios.html', 'viva-lago.html']) {
+    const html = readFileSync(new URL(`../../${page}`, import.meta.url), 'utf8');
+    assert.match(html, /href="privacidad\.html"/, page);
+  }
   assert.match(readFileSync(new URL('../../privacidad.html', import.meta.url), 'utf8'), /Política de privacidad/);
+});
+
+test('the site is Génesis first: home → barrios privados → Viva Lago Country', () => {
+  const read = (f) => readFileSync(new URL(`../../${f}`, import.meta.url), 'utf8');
+  const home = read('index.html');
+  assert.match(home, /<title>Génesis/);
+  assert.match(home, /href="barrios\.html"[^>]*>[\s\S]*?Conocer barrios privados/);
+  assert.match(read('barrios.html'), /href="viva-lago\.html"/);
+  assert.match(read('viva-lago.html'), /class="nav__back" href="barrios\.html"/);
+  for (const f of ['index.html', 'barrios.html']) assert.doesNotMatch(read(f), /USD|Gs\.? ?\d|\$ ?\d/, `${f} has no prices`);
 });

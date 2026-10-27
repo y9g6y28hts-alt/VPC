@@ -1,0 +1,463 @@
+<!doctype html>
+<html lang="es-PY">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Viva Lago Country · Barrio privado · Génesis</title>
+  <meta name="description" content="Recorré Viva Lago Country, elegí un lote y mirá cómo podría construirse una residencia sobre él. Génesis Negocios Inmobiliarios, Ciudad del Este." />
+  <meta name="theme-color" content="#1f1425" />
+  <link rel="icon" href="assets/brand/favicon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="assets/social/apple-touch-icon.png" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <!-- Link previews (WhatsApp, Facebook, LinkedIn, X). js/main.js makes og:image and og:url absolute once SITE.siteUrl is set. -->
+  <meta property="og:type" content="website" />
+  <meta property="og:locale" content="es_PY" />
+  <meta property="og:site_name" content="Génesis Negocios Inmobiliarios" />
+  <meta property="og:title" content="Viva Lago Country · El comienzo de tu historia" />
+  <meta property="og:description" content="32 lotes sobre el río Acaray, con club náutico y acceso propio al agua. Elegí tu lote y mirá cómo se construye una residencia sobre él." />
+  <meta property="og:image" content="assets/social/og.jpg" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="Playa y club de Viva Lago Country sobre el río Acaray al atardecer (render ilustrativo)" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <script type="application/ld+json">{"@context": "https://schema.org", "@graph": [{"@type": "RealEstateAgent", "@id": "#genesis", "name": "Génesis Negocios Inmobiliarios", "slogan": "El comienzo de tu historia", "address": {"@type": "PostalAddress", "addressLocality": "Ciudad del Este", "addressRegion": "Alto Paraná", "addressCountry": "PY"}}, {"@type": "Place", "name": "Viva Lago Country", "description": "Barrio cerrado de 32 lotes sobre el río Acaray, con Club Náutico & Deportivo y acceso náutico propio.", "address": {"@type": "PostalAddress", "streetAddress": "Zona Quinta, Calle 9 Acaray (km 9)", "addressLocality": "Ciudad del Este", "addressRegion": "Alto Paraná", "addressCountry": "PY"}, "geo": {"@type": "GeoCoordinates", "latitude": -25.460696, "longitude": -54.682035}, "hasMap": "https://maps.app.goo.gl/MoXFWMTVsvddWcvg7"}]}</script>
+  <link rel="preload" href="assets/fonts/instrument-serif-normal-400.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="assets/fonts/geist-normal-300-600.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="stylesheet" href="css/genesis.css" />
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "./vendor/three/three.module.min.js",
+        "three/addons/": "./vendor/three/addons/"
+      }
+    }
+  </script>
+  <script type="module" src="js/main.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#proyecto">Saltar al contenido</a>
+  <noscript><p style="margin:0;padding:12px 16px;background:#f4efe6;color:#26222a;font:14px/1.5 system-ui,sans-serif">La experiencia interactiva necesita JavaScript. El resto del contenido está disponible abajo.</p></noscript>
+
+  <header class="site-header" id="header">
+    <div class="inner">
+      <a class="brand" href="./" aria-label="Génesis Negocios Inmobiliarios — inicio" data-brand>
+        <span class="brand__name">Génesis</span>
+        <span class="brand__sub">Negocios inmobiliarios</span>
+      </a>
+      <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="nav" aria-label="Abrir menú">
+        <span></span><span></span>
+      </button>
+      <nav class="nav" id="nav" aria-label="Principal">
+        <a class="nav__back" href="barrios.html"><span aria-hidden="true">←</span> Barrios privados</a>
+        <a href="#proyecto">El desarrollo</a>
+        <a href="#ubicacion">Ubicación</a>
+        <a href="#lotes">Lotes</a>
+        <a href="#club">El club</a>
+        <a href="#obra">La obra</a>
+        <a href="#contacto">Contacto</a>
+        <button class="btn btn--light" type="button" data-open-explorer>Explorar en 3D</button>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <!-- Hero: the residence takes shape as you scroll (frames rendered by the experience engine). -->
+    <section class="hero" id="inicio" aria-label="Presentación">
+      <div class="hero__stage">
+        <div class="hero__media" data-hero-media>
+          <picture>
+            <source media="(max-aspect-ratio: 85/100)" srcset="assets/cinematic/B-05/mobile/f00.webp" />
+            <img src="assets/cinematic/B-05/desktop/f00.webp" alt="" width="1600" height="900" data-hero-poster fetchpriority="high" />
+          </picture>
+        </div>
+        <div class="hero__shade"></div>
+        <div class="hero__content">
+          <nav class="crumbs on-dark" aria-label="Estás en"><a href="./">Génesis</a><span aria-hidden="true">/</span><a href="barrios.html">Barrios privados</a><span aria-hidden="true">/</span><span aria-current="page">Viva Lago Country</span></nav>
+          <p class="eyebrow on-dark">Un barrio privado de Génesis · Km 9 Acaray<span class="hide-s"> · Ciudad del Este</span></p>
+          <h1 class="display h1 hero__title">El comienzo de <em>tu historia.</em></h1>
+          <p class="lede hero__lede">Treinta y dos lotes sobre el río Acaray, con club náutico y acceso propio al agua. Elegí el tuyo y mirá cómo una residencia toma forma sobre él.</p>
+          <div class="hero__actions">
+            <a class="btn btn--light" href="#lotes">Ver los lotes <span class="arrow" aria-hidden="true">→</span></a>
+            <button class="btn btn--text on-dark-text" type="button" data-open-explorer>Recorrido 3D</button>
+          </div>
+          <div class="hero__meta">
+            <span class="hero__stage-label" data-hero-stage aria-live="off">Terreno y replanteo</span>
+            <span class="hero__progress" aria-hidden="true"><i data-hero-progress></i></span>
+            <span class="scroll-cue" data-hero-cue>Desplazá para construir</span>
+            <span class="hero__caption">Visualización conceptual generada con la experiencia interactiva. No es una obra aprobada.</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Project: what Viva Lago Country is, in verified figures. -->
+    <section class="section" id="proyecto" aria-labelledby="proyecto-title">
+      <div class="inner">
+        <div class="project-head reveal">
+          <div>
+            <p class="eyebrow">El desarrollo</p>
+            <h2 class="project-title" id="proyecto-title"><img class="project-logo" src="assets/brand/viva-lago-logo.webp" alt="Viva Lago Country" width="573" height="225" /></h2>
+          </div>
+          <div class="project-intro">
+            <p class="lede">Un barrio cerrado de casas quinta sobre la margen del río Acaray, a la altura del km 9, en Ciudad del Este. Dos hectáreas ordenadas en cinco manzanas, una avenida central y un club náutico con salida propia al agua.</p>
+            <p class="small">Comercializa Génesis Negocios Inmobiliarios.</p>
+          </div>
+        </div>
+        <dl class="figures reveal" aria-label="El desarrollo en cifras">
+          <div><dt>Superficie total</dt><dd><span class="figure-num">2</span><span class="figure-unit">ha</span></dd><p>20.000 m² según título</p></div>
+          <div><dt>Lotes</dt><dd><span class="figure-num">32</span></dd><p>en cinco manzanas, de la A a la E</p></div>
+          <div><dt>Superficie por lote</dt><dd><span class="figure-num">366–512</span><span class="figure-unit">m²</span></dd><p>de 365,80 a 511,56 m² de área propia</p></div>
+          <div><dt>Áreas comunes</dt><dd><span class="figure-num">7.599</span><span class="figure-unit">m²</span></dd><p>club, acceso náutico, administración y calles</p></div>
+        </dl>
+        <div class="spec reveal" aria-labelledby="spec-title">
+          <div class="spec__head">
+            <p class="pill">Barrio cerrado · Km 9 Acaray</p>
+            <h3 class="spec__title" id="spec-title">Ficha del desarrollo</h3>
+          </div>
+          <div class="spec__grid">
+            <section>
+              <h4>Ocio y bienestar</h4>
+              <p>Club Náutico &amp; Deportivo de 2.141,96 m² sobre la ribera del Acaray. Acceso náutico propio de 517,41 m² hasta la orilla del río.</p>
+            </section>
+            <section>
+              <h4>Infraestructura</h4>
+              <p>Avenida principal y calles 1 y 2: 4.598,16 m² de red vial interna. Administración de 341,70 m² junto al ingreso.</p>
+            </section>
+            <section>
+              <h4>Diferenciales</h4>
+              <p>Frente al río Acaray, a la altura del km 9, en Ciudad del Este. Plano georreferenciado y recorrido 3D de cada lote antes de decidir.</p>
+            </section>
+            <section class="spec__terms">
+              <h4>Condiciones</h4>
+              <p class="spec__strong">Precio, disponibilidad y financiación de cada lote, por escrito y con un asesor de Génesis.</p>
+            </section>
+          </div>
+          <div class="spec__actions">
+            <a class="btn" href="#contacto">Consultar condiciones <span class="arrow" aria-hidden="true">→</span></a>
+            <a class="btn btn--ghost" href="#ubicacion">Ver ubicación</a>
+            <a class="btn btn--ghost" href="#lotes">Ver los lotes</a>
+            <a class="btn btn--ghost" href="#" data-brochure hidden download>Descargar brochure (PDF)</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Location -->
+    <section class="section section--ivory" id="ubicacion" aria-labelledby="ubicacion-title">
+      <div class="inner location">
+        <div class="location__text reveal">
+          <p class="eyebrow">Ubicación</p>
+          <h2 class="display h2" id="ubicacion-title">Km 9 del Acaray, <em>frente al agua.</em></h2>
+          <dl class="facts facts--compact">
+            <div><dt>Dirección</dt><dd>Zona Quinta, Calle 9 Acaray · Ciudad del Este, Alto Paraná</dd></div>
+            <div><dt>Coordenadas</dt><dd><span data-coords-dms></span><br /><span class="mono-num" data-coords-decimal></span></dd></div>
+            <div><dt>Referencia</dt><dd>Centro de los cuatro mojones del plano georreferenciado (UTM 21S · WGS 84)</dd></div>
+          </dl>
+          <div class="location__actions">
+            <a class="btn" href="https://maps.app.goo.gl/MoXFWMTVsvddWcvg7" target="_blank" rel="noopener" data-maps-link>Abrir en Google Maps <span class="arrow" aria-hidden="true">↗</span></a>
+            <button class="btn btn--ghost" type="button" data-copy-coords>Copiar coordenadas</button>
+            <span class="copy-status small" role="status" aria-live="polite" data-copy-status></span>
+          </div>
+        </div>
+        <figure class="figure location__map reveal">
+          <div data-location-map></div>
+          <figcaption><span>El predio, la ribera y las calles que lo rodean · norte arriba</span><span data-location-scale>Escala gráfica 100 m</span></figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <!-- Lots: the commercial core, usable without 3D. -->
+    <section class="section section--dark on-dark" id="lotes" aria-labelledby="lotes-title">
+      <div class="inner">
+        <div class="lots-head reveal">
+          <div>
+            <p class="eyebrow on-dark">Lotes</p>
+            <h2 class="display h2" id="lotes-title">Treinta y dos lotes, <em>uno por uno.</em></h2>
+          </div>
+          <p class="lede">Superficies y medidas tomadas del cuadro del plano. Elegí un lote en el plano o en la lista para ver su ficha, recorrerlo en 3D o consultar por él.</p>
+        </div>
+        <div class="lot-browser reveal" data-lot-browser></div>
+      </div>
+    </section>
+
+    <!-- Common areas, from the plan's own table. -->
+    <section class="section" id="infraestructura" aria-labelledby="infra-title">
+      <div class="inner">
+        <div class="infra-head reveal">
+          <p class="eyebrow">Áreas comunes</p>
+          <h2 class="display h2" id="infra-title">Lo que se comparte <em>también está en el plano.</em></h2>
+          <p class="lede">Cada lote incluye su parte proporcional de 7.599,23 m² de áreas comunes, según el porcentaje de copropiedad que figura en su ficha.</p>
+        </div>
+        <ol class="infra reveal" data-infra></ol>
+      </div>
+    </section>
+
+    <!-- The club: Génesis' images of the Club Náutico & Deportivo. -->
+    <section class="section club" id="club" aria-labelledby="club-title">
+      <div class="inner">
+        <div class="club-head reveal">
+          <div>
+            <p class="eyebrow">El club</p>
+            <h2 class="display h2" id="club-title">La vida, <em>frente al agua.</em></h2>
+          </div>
+          <p class="lede">El Club Náutico &amp; Deportivo ocupa 2.141,96 m² sobre la ribera del Acaray, con acceso náutico propio. Así lo imagina Génesis.</p>
+        </div>
+        <div class="club-gallery reveal" data-club-gallery>
+          <figure class="club-shot club-shot--feature">
+            <button class="club-shot__open" type="button" data-index="0" aria-label="Ampliar: Playa, piscina y solárium frente al Acaray">
+              <img src="assets/gallery/playa-aerea-1100.webp" srcset="assets/gallery/playa-aerea-1100.webp 1100w, assets/gallery/playa-aerea-2000.webp 2000w" sizes="100vw" alt="Playa, piscina y solárium frente al Acaray" width="2576" height="1567" loading="lazy" decoding="async" data-full="assets/gallery/playa-aerea-2000.webp" />
+            </button>
+            <figcaption><span>Playa, piscina y solárium frente al Acaray</span><span class="club-shot__kind">Render ilustrativo</span></figcaption>
+          </figure>
+          <figure class="club-shot club-shot--wide">
+            <button class="club-shot__open" type="button" data-index="1" aria-label="Ampliar: Deck y piscina con vista al río">
+              <img src="assets/gallery/deck-piscina-1100.webp" srcset="assets/gallery/deck-piscina-1100.webp 1100w, assets/gallery/deck-piscina-2000.webp 2000w" sizes="(max-width: 760px) 100vw, 60vw" alt="Deck y piscina con vista al río" width="2576" height="1570" loading="lazy" decoding="async" data-full="assets/gallery/deck-piscina-2000.webp" />
+            </button>
+            <figcaption><span>Deck y piscina con vista al río</span><span class="club-shot__kind">Render ilustrativo</span></figcaption>
+          </figure>
+          <figure class="club-shot club-shot--tall">
+            <button class="club-shot__open" type="button" data-index="2" aria-label="Ampliar: Sombrillas de paja sobre la arena">
+              <img src="assets/gallery/foto-playa-1100.webp" srcset="assets/gallery/foto-playa-1100.webp 1100w, assets/gallery/foto-playa-2000.webp 2000w" sizes="(max-width: 760px) 100vw, 60vw" alt="Sombrillas de paja sobre la arena" width="1314" height="1600" loading="lazy" decoding="async" data-full="assets/gallery/foto-playa-2000.webp" />
+            </button>
+            <figcaption><span>Sombrillas de paja sobre la arena</span><span class="club-shot__kind">Fotografía</span></figcaption>
+          </figure>
+          <figure class="club-shot club-shot--half">
+            <button class="club-shot__open" type="button" data-index="3" aria-label="Ampliar: Quinchos con parrilla">
+              <img src="assets/gallery/quinchos-1100.webp" srcset="assets/gallery/quinchos-1100.webp 1100w, assets/gallery/quinchos-2000.webp 2000w" sizes="(max-width: 760px) 100vw, 60vw" alt="Quinchos con parrilla" width="1600" height="1228" loading="lazy" decoding="async" data-full="assets/gallery/quinchos-2000.webp" />
+            </button>
+            <figcaption><span>Quinchos con parrilla</span><span class="club-shot__kind">Render ilustrativo</span></figcaption>
+          </figure>
+          <figure class="club-shot club-shot--half">
+            <button class="club-shot__open" type="button" data-index="4" aria-label="Ampliar: Plaza de juegos">
+              <img src="assets/gallery/plaza-juegos-1100.webp" srcset="assets/gallery/plaza-juegos-1100.webp 1100w, assets/gallery/plaza-juegos-2000.webp 2000w" sizes="(max-width: 760px) 100vw, 60vw" alt="Plaza de juegos" width="1600" height="1228" loading="lazy" decoding="async" data-full="assets/gallery/plaza-juegos-2000.webp" />
+            </button>
+            <figcaption><span>Plaza de juegos</span><span class="club-shot__kind">Render ilustrativo</span></figcaption>
+          </figure>
+          <figure class="club-shot club-shot--wide">
+            <button class="club-shot__open" type="button" data-index="5" aria-label="Ampliar: La playa y la piscina al atardecer">
+              <img src="assets/gallery/playa-piscina-1100.webp" srcset="assets/gallery/playa-piscina-1100.webp 1100w, assets/gallery/playa-piscina-2000.webp 2000w" sizes="(max-width: 760px) 100vw, 60vw" alt="La playa y la piscina al atardecer" width="2576" height="1570" loading="lazy" decoding="async" data-full="assets/gallery/playa-piscina-2000.webp" />
+            </button>
+            <figcaption><span>La playa y la piscina al atardecer</span><span class="club-shot__kind">Render ilustrativo</span></figcaption>
+          </figure>
+          <figure class="club-shot club-shot--narrow">
+            <button class="club-shot__open" type="button" data-index="6" aria-label="Ampliar: Portal de acceso">
+              <img src="assets/gallery/portal-1100.webp" srcset="assets/gallery/portal-1100.webp 1100w, assets/gallery/portal-2000.webp 2000w" sizes="(max-width: 760px) 100vw, 60vw" alt="Portal de acceso" width="1429" height="1101" loading="lazy" decoding="async" data-full="assets/gallery/portal-2000.webp" />
+            </button>
+            <figcaption><span>Portal de acceso</span><span class="club-shot__kind">Render ilustrativo</span></figcaption>
+          </figure>
+          <figure class="club-shot club-shot--wide2">
+            <button class="club-shot__open" type="button" data-index="7" aria-label="Ampliar: Solárium al atardecer">
+              <img src="assets/gallery/deck-atardecer-1100.webp" srcset="assets/gallery/deck-atardecer-1100.webp 1100w, assets/gallery/deck-atardecer-2000.webp 2000w" sizes="(max-width: 760px) 100vw, 60vw" alt="Solárium al atardecer" width="2576" height="1554" loading="lazy" decoding="async" data-full="assets/gallery/deck-atardecer-2000.webp" />
+            </button>
+            <figcaption><span>Solárium al atardecer</span><span class="club-shot__kind">Render ilustrativo</span></figcaption>
+          </figure>
+          <figure class="club-shot club-shot--narrow2">
+            <button class="club-shot__open" type="button" data-index="8" aria-label="Ampliar: Paseo hacia el río">
+              <img src="assets/gallery/arco-rio-1100.webp" srcset="assets/gallery/arco-rio-1100.webp 1100w, assets/gallery/arco-rio-2000.webp 2000w" sizes="(max-width: 760px) 100vw, 60vw" alt="Paseo hacia el río" width="1536" height="1024" loading="lazy" decoding="async" data-full="assets/gallery/arco-rio-2000.webp" />
+            </button>
+            <figcaption><span>Paseo hacia el río</span><span class="club-shot__kind">Render ilustrativo</span></figcaption>
+          </figure>
+        </div>
+        <p class="small club-note">Imágenes provistas por Génesis. Los renders son ilustrativos: el diseño final del club, sus equipamientos y materiales pueden variar.</p>
+      </div>
+    </section>
+
+    <!-- From site to residence: the construction sequence under the visitor's control. -->
+    <section class="section section--ivory" id="obra" aria-labelledby="obra-title">
+      <div class="inner">
+        <div class="obra-head reveal">
+          <div>
+            <p class="eyebrow">De la obra a la casa</p>
+            <h2 class="display h2" id="obra-title">Ocho etapas, <em>un mismo encuadre.</em></h2>
+          </div>
+          <p class="lede">Del terreno marcado con hilos a la casa con las luces encendidas, sobre el lote B-05 y con la cámara quieta. Elegí una etapa o recorré la obra con el control.</p>
+        </div>
+        <figure class="figure film-video reveal">
+          <div class="film-video__frame" data-film-video="B-05"></div>
+          <figcaption><span>La obra completa, en un solo recorrido de cámara · lote B-05</span><span>Render con trazado de rayos (Cycles)</span></figcaption>
+        </figure>
+        <div class="stage-viewer reveal" data-stage-viewer></div>
+        <p class="small obra-note">Visualizaciones conceptuales renderizadas con trazado de rayos a partir de la escena 3D: muestran una residencia posible adaptada a un lote de 12 × 32 m, no una obra existente ni un proyecto aprobado.</p>
+      </div>
+    </section>
+
+    <!-- Experience -->
+    <section class="section section--dark on-dark" id="experiencia" aria-labelledby="xp-title">
+      <div class="inner">
+        <div class="xp-intro reveal">
+          <div>
+            <p class="eyebrow">Recorrido 3D</p>
+            <h2 class="display h2" id="xp-title">Elegí el terreno.<br /><em>Mirá cómo se construye.</em></h2>
+          </div>
+          <p class="lede">El loteo en tres dimensiones, en la luz de la tarde. Al elegir un lote, la cámara se acerca y una residencia conceptual, ajustada a sus medidas, se levanta etapa por etapa: replanteo, estructura, muros, fachadas, aberturas y jardín.</p>
+        </div>
+        <div class="xp-poster reveal">
+          <img src="assets/renders/overview.webp" alt="Vista aérea de la escena interactiva de Viva Lago Country al atardecer, con el río Acaray al fondo" loading="lazy" width="1600" height="820" data-xp-poster />
+          <div class="xp-poster__cta">
+            <button class="btn btn--light" type="button" data-open-explorer>Abrir el recorrido 3D <span class="arrow" aria-hidden="true">→</span></button>
+            <span class="xp-poster__note">Funciona en computadoras y celulares actuales. Si tu dispositivo no admite 3D, verás el plano con las mismas fichas.</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Génesis: who markets the development, its mission and how it works. -->
+    <section class="section section--dark on-dark nosotros" id="nosotros" aria-labelledby="nosotros-title">
+      <div class="inner">
+        <div class="nosotros-head reveal">
+          <p class="eyebrow on-dark">Nosotros</p>
+          <img class="nosotros-lockup" src="assets/brand/genesis-logo-ivory.svg" alt="Génesis — El comienzo de tu historia" width="483" height="105" loading="lazy" />
+        </div>
+        <div class="mission reveal">
+          <h2 class="eyebrow on-dark mission__label" id="nosotros-title">Nuestra misión</h2>
+          <blockquote class="mission__text">
+            <p>Nuestra misión es brindar soluciones inmobiliarias integrales con eficiencia, ética y conocimiento técnico, acompañando a cada cliente en la toma de decisiones para garantizar <em>operaciones seguras, claras y exitosas.</em></p>
+          </blockquote>
+          <p class="mission__sign">Génesis Negocios Inmobiliarios · Ciudad del Este</p>
+        </div>
+        <ol class="pillars reveal" aria-label="Cómo trabajamos">
+          <li>
+            <span class="pillars__n">01</span>
+            <h3>Soluciones integrales</h3>
+            <p>Te acompañamos en cada etapa de la operación inmobiliaria, desde la primera consulta hasta la firma.</p>
+          </li>
+          <li>
+            <span class="pillars__n">02</span>
+            <h3>Ética</h3>
+            <p>Información verificada y por escrito: superficies del plano, condiciones claras y ningún dato sin respaldo.</p>
+          </li>
+          <li>
+            <span class="pillars__n">03</span>
+            <h3>Conocimiento técnico</h3>
+            <p>Planos, georreferencia y documentación de cada lote, explicados con claridad para decidir con certeza.</p>
+          </li>
+          <li>
+            <span class="pillars__n">04</span>
+            <h3>Acompañamiento</h3>
+            <p>Un asesor a tu lado en cada decisión, para que la operación sea segura, clara y exitosa.</p>
+          </li>
+        </ol>
+        <div class="provenance provenance--dark reveal">
+          <h3>De dónde sale cada dato</h3>
+          <ul>
+            <li><strong>Loteo y superficies.</strong> Proyecto de loteamiento georreferenciado de la Finca 18.485, escala 1/1.000, con cuadro de superficies por lote.</li>
+            <li><strong>Posición.</strong> Cuatro mojones en coordenadas UTM 21S (WGS 84), relevados con GPS de mano (precisión declarada: 0,80 m).</li>
+            <li><strong>Estado comercial.</strong> Solo se indica cuando un documento de Génesis lo establece. El resto se consulta.</li>
+            <li><strong>Imágenes.</strong> Renders con trazado de rayos de la escena 3D; la residencia es un concepto, no un proyecto aprobado.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- How to buy: the steps, with an advisor. -->
+    <section class="section section--ivory" id="proceso" aria-labelledby="proceso-title">
+      <div class="inner">
+        <div class="proceso-head reveal">
+          <div>
+            <p class="eyebrow">Cómo comprar</p>
+            <h2 class="display h2" id="proceso-title">Cuatro pasos, <em>con un asesor a tu lado.</em></h2>
+          </div>
+          <p class="lede">Del plano a la firma, cada decisión con información verificada y por escrito.</p>
+        </div>
+        <ol class="steps reveal">
+          <li>
+            <span class="steps__n">01</span>
+            <h3>Elegí tu lote</h3>
+            <p>Recorré el plano, compará superficies y medidas, y mirá una residencia conceptual sobre el lote en 3D.</p>
+            <a class="steps__link" href="#lotes">Ver los lotes <span aria-hidden="true">→</span></a>
+          </li>
+          <li>
+            <span class="steps__n">02</span>
+            <h3>Consultá con un asesor</h3>
+            <p>Precio, disponibilidad y condiciones de financiación del lote que elegiste, informados por Génesis.</p>
+            <a class="steps__link" href="#contacto">Hacer una consulta <span aria-hidden="true">→</span></a>
+          </li>
+          <li>
+            <span class="steps__n">03</span>
+            <h3>Visitá el predio</h3>
+            <p>Conocé el terreno, el entorno y el acceso al río Acaray en el km 9, acompañado por un asesor.</p>
+            <a class="steps__link" href="#ubicacion">Cómo llegar <span aria-hidden="true">→</span></a>
+          </li>
+          <li>
+            <span class="steps__n">04</span>
+            <h3>Formalizá la operación</h3>
+            <p>Revisamos con vos la documentación del lote antes de firmar, para una operación segura y clara.</p>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- Closing statement -->
+    <section class="closing on-dark" aria-labelledby="closing-title">
+      <picture>
+        <source media="(max-aspect-ratio: 85/100)" srcset="assets/renders/closing-mobile.webp" />
+        <img class="closing__img" src="assets/renders/closing-desktop.webp" alt="Residencia conceptual terminada, vista desde el jardín con el deck y la piscina, sobre un lote de Viva Lago Country" loading="lazy" width="1600" height="900" />
+      </picture>
+      <div class="closing__shade"></div>
+      <div class="closing__content">
+        <p class="eyebrow on-dark">Viva Lago Country</p>
+        <h2 class="display h2" id="closing-title">El terreno ya está.<br /><em>El resto es tu historia.</em></h2>
+        <div class="closing__actions">
+          <a class="btn btn--light" href="#contacto">Hablar con un asesor <span class="arrow" aria-hidden="true">→</span></a>
+          <a class="btn btn--text on-dark-text" href="#lotes">Volver a los lotes</a>
+        </div>
+        <p class="closing__caption">Visualización conceptual.</p>
+      </div>
+    </section>
+
+    <!-- Contact -->
+    <section class="section" id="contacto">
+      <div class="inner split">
+        <div class="reveal">
+          <p class="eyebrow">Contacto</p>
+          <h2 class="display h2">Hablemos de tu lote.</h2>
+          <p class="lede" style="margin-top: 24px">Dejanos tus datos y el lote que te interesa. Un asesor de Génesis te responderá con la información verificada.</p>
+        </div>
+        <div class="reveal" data-contact-form></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer on-dark">
+    <div class="inner">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a class="brand" href="./" aria-label="Génesis — inicio" data-brand style="color: var(--ivory)">
+            <span class="brand__name">Génesis</span>
+            <span class="brand__sub">Negocios inmobiliarios</span>
+          </a>
+          <p class="footer-tagline">El comienzo de tu historia.</p>
+          <p>Ciudad del Este, Paraguay.</p>
+        </div>
+        <nav class="footer-nav" aria-label="Pie de página">
+          <h4>Viva Lago Country</h4>
+          <a href="#proyecto">El desarrollo</a>
+          <a href="#ubicacion">Ubicación</a>
+          <a href="#lotes">Lotes</a>
+          <a href="#club">El club</a>
+          <a href="#obra">La obra</a>
+          <a href="#experiencia">Recorrido 3D</a>
+          <h4>Génesis</h4>
+          <a href="./">Inicio</a>
+          <a href="barrios.html">Barrios privados</a>
+          <a href="#nosotros">Nosotros</a>
+          <a href="#proceso">Cómo comprar</a>
+          <a href="#contacto">Contacto</a>
+        </nav>
+        <div>
+          <h4>Sobre esta presentación</h4>
+          <p>Lotes, calles, numeración y superficies provienen del proyecto de loteamiento georreferenciado de Viva Lago Country. La vegetación, el relieve, el entorno y la residencia son una recreación: la residencia es un concepto adaptado a las medidas de cada lote, no un proyecto aprobado, y no está incluida en el precio de ningún lote. Precios, disponibilidad y condiciones de financiación se informan únicamente a través de un asesor de Génesis.</p>
+          <p>Escena en tiempo real con three.js (MIT) y ez-tree (MIT); renders con Blender Cycles. Iluminación con HDRI de Poly Haven (CC0). Texturas arquitectónicas generadas para este proyecto. Tipografías Instrument Serif y Geist (SIL OFL 1.1).</p>
+        </div>
+      </div>
+      <div class="legal">
+        <span>© <span data-year>2026</span> Génesis Negocios Inmobiliarios.</span>
+        <span>Visualizaciones conceptuales, sin valor contractual. <a href="privacidad.html">Política de privacidad</a></span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Explorer overlay; populated by js/explorer.js on first open. -->
+  <div class="explorer" id="explorer" role="dialog" aria-modal="true" aria-label="Viva Lago Country — experiencia interactiva" hidden></div>
+</body>
+</html>

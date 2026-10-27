@@ -62,8 +62,13 @@ Partially built elements are cut with per-component clipping planes in house spa
 ## Structure
 
 ```
-index.html, css/genesis.css     page and design system
-js/main.js                      page bootstrap (header, reveals, hero, location, lot browser, common areas, contact, deep links)
+index.html                      Génesis home: hero, “Conocé nuestros barrios privados”, Nosotros, contact
+barrios.html                    the private neighbourhoods (one card per development; Viva Lago Country today)
+viva-lago.html                  the development: lots, location, club, construction film, 3D explorer
+css/genesis.css                 design system for all pages
+js/ui/shell.js                  shared shell: header, menu, reveals, analytics, contact button, footer year
+js/site.js                      bootstrap for the home and barrios pages
+js/main.js                      Viva Lago bootstrap (hero, location, lot browser, common areas, contact, deep links)
 js/ui/lot-browser.js            plan + filter + list + lot sheet
 js/ui/site-maps.js              location sketch and key plans (SVG from the survey data)
 js/explorer.js                  overlay UI for the experience + 2D fallback
@@ -124,7 +129,7 @@ Every item below is a one-line change; until it is set the page adapts on its ow
 
 Optionally: drone photos or video of the site, Génesis' track record for “Nosotros”, and a professionally designed residence as a GLB with components split by trade, to replace the concept model.
 
-Publishing: the site is static. Copy `index.html`, `privacidad.html`, `manifest.webmanifest`, `robots.txt`, `css/`, `js/`, `vendor/` and `assets/` (without `assets/trees/source`) to any web host with HTTPS; `.exr` must be served as a binary file.
+Publishing: the site is static. Copy `index.html`, `barrios.html`, `viva-lago.html`, `privacidad.html`, `manifest.webmanifest`, `robots.txt`, `css/`, `js/`, `vendor/` and `assets/` (without `assets/trees/source`) to any web host with HTTPS; `.exr` must be served as a binary file.
 
 ## Assets and licences
 

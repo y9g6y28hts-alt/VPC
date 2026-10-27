@@ -17,6 +17,7 @@ if (shots) fs.mkdirSync(shots, { recursive: true });
 
 const server = createServer().listen(0);
 const base = `http://localhost:${server.address().port}/`;
+const site = `${base}viva-lago.html`;
 const results = [];
 let failures = 0;
 
@@ -63,12 +64,33 @@ const gpuArgs = ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ig
   const page = await context.newPage();
   const errors = collectErrors(page);
 
-  await check('homepage renders headline, navigation and the surveyed figures', async () => {
+  await check('Génesis home leads to the private neighbourhoods and on to Viva Lago Country', async () => {
     await page.goto(base);
     await page.waitForLoadState('networkidle');
+    assert.match(await page.title(), /^Génesis/);
+    assert.match(await page.textContent('h1'), /el comienzo de tu historia/i);
+    assert.match(await page.textContent('.stats-card'), /datos del plano/);
+    assert.ok(!/USD|Gs\b|\$/.test(await page.locator('main').textContent()), 'no prices on the home page');
+    await snap(page, '00-genesis-home');
+    await page.locator('.category').scrollIntoViewIfNeeded();
+    assert.match(await page.textContent('.category'), /Conocer barrios privados/);
+    await Promise.all([page.waitForURL(/barrios\.html/), page.click('.category')]);
+    assert.match(await page.textContent('h1'), /Barrios privados/);
+    const card = page.locator('.project-card', { hasText: 'Viva Lago Country' });
+    assert.equal(await card.count(), 1);
+    assert.match(await card.locator('[data-maps-link]').getAttribute('href'), /^https:\/\/maps\.app\.goo\.gl\/MoXFWMTVsvddWcvg7/);
+    await snap(page, '00-barrios');
+    await Promise.all([page.waitForURL(/viva-lago\.html/), card.getByRole('link', { name: /Ver detalles/ }).click()]);
+    assert.equal(await page.getAttribute('.nav__back', 'href'), 'barrios.html');
+    assert.deepEqual(await page.locator('.crumbs a').evaluateAll((as) => as.map((a) => a.getAttribute('href'))), ['./', 'barrios.html']);
+  });
+
+  await check('Viva Lago page renders headline, navigation and the surveyed figures', async () => {
+    await page.goto(site);
+    await page.waitForLoadState('networkidle');
     assert.match(await page.textContent('h1'), /El comienzo de/);
-    assert.deepEqual(await page.locator('.nav a').allTextContents(), ['El desarrollo', 'Ubicación', 'Lotes', 'Recorrido 3D', 'Contacto']);
-    for (const id of await page.locator('.nav a').evaluateAll((as) => as.map((a) => a.getAttribute('href')))) {
+    assert.deepEqual(await page.locator('.nav a:not(.nav__back)').allTextContents(), ['El desarrollo', 'Ubicación', 'Lotes', 'El club', 'La obra', 'Contacto']);
+    for (const id of await page.locator('.nav a:not(.nav__back)').evaluateAll((as) => as.map((a) => a.getAttribute('href')))) {
       assert.equal(await page.locator(id).count(), 1, `${id} exists`);
     }
     const figures = await page.locator('.figures').textContent();
@@ -184,7 +206,7 @@ const gpuArgs = ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ig
 
   await check('hero builds the residence as the visitor scrolls', async () => {
     const motion = await browser.newPage({ viewport: { width: 1280, height: 760 } });
-    await motion.goto(base);
+    await motion.goto(site);
     await motion.waitForSelector('[data-hero-media] canvas', { state: 'attached', timeout: 20000 });
     const before = await motion.textContent('[data-hero-stage]');
     const heroHeight = await motion.evaluate(() => document.getElementById('inicio').offsetHeight - innerHeight);
@@ -343,7 +365,7 @@ const gpuArgs = ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ig
   });
 
   await check('deep link #lote=C-03 opens the experience on that lot', async () => {
-    await page.goto(`${base}#lote=C-03`);
+    await page.goto(`${site}#lote=C-03`);
     await waitState(page, ['approaching', 'building', 'complete', 'exploring']);
     assert.match(await page.locator('.xp-bar__lot').textContent(), /Manzana C · Lote 3/);
     assert.equal(await page.inputValue('[data-contact-form] select[name="lot"]'), 'C-03');
@@ -381,7 +403,7 @@ const gpuArgs = ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ig
   await page.route('**/assets/textures/**', (r) => r.abort());
   await page.route('**/assets/env/**', (r) => r.abort());
   await check('missing textures and HDRI degrade gracefully and are reported', async () => {
-    await page.goto(base);
+    await page.goto(site);
     await page.click('.hero [data-open-explorer]');
     await waitState(page, 'overview');
     assert.match(await page.locator('.xp-toast').textContent(), /texturas/);
@@ -401,7 +423,7 @@ const gpuArgs = ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ig
   const page = await context.newPage();
   const errors = collectErrors(page);
   await check('mobile: home has no horizontal overflow and the menu opens', async () => {
-    await page.goto(base);
+    await page.goto(site);
     await page.waitForLoadState('networkidle');
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
     assert.ok(overflow <= 0, `horizontal overflow ${overflow}px`);
@@ -448,7 +470,7 @@ const gpuArgs = ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ig
   const page = await browser.newPage({ viewport: { width: 1280, height: 760 } });
   const errors = collectErrors(page);
   await check('without WebGL the explorer offers the 2D plan with the same lot actions', async () => {
-    await page.goto(base);
+    await page.goto(site);
     await page.click('.hero [data-open-explorer]');
     await page.waitForSelector('.xp-fallback:not([hidden])');
     assert.match(await page.locator('.xp-fallback .notice').textContent(), /no permite mostrar la escena 3D/);

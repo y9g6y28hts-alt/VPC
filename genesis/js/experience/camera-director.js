@@ -143,8 +143,17 @@ export class CameraDirector {
     const mid = from.position.clone().lerp(pose.position, 0.5);
     mid.y += dist * arc;
     return new Promise((resolve) => {
-      this.flight = { from, to: pose, mid, t: 0, duration, ease, resolve };
+      this.flight = { from, to: pose, mid, arc, t: 0, duration, ease, resolve };
     });
+  }
+
+  /** Moves the destination of the flight in progress (no-op otherwise). */
+  retarget(pose) {
+    const f = this.flight;
+    if (!f) return;
+    f.to = pose;
+    f.mid = f.from.position.clone().lerp(pose.position, 0.5);
+    f.mid.y += f.from.position.distanceTo(pose.position) * f.arc;
   }
 
   /** Construction dolly: position follows the construction clock (pauses with it). */

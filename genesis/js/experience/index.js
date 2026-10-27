@@ -505,7 +505,10 @@ export async function createExperience(container, options = {}) {
     /** Lot-space pose [x, y, d, tx, ty, td] of a film to hand over to, or null. */
     setFilmShot(spec) {
       filmShot = spec;
-      if (currentLot) currentShots = withFilm(lotShots(currentLot, sunnySide(currentLot, env.sunDir), sceneRenderer.width / sceneRenderer.height), currentLot);
+      if (!currentLot) return;
+      currentShots = withFilm(lotShots(currentLot, sunnySide(currentLot, env.sunDir), sceneRenderer.width / sceneRenderer.height), currentLot);
+      // The film is usually known a frame after the flight starts: land on it.
+      if (machine.state === State.APPROACHING) director.retarget(currentShots.arrival);
     },
     /** While a film covers the canvas, the clock runs but nothing is drawn. */
     setCovered(on) {

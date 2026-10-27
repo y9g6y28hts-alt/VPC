@@ -134,7 +134,8 @@ const gpuArgs = ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ig
   });
 
   await check('with reduced motion the hero shows the finished residence without scroll-scrubbing', async () => {
-    assert.match(await page.getAttribute('[data-hero-poster]', 'src'), /f29\.webp$/);
+    const last = await page.evaluate(async () => (await (await fetch('assets/renders/hero/manifest.json')).json()).frames - 1);
+    assert.match(await page.getAttribute('[data-hero-poster]', 'src'), new RegExp(`f${String(last).padStart(2, '0')}\\.webp$`));
     assert.equal(await page.locator('[data-hero-media] canvas').count(), 0);
     assert.match(await page.textContent('[data-hero-stage]'), /Residencia terminada/);
   });
@@ -201,6 +202,22 @@ const gpuArgs = ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ig
     await snap(page, '04-building');
   });
 
+  await check('the lot’s own path-traced film takes over the build and gives way to the 3D view', async () => {
+    await page.waitForSelector('.xp-cinema.is-visible', { timeout: 30000 });
+    const caption = await page.locator('.xp-cinema__caption').textContent();
+    assert.match(caption, /lote B-05 · Cycles/);
+    assert.doesNotMatch(caption, /referencia/);
+    await page.waitForFunction(() => document.querySelector('.xp-cinema__frame img')?.naturalWidth > 0, null, { timeout: 30000 });
+    const toggle = page.locator('.xp-view-toggle');
+    assert.match(await toggle.textContent(), /Vista 3D interactiva/);
+    await snap(page, '04b-film');
+    await toggle.click();
+    await page.waitForSelector('.xp-cinema:not(.is-visible)', { state: 'attached' });
+    assert.match(await toggle.textContent(), /Vista cinematográfica/);
+    await toggle.click();
+    await page.waitForSelector('.xp-cinema.is-visible');
+  });
+
   await check('construction can be paused, scrubbed by stage and resumed', async () => {
     await page.click('.xp-build__controls .icon-btn:has-text("Pausar")');
     assert.equal(await page.evaluate(async () => (await import('./js/explorer.js'))._debugExperience().playing), false);
@@ -265,6 +282,10 @@ const gpuArgs = ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ig
     await waitState(page, ['approaching', 'building', 'complete', 'exploring']);
     assert.match(await page.locator('.xp-bar__lot').textContent(), /Manzana C · Lote 3/);
     assert.equal(await page.inputValue('[data-contact-form] select[name="lot"]'), 'C-03');
+    // C-03 has no film of its own: the one shown is labelled as a reference.
+    await waitState(page, ['building', 'complete', 'exploring']);
+    await page.waitForSelector('.xp-cinema.is-visible', { timeout: 30000 });
+    assert.match(await page.locator('.xp-cinema__caption').textContent(), /^Render de referencia: .*lote [BE]-0[57]/);
   });
 
   await check('no uncaught errors or failed requests on desktop', async () => {

@@ -2649,3 +2649,78 @@ textarea {
   outline-offset: 2px;
 }
 
+/* Path-traced construction film over the explorer scene */
+.xp-cinema {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  opacity: 0;
+  visibility: hidden;
+  background: var(--plum-950);
+  cursor: grab;
+  transition: opacity 1.1s var(--ease-out), visibility 0s linear 1.1s;
+}
+.xp-cinema.is-visible {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 1.1s var(--ease-out), visibility 0s;
+}
+.xp-cinema__frame {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+.xp-cinema__frame img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scale(var(--push, 1));
+  transform-origin: 50% 46%;
+  transition: transform 0.9s linear;
+  will-change: transform, opacity;
+}
+.xp-cinema__frame img + img {
+  opacity: 0;
+}
+/* Same quiet vignette as the live scene, so the hand-over is invisible. */
+.xp-cinema::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(120% 90% at 50% 46%, rgba(0, 0, 0, 0) 58%, rgba(14, 9, 17, 0.38) 100%);
+}
+.xp-cinema__caption {
+  position: absolute;
+  left: var(--gutter);
+  bottom: 14px;
+  z-index: 1;
+  margin: 0;
+  font-size: 11px;
+  color: rgba(244, 239, 230, 0.6);
+  text-shadow: 0 1px 8px rgba(14, 9, 17, 0.7);
+  pointer-events: none;
+}
+.xp-view-toggle[aria-pressed='true'] {
+  background: rgba(244, 239, 230, 0.12);
+}
+@media (max-width: 640px) {
+  .xp-view-toggle {
+    font-size: 11px;
+    padding-inline: 10px;
+  }
+  .xp-cinema__caption {
+    bottom: auto;
+    top: 64px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .xp-cinema,
+  .xp-cinema.is-visible,
+  .xp-cinema__frame img {
+    transition: none;
+  }
+}
+

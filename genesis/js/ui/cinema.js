@@ -18,10 +18,27 @@ export function loadCinemaManifest() {
   return manifestPromise;
 }
 
-/** Film for a lot: its own class (house fitting) or none. */
-export function filmFor(manifest, lot) {
-  if (!manifest || !lot) return null;
-  return manifest.films.find((f) => f.lots.includes(lot.id)) || null;
+/**
+ * Film for a lot: its own (exact framing, seamless hand-over) or, as a labelled
+ * reference, the film whose lot faces the most similar direction.
+ * @returns {{ film: object, exact: boolean } | null}
+ */
+export function filmFor(manifest, lot, findLot) {
+  if (!manifest?.films?.length || !lot) return null;
+  const own = manifest.films.find((f) => f.lots.includes(lot.id));
+  if (own) return { film: own, exact: true };
+  let best = null;
+  let bestDot = -Infinity;
+  for (const f of manifest.films) {
+    const ref = findLot?.(f.lot);
+    if (!ref) continue;
+    const dot = ref.frame.inward.x * lot.frame.inward.x + ref.frame.inward.z * lot.frame.inward.z;
+    if (dot > bestDot) {
+      bestDot = dot;
+      best = f;
+    }
+  }
+  return best ? { film: best, exact: false } : null;
 }
 
 export class Cinema {
@@ -30,7 +47,7 @@ export class Cinema {
     this.a = h('img', { alt: '', decoding: 'async', draggable: 'false' });
     this.b = h('img', { alt: '', decoding: 'async', draggable: 'false' });
     this.caption = h('p', { class: 'xp-cinema__caption' });
-    this.el = h('div', { class: 'xp-cinema', 'aria-hidden': 'true' }, h('div', { class: 'xp-cinema__frame' }, this.a, this.b), h('div', { class: 'xp-cinema__grain' }), this.caption);
+    this.el = h('div', { class: 'xp-cinema', 'aria-hidden': 'true' }, h('div', { class: 'xp-cinema__frame' }, this.a, this.b), this.caption);
     this.film = null;
     this.variant = 'desktop';
     this.cache = new Map();
@@ -38,10 +55,10 @@ export class Cinema {
   }
 
   /** Prepares a film (preloads the first frames); resolves when frame 0 is decoded. */
-  async load(film) {
+  async load(film, { exact = true } = {}) {
     this.film = film;
     this.variant = innerWidth / Math.max(1, innerHeight) < 0.85 && film.mobile ? 'mobile' : 'desktop';
-    this.caption.textContent = film.caption || '';
+    this.caption.textContent = exact ? film.caption || '' : `Render de referencia: la residencia conceptual sobre el lote ${film.lot}, de orientación similar · Cycles`;
     this.shown = [-1, -1];
     await this._img(0);
     // Warm the cache in the background, nearest frames first.

@@ -230,7 +230,7 @@ sky.altitude = 200.0
 sky.air_density = 1.0
 sky.aerosol_density = 1.4
 bg = nt.nodes.new('ShaderNodeBackground')
-bg.inputs['Strength'].default_value = 0.11
+bg.inputs['Strength'].default_value = 0.1
 wout = nt.nodes.new('ShaderNodeOutputWorld')
 nt.links.new(sky.outputs['Color'], bg.inputs['Color'])
 nt.links.new(bg.outputs['Background'], wout.inputs['Surface'])
@@ -238,7 +238,7 @@ nt.links.new(bg.outputs['Background'], wout.inputs['Surface'])
 sun_data = bpy.data.lights.new('sun', 'SUN')
 sun_data.energy = 4.2
 sun_data.angle = math.radians(0.6)
-sun_data.color = (1.0, 0.86, 0.68)
+sun_data.color = (1.0, 0.8, 0.6)  # late-afternoon sun
 sun = bpy.data.objects.new('sun', sun_data)
 scene.collection.objects.link(sun)
 sun.rotation_euler = (-sun_w).to_track_quat('-Z', 'Y').to_euler()
@@ -257,7 +257,7 @@ cam.rotation_euler = direction.to_track_quat('-Z', 'Y').to_euler()
 scene.camera = cam
 
 # -------------------------------------------------------- optional grass
-def scatter_grass(window_m=70.0, per_m2=900, res=0.1):
+def scatter_grass(window_m=34.0, per_m2=420, res=0.08, children=6):
     """Real grass blades on the lawn around the lot.
 
     Density comes from a mask: lawn-coloured ground in the near bake, minus the
@@ -265,7 +265,10 @@ def scatter_grass(window_m=70.0, per_m2=900, res=0.1):
     deck, pool, site works), so blades never poke through hard surfaces."""
     from PIL import Image, ImageDraw
 
-    cx, cz = shot['lot']['centroid']['x'], shot['lot']['centroid']['z']
+    # Window centred between the camera and the lot: that is the lawn in view.
+    cam_p = shot['position']
+    cx = (shot['lot']['centroid']['x'] * 2 + cam_p[0]) / 3
+    cz = (shot['lot']['centroid']['z'] * 2 + cam_p[2]) / 3
     n = int(window_m / res)
     x0, y0 = cx - window_m / 2, -cz - window_m / 2  # Blender XY of the window corner
 
@@ -312,60 +315,62 @@ def scatter_grass(window_m=70.0, per_m2=900, res=0.1):
             draw.polygon(list(zip(xs3.tolist(), ys3.tolist())), fill=255)
     hard = np.asarray(block, dtype=np.float32)[::-1, :] / 255.0
     density = np.clip(lawn * (1.0 - hard), 0, 1)
-    dimg = bpy.data.images.new('grass-density', n, n, alpha=False, float_buffer=True)
-    rgba = np.dstack([density, density, density, np.ones_like(density)]).astype(np.float32)
-    dimg.pixels.foreach_set(rgba.ravel())
-
-    # 3. Emitter plane over the window, UV 0..1 = mask.
-    bpy.ops.mesh.primitive_plane_add(size=window_m, location=(cx, -cz, 0.0))
-    plane = bpy.context.active_object
-    plane.name = 'grass-emitter'
-    plane.hide_render = False
-    plane.data.materials.append(bpy.data.materials.new('emitter-invisible'))
-    em = plane.data.materials[0]
+    if os.environ.get('CINE_DEBUG'):
+        Image.fromarray((np.dstack([lawn, hard, density]) * 255).astype(np.uint8)[::-1]).save(os.path.join(D, 'grass-mask.png'))
+    # 3. Emitter: only the lawn cells of the mask (particle texture influence
+    #    is not evaluated by the bpy module, so the mask becomes geometry).
+    cell = 0.15
+    k = max(1, int(round(cell / res)))
+    m = density[: (n // k) * k, : (n // k) * k].reshape(n // k, k, n // k, k).mean(axis=(1, 3))
+    rows, cols = np.nonzero(m > 0.5)
+    bm = bmesh.new()
+    for r_, c_ in zip(rows.tolist(), cols.tolist()):
+        x_ = x0 + c_ * cell
+        y_ = y0 + r_ * cell
+        vs = [bm.verts.new((x_, y_, 0.0)), bm.verts.new((x_ + cell, y_, 0.0)), bm.verts.new((x_ + cell, y_ + cell, 0.0)), bm.verts.new((x_, y_ + cell, 0.0))]
+        bm.faces.new(vs)
+    me = bpy.data.meshes.new('grass-emitter')
+    bm.to_mesh(me)
+    bm.free()
+    plane = bpy.data.objects.new('grass-emitter', me)
+    scene.collection.objects.link(plane)
+    lawn_area = len(rows) * cell * cell
+    em = bpy.data.materials.new('emitter-invisible')
     em.node_tree.nodes.clear()
     em_out = em.node_tree.nodes.new('ShaderNodeOutputMaterial')
     em_tr = em.node_tree.nodes.new('ShaderNodeBsdfTransparent')
     em.node_tree.links.new(em_tr.outputs[0], em_out.inputs['Surface'])
-    bpy.ops.object.modifier_add(type='SUBSURF')
-    plane.modifiers[-1].levels = 0
+    plane.data.materials.append(em)
     ps = plane.modifiers.new('grass', 'PARTICLE_SYSTEM').particle_system
     st = ps.settings
     st.type = 'HAIR'
-    st.count = int(window_m * window_m * per_m2 / 8)
-    st.hair_length = 0.11
+    st.count = int(lawn_area * per_m2 / (children + 1))
     st.use_advanced_hair = True
     st.emit_from = 'FACE'
     st.distribution = 'RAND'
-    st.child_type = 'INTERPOLATED'
-    st.child_percent = 8
-    st.rendered_child_count = 8
+    st.use_even_distribution = True
+    # Children cluster around their parent; interpolated children would spread
+    # beyond the lawn cells.
+    st.child_type = 'SIMPLE'
+    st.child_percent = children
+    st.rendered_child_count = children
+    st.child_radius = 0.06
+    st.child_roundness = 1.0
     st.child_length = 1.0
-    st.child_length_threshold = 0.35
-    st.roughness_1 = 0.02
-    st.roughness_endpoint = 0.035
-    st.roughness_2 = 0.03
+    st.roughness_1 = 0.012
+    st.roughness_endpoint = 0.02
+    st.roughness_2 = 0.015
     st.clump_factor = 0.05
     st.root_radius = 1.0
     st.tip_radius = 0.0
-    st.radius_scale = 0.0035
+    st.radius_scale = 0.006
     st.hair_step = 4
     st.render_step = 4
     st.use_hair_bspline = True
     st.factor_random = 0.25
-    st.normal_factor = 1.0
     st.brownian_factor = 0.0
-    # Density from the mask.
-    tex = bpy.data.textures.new('grass-density', 'IMAGE')
-    tex.image = dimg
-    slot = st.texture_slots.add()
-    slot.texture = tex
-    slot.texture_coords = 'UV'
-    slot.use_map_time = False
-    slot.use_map_density = True
-    slot.density_factor = 1.0
-    slot.use_map_length = True
-    slot.length_factor = 0.6
+    # Set last: Blender derives the emission velocity from it (and vice versa).
+    st.hair_length = 0.055  # a mown lawn
     # Blade material: ground colour under each blade, varied per strand.
     gm = bpy.data.materials.new('grass-blades')
     nt = gm.node_tree
@@ -394,7 +399,7 @@ def scatter_grass(window_m=70.0, per_m2=900, res=0.1):
     nt.links.new(bsdf.outputs['BSDF'], o.inputs['Surface'])
     plane.data.materials.append(gm)
     st.material = 2
-    print(f'grass: {st.count} parents x {st.rendered_child_count} children over {window_m:.0f} m', flush=True)
+    print(f'grass: {st.count} parents x {st.rendered_child_count} children on {lawn_area:.0f} m² of lawn', flush=True)
 
 
 if args.grass and terrain:
@@ -432,20 +437,8 @@ print(f'clipped {clipped} components; rendering {W}x{H} @ {args.samples} spp', f
 bpy.ops.render.render(write_still=True)
 
 # ------------------------------------------------------ tone map to PNG
-img = bpy.data.images.load(exr)
-w, h = img.size
-rgb = np.array(img.pixels[:], dtype=np.float32).reshape(h, w, 4)[::-1, :, :3]
-rgb *= 2.0 ** args.exposure
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from grade import grade, load_exr, save  # noqa: E402
 
-
-def aces(x):
-    a, b_, c, d, e = 2.51, 0.03, 2.43, 0.59, 0.14
-    return np.clip((x * (a * x + b_)) / (x * (c * x + d) + e), 0, 1)
-
-
-mapped = aces(rgb * 0.85)
-srgb = np.where(mapped <= 0.0031308, 12.92 * mapped, 1.055 * np.power(mapped, 1 / 2.4) - 0.055)
-from PIL import Image  # noqa: E402
-
-Image.fromarray((np.clip(srgb, 0, 1) * 255 + 0.5).astype(np.uint8)).save(out_png)
+save(grade(load_exr(exr), exposure=-1.0 + args.exposure, warmth=0.06), out_png)
 print('wrote', out_png, flush=True)

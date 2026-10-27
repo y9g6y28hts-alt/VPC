@@ -46,6 +46,10 @@ export class SceneRenderer {
     this.sceneTarget = new THREE.WebGLRenderTarget(1, 1, targetOptions);
     if (settings.ao) this.aoTarget = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType });
     this.outputPass = new OutputPass();
+    // Ambient occlusion fades out during camera flights (where it costs the
+    // most and is least visible) and back in when the camera settles.
+    this.aoMix = 1;
+    this.motion = false;
   }
 
   attach(scene, camera) {
@@ -84,17 +88,28 @@ export class SceneRenderer {
     this.setSize(this.width, this.height);
   }
 
-  render() {
+  /** Camera in flight: drop the costliest pass so the move stays fluid. */
+  setMotion(on) {
+    this.motion = on;
+  }
+
+  /** @returns {boolean} true while the AO is still fading (needs more frames). */
+  render(dt = 0) {
     const r = this.renderer;
     r.setRenderTarget(this.sceneTarget);
     r.render(this.scene, this.camera);
     let source = this.sceneTarget;
-    if (this.gtao) {
+    const goal = this.motion ? 0 : 1;
+    this.aoMix = dt > 0 ? goal + (this.aoMix - goal) * Math.exp(-dt / 0.12) : goal;
+    if (Math.abs(this.aoMix - goal) < 0.01) this.aoMix = goal;
+    if (this.gtao && this.aoMix > 0) {
+      this.gtao.blendIntensity = 0.85 * this.aoMix;
       this.gtao.render(r, this.aoTarget, this.sceneTarget);
       source = this.aoTarget;
     }
     this.outputPass.renderToScreen = true;
     this.outputPass.render(r, null, source);
+    return Boolean(this.gtao) && this.aoMix !== goal;
   }
 
   dispose() {

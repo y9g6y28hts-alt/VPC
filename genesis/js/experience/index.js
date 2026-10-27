@@ -158,6 +158,18 @@ export async function createExperience(container, options = {}) {
     invalidate(2);
   });
 
+  // A path-traced film (see js/ui/cinema.js) is framed from one lot-space
+  // pose: when one is set, the directed camera lands on exactly that framing
+  // and holds it, so the hand-over from real time to film is seamless.
+  let filmShot = null;
+  function withFilm(shots, lot) {
+    if (!filmShot) return shots;
+    const side = sunnySide(lot, env.sunDir);
+    const [x, y, d, tx, ty, td] = filmShot;
+    const pose = { position: lotPoint(lot, x * side, y, d), target: lotPoint(lot, tx * side, ty, td) };
+    return { ...shots, arrival: pose, buildStart: pose, buildEnd: pose };
+  }
+
   async function beginApproach(lot) {
     currentLot = lot;
     lots.setSelected(lot.id);
@@ -166,7 +178,7 @@ export async function createExperience(container, options = {}) {
     timeline.restart({ autoplay: false });
     applyConstruction(0);
     const aspect = sceneRenderer.width / sceneRenderer.height;
-    currentShots = lotShots(lot, sunnySide(lot, env.sunDir), aspect);
+    currentShots = withFilm(lotShots(lot, sunnySide(lot, env.sunDir), aspect), lot);
     env.fitShadows(new THREE.Vector3(lot.centroid.x, 0, lot.centroid.z), 48);
     director.setMode('cinematic');
     director.userControl = false;
@@ -321,10 +333,24 @@ export async function createExperience(container, options = {}) {
   }
 
   let halted = false; // set after an unrecoverable error inside the loop
+  let covered = false; // a film covers the canvas: advance time, don't draw
 
   function frame(now) {
     rafId = 0;
     if (disposed || contextLost || halted) return;
+    if (covered) {
+      // The film covers the canvas: keep the clock running, skip drawing.
+      const dt = Math.min(0.1, (now - last) / 1000);
+      last = now;
+      if (machine.state === State.BUILDING && timeline.playing) {
+        timeline.update(dt);
+        applyConstruction(timeline.progress);
+        emit('onStage', timeline.stage, timeline.stageIndex, timeline.progress);
+      }
+      director.update(dt);
+      if (machine.state === State.BUILDING && timeline.playing) rafId = requestAnimationFrame(frame);
+      return;
+    }
     try {
       tick(now);
     } catch (err) {
@@ -347,10 +373,11 @@ export async function createExperience(container, options = {}) {
     }
     const moving = director.update(dt);
     updateView(dt);
-    sceneRenderer.render();
+    sceneRenderer.setMotion(director.busy);
+    const fading = sceneRenderer.render(dt);
     adaptResolution(dt);
 
-    const busy = moving || director.busy || (machine.state === State.BUILDING && timeline.playing);
+    const busy = moving || fading || director.busy || (machine.state === State.BUILDING && timeline.playing);
     if (busy) activeUntil = Math.max(activeUntil, now + 300);
     if (now < activeUntil) rafId = requestAnimationFrame(frame);
   }
@@ -388,7 +415,7 @@ export async function createExperience(container, options = {}) {
     sceneRenderer.setSize(r.width, r.height);
     director.fitLens(r.width / r.height);
     lots.setResolution(r.width, r.height);
-    if (currentLot) currentShots = lotShots(currentLot, sunnySide(currentLot, env.sunDir), r.width / r.height);
+    if (currentLot) currentShots = withFilm(lotShots(currentLot, sunnySide(currentLot, env.sunDir), r.width / r.height), currentLot);
     invalidate(0.3);
   }
   const ro = new ResizeObserver(resize);
@@ -475,6 +502,16 @@ export async function createExperience(container, options = {}) {
       return true;
     },
     invalidate,
+    /** Lot-space pose [x, y, d, tx, ty, td] of a film to hand over to, or null. */
+    setFilmShot(spec) {
+      filmShot = spec;
+      if (currentLot) currentShots = withFilm(lotShots(currentLot, sunnySide(currentLot, env.sunDir), sceneRenderer.width / sceneRenderer.height), currentLot);
+    },
+    /** While a film covers the canvas, the clock runs but nothing is drawn. */
+    setCovered(on) {
+      covered = Boolean(on);
+      invalidate(0.5);
+    },
     /** Stops rendering at once (the overlay is fading out; disposal follows). */
     suspend() {
       frozen = true;

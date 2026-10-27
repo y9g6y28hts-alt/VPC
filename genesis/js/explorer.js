@@ -11,6 +11,7 @@ import { BRAND } from './config/brand.js';
 import { DEVELOPMENT, CONCEPT_RESIDENCE, LOTS, findLot } from './data/viva-lago.js';
 import { CONSTRUCTION_STAGES } from './core/timeline.js';
 import { lotDetailRows, lotLabel, formatArea } from './core/format.js';
+import { Cinema, loadCinemaManifest, filmFor } from './ui/cinema.js';
 
 const root = () => document.getElementById('explorer');
 let ui = null;
@@ -26,6 +27,51 @@ export function setHeroManifest(m) {
 function brandMark() {
   if (BRAND.logo.wordmarkMono) return h('img', { class: 'brand__logo', src: BRAND.logo.wordmarkMono, alt: BRAND.legalName });
   return h('span', { class: 'brand__name' }, BRAND.name);
+}
+
+const cinema = new Cinema({ reducedMotion: prefersReducedMotion() });
+let currentFilm = null;
+let coverTimer = 0;
+
+/** Shows the path-traced film over the scene (or hands back the 3D view). */
+function setFilmVisible(on) {
+  if (!currentFilm) on = false;
+  cinema.show(on);
+  ui.viewToggle.setAttribute('aria-pressed', String(on));
+  ui.viewToggle.textContent = on ? 'Vista 3D interactiva' : 'Vista cinematográfica';
+  clearTimeout(coverTimer);
+  if (on) {
+    cinema.setProgress(xp?.progress ?? 1);
+    // Stop drawing the scene once the film has faded in over it.
+    coverTimer = setTimeout(() => xp?.setCovered(true), prefersReducedMotion() ? 0 : 1200);
+  } else {
+    xp?.setCovered(false);
+  }
+}
+
+async function prepareFilm(lot) {
+  const manifest = await loadCinemaManifest();
+  const match = filmFor(manifest, lot, findLot);
+  currentFilm = null;
+  ui.viewToggle.hidden = true;
+  if (!match || !xp) {
+    xp?.setFilmShot(null);
+    return;
+  }
+  const { film, exact } = match;
+  const portrait = innerWidth / Math.max(1, innerHeight) < 0.85 && film.mobile;
+  // Only the film's own lot gets the matched framing (seamless hand-over).
+  xp.setFilmShot(exact ? (portrait ? film.shots.mobile : film.shots.desktop) : null);
+  try {
+    await cinema.load(film, { exact });
+    if (xp?.lot?.id !== lot.id) return;
+    currentFilm = film;
+    ui.viewToggle.hidden = false;
+    // Already arrived (fast flight or cached film): hand over now.
+    if (['building', 'complete'].includes(xp.state)) setFilmVisible(true);
+  } catch {
+    xp?.setFilmShot(null);
+  }
 }
 
 function buildUI() {
@@ -47,13 +93,16 @@ function buildUI() {
     disclosureBtn.setAttribute('aria-expanded', String(open));
   });
   const closeBtn = h('button', { class: 'xp-close', type: 'button', 'aria-label': 'Salir de la experiencia' }, svgIcon.close());
+  // Film ⇄ interactive 3D, offered only while a lot's film is available.
+  const viewToggle = h('button', { class: 'xp-chip xp-view-toggle', type: 'button', hidden: true, 'aria-pressed': 'true' }, 'Vista 3D interactiva');
+  viewToggle.addEventListener('click', () => setFilmVisible(!cinema.visible));
   closeBtn.addEventListener('click', () => closeExplorer());
 
   const bar = h(
     'div',
     { class: 'xp-bar' },
     h('div', { class: 'xp-bar__title' }, brandMark(), h('span', { class: 'sep', 'aria-hidden': 'true', style: { opacity: 0.4 } }, '/'), h('span', { class: 'xp-bar__project' }, DEVELOPMENT.name), lotLabelEl),
-    h('div', { class: 'xp-bar__actions' }, disclosureBtn, closeBtn),
+    h('div', { class: 'xp-bar__actions' }, viewToggle, disclosureBtn, closeBtn),
   );
 
   // Loading
@@ -169,10 +218,13 @@ function buildUI() {
 
   const fallback = h('div', { class: 'xp-fallback', hidden: true });
 
-  el.replaceChildren(stage, fallback, bar, disclosure, loading, overview, build, details, tooltip, toast, sheet);
+  // Dragging or tapping the film hands the camera to the visitor.
+  cinema.el.addEventListener('pointerdown', () => setFilmVisible(false));
+  el.replaceChildren(stage, cinema.el, fallback, bar, disclosure, loading, overview, build, details, tooltip, toast, sheet);
   el.addEventListener('keydown', onKeyDown);
 
   return {
+    viewToggle,
     el, stage, bar, lotLabelEl, disclosure, disclosureBtn, closeBtn, loading, loadBar, loadPct, loadLabel,
     overview, lotSelect, build, stageName, stageCount, segments, pauseBtn, setPauseIcon,
     details, detailsLot, detailsRows, viewButtons, tooltip, toast, sheet, form, fallback,
@@ -217,6 +269,14 @@ function onState(state, ctx) {
     ui.tooltip.classList.remove('is-visible');
     toastMsg(`${lotLabel(lot)} · preparando el terreno`);
     setHash(lot.id);
+    setFilmVisible(false);
+    prepareFilm(lot);
+  }
+  // The film takes over when the camera lands (and on replay).
+  if (state === 'building' && currentFilm && ctx.previous !== 'building') setFilmVisible(true);
+  if (state === 'overview' || state === 'returning') {
+    setFilmVisible(false);
+    ui.viewToggle.hidden = true;
   }
   if (state === 'building') ui.setPauseIcon(Boolean(ctx.paused));
   if ((state === 'complete' || state === 'exploring') && lot) {
@@ -229,6 +289,7 @@ function onState(state, ctx) {
 }
 
 function onStage(stage, index, progress) {
+  if (cinema.visible) cinema.setProgress(progress);
   ui.stageName.textContent = stage.label;
   ui.stageCount.textContent = `${String(index + 1).padStart(2, '0')} / ${String(CONSTRUCTION_STAGES.length).padStart(2, '0')}`;
   ui.segments.forEach((seg, i) => {
@@ -311,7 +372,8 @@ let fallbackPlan = null;
 
 function stageStills() {
   if (!heroManifest?.stages) return [];
-  return heroManifest.stages.map((s) => ({ label: s.label, src: new URL(`../assets/renders/hero/desktop/f${String(s.frame).padStart(2, '0')}.webp`, import.meta.url).href }));
+  const base = new URL(heroManifest.source || './', new URL('../assets/renders/hero/', import.meta.url));
+  return heroManifest.stages.map((s) => ({ label: s.label, src: new URL(`desktop/f${String(s.frame).padStart(2, '0')}.webp`, base).href }));
 }
 
 function enterFallback(reason) {
@@ -442,6 +504,10 @@ export function closeExplorer() {
   document.body.classList.remove('is-locked');
   xp?.suspend?.();
   // Release the GPU: the scene is rebuilt on the next visit (assets come from cache).
+  cinema.show(false);
+  currentFilm = null;
+  ui.viewToggle.hidden = true;
+  clearTimeout(coverTimer);
   const done = () => {
     if (el.classList.contains('is-open')) return;
     el.hidden = true;

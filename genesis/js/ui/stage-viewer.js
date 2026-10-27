@@ -1,5 +1,5 @@
 // "De la obra a la casa": the construction sequence under the visitor's
-// control. The frames are the hero's renders (same lot, same camera), so the
+// control. The frames are the hero's (same lot, same camera), so the
 // eight stages read as one continuous take. Images load only when the section
 // approaches; the next and previous frames are preloaded.
 import { h } from './dom.js';
@@ -45,7 +45,8 @@ export async function mountStageViewer(host, { reducedMotion = false } = {}) {
     note: NOTES[s.id],
   }));
   const variant = () => (host.clientWidth / Math.max(1, innerHeight) < 0.85 && innerWidth < 760 ? 'mobile' : 'desktop');
-  const url = (i) => new URL(`${variant()}/f${String(i).padStart(2, '0')}.webp`, base).href;
+  const src = manifest.source ? new URL(manifest.source, base) : base;
+  const url = (i) => new URL(`${variant()}/f${String(i).padStart(2, '0')}.webp`, src).href;
 
   const imgA = h('img', { alt: '', decoding: 'async' });
   const imgB = h('img', { alt: '', decoding: 'async', class: 'is-back' });

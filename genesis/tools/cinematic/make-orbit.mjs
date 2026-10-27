@@ -1,8 +1,8 @@
 // Path-traced construction orbit: one continuous camera move around the lot
 // while the residence is built, rendered with Cycles and assembled into video.
 //
-//   node tools/cinematic/make-orbit.mjs --lot=B-05 [--seconds=12] [--fps=30]
-//        [--states=24] [--size=1920x1080] [--samples=32] [--haze=0.0007]
+//   node tools/cinematic/make-orbit.mjs --lot=B-05 [--seconds=10] [--fps=24]
+//        [--states=24] [--size=1280x720] [--samples=16] [--fog=0.0007]
 //        [--preview=6]   (renders N stills of the path on the finished house)
 //
 // Each construction state is rendered for its stretch of the path (plus a few
@@ -24,14 +24,14 @@ const args = Object.fromEntries(
   }),
 );
 const LOT = args.lot || 'B-05';
-const FPS = Number(args.fps || 30);
-const SECONDS = Number(args.seconds || 12);
+const FPS = Number(args.fps || 24);
+const SECONDS = Number(args.seconds || 10);
 const STATES = Number(args.states || 24);
-const SIZE = args.size || '1920x1080';
-const SAMPLES = Number(args.samples || 32);
-const HAZE = Number(args.haze ?? 0.0007);
-const OVERLAP = 4; // frames of dissolve between construction states
-const FOV = 38;
+const SIZE = args.size || '1280x720';
+const SAMPLES = Number(args.samples || 16);
+const FOG = Number(args.fog ?? 0.0007);
+const OVERLAP = 3; // frames of dissolve between construction states
+const FOV = 36;
 const WORK = path.resolve(args.work || path.join(root, '.film-work', `${LOT}-orbit`));
 const OUT = path.join(root, 'assets', 'cinematic', LOT);
 const lot = LOTS.find((l) => l.id === LOT);
@@ -50,13 +50,21 @@ const point = (x, y, d, side) => {
 const ease = (u) => 0.5 - 0.5 * Math.cos(Math.PI * u); // sine in-out: no jolt at either end
 function pose(u, side) {
   const e = ease(u);
-  const theta = ((-32 + 140 * e) * Math.PI) / 180;
-  const radius = 31 - 6 * e; // slow push-in
-  const height = 3.2 + 4.6 * e; // rising as the house rises
-  const cx = 0;
-  const cd = 14;
-  const position = point(cx + radius * Math.sin(theta), height, cd - radius * Math.cos(theta), side);
-  const target = point(0.6 * Math.sin(theta), 2.6 + 1.4 * e, cd + 0.5, side);
+  const theta = ((-50 + 130 * e) * Math.PI) / 180;
+  const radius = 34 - 4 * e; // slow push-in
+  const height = 4.2 + 5.8 * e * e; // rises late, ending on an elevated reveal
+  // The house centre is placed with the lot's fitting; the camera's offset
+  // from it is in true metres (the fitting scales the house, not the orbit).
+  const c = point(0, 0, 14 + 1.0 * e, side);
+  const o0 = lotToWorld(lot.frame, 0, 0);
+  const ox = lotToWorld(lot.frame, side, 0);
+  const od = lotToWorld(lot.frame, 0, 1);
+  const ax = [ox.x - o0.x, ox.z - o0.z];
+  const ad = [od.x - o0.x, od.z - o0.z];
+  const sx = radius * Math.sin(theta);
+  const sd = -radius * Math.cos(theta);
+  const position = [c[0] + ax[0] * sx + ad[0] * sd, height, c[2] + ax[1] * sx + ad[1] * sd];
+  const target = [c[0], 2.8 + 0.8 * e, c[2]];
   return { position, target };
 }
 
@@ -75,7 +83,7 @@ const side = dist(shot.position, point(24, 3.4, -11.5, 1)) < dist(shot.position,
 const render = (t, frames, outdir, size = SIZE, samples = SAMPLES) => {
   const camsFile = path.join(WORK, `cams-${path.basename(outdir)}.json`);
   fs.writeFileSync(camsFile, JSON.stringify({ fov: FOV, frames }));
-  const r = spawnSync('python3', [path.join(root, 'tools/cinematic/render.py'), '--dir', WORK, '--t', tag(t), '--shot', 'orbit', '--size', size, '--samples', String(samples), '--grass', '--grass-window', '64', '--haze', String(HAZE), '--cams', camsFile, '--outdir', outdir], { encoding: 'utf8', maxBuffer: 1 << 28 });
+  const r = spawnSync('python3', [path.join(root, 'tools/cinematic/render.py'), '--dir', WORK, '--t', tag(t), '--shot', 'orbit', '--size', size, '--samples', String(samples), '--fast', '--grass', '--grass-window', '44', '--fog', String(FOG), '--cams', camsFile, '--outdir', outdir], { encoding: 'utf8', maxBuffer: 1 << 28 });
   if (r.status !== 0) {
     console.error(r.stdout?.slice(-3000), r.stderr?.slice(-3000));
     throw new Error(`render failed at t=${t}`);
@@ -141,7 +149,8 @@ for a, b, w, out in json.load(open(${JSON.stringify(path.join(WORK, 'composite.j
 fs.mkdirSync(OUT, { recursive: true });
 const mp4 = path.join(OUT, 'orbit.mp4');
 // 60 fps by motion-compensated interpolation of the rendered frames (the
-// camera path is smooth, so in-between frames are reliable), H.264 for reach.
-execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-framerate', String(FPS), '-i', path.join(seq, '%04d.png'), '-vf', `minterpolate=fps=60:mi_mode=mci:mc_mode=aobmc:me_mode=bidir:vsbmc=1,format=yuv420p`, '-c:v', 'libx264', '-preset', 'slow', '-crf', '19', '-profile:v', 'high', '-movflags', '+faststart', '-an', mp4], { stdio: 'inherit' });
+// camera path is smooth, so in-between frames are reliable), scaled to 1080p,
+// H.264 for reach.
+execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-framerate', String(FPS), '-i', path.join(seq, '%04d.png'), '-vf', `minterpolate=fps=60:mi_mode=mci:mc_mode=aobmc:me_mode=bidir:vsbmc=1,scale=1920:1080:flags=lanczos,format=yuv420p`, '-c:v', 'libx264', '-preset', 'slow', '-crf', '19', '-profile:v', 'high', '-movflags', '+faststart', '-an', mp4], { stdio: 'inherit' });
 execFileSync('python3', ['-c', `from PIL import Image; Image.open(${JSON.stringify(path.join(seq, `${String(TOTAL - 1).padStart(4, '0')}.png`))}).convert('RGB').save(${JSON.stringify(path.join(OUT, 'orbit-poster.webp'))}, quality=82, method=6)`]);
 console.log(`wrote ${path.relative(root, mp4)} (${(fs.statSync(mp4).size / 1e6).toFixed(1)} MB)`);

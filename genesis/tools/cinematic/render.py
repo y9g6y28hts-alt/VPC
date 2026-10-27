@@ -35,9 +35,11 @@ ap.add_argument('--exposure', type=float, default=0.0)
 ap.add_argument('--grass', action='store_true', help='scatter real grass blades near the camera')
 ap.add_argument('--threads', type=int, default=0)
 ap.add_argument('--haze', type=float, default=0.0, help='atmospheric volume density (1/m), e.g. 0.0008')
+ap.add_argument('--fog', type=float, default=0.0, help='aerial-perspective density (1/m) applied in compositing from the mist pass')
 ap.add_argument('--cams', default=None, help='JSON camera path (three coords): renders every pose in one session')
 ap.add_argument('--outdir', default=None, help='with --cams: graded frames are written here as NNNN.png')
 ap.add_argument('--grass-window', type=float, default=40.0)
+ap.add_argument('--fast', action='store_true', help='fewer bounces (camera paths: hundreds of frames)')
 args = ap.parse_args(sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else sys.argv[1:])
 
 D = os.path.abspath(args.dir)
@@ -422,6 +424,47 @@ if args.haze > 0:
     hnt.links.new(pv.outputs['Volume'], hout.inputs['Volume'])
     hme.materials.append(hm)
     haze.visible_shadow = False
+    # Single scattering along camera rays only: the aerial perspective and sun
+    # shafts read the same, at a fraction of the cost of scattering every bounce.
+    haze.visible_diffuse = False
+    haze.visible_glossy = False
+    haze.visible_transmission = False
+    haze.visible_volume_scatter = False
+
+if args.fog > 0:
+    # Aerial perspective as exact exponential fog: absorption plus a constant
+    # in-scattered radiance, seen by camera rays only. No light sampling, so it
+    # costs little; the sky is outside the box and keeps its own atmosphere.
+    fb = bmesh.new()
+    bmesh.ops.create_cube(fb, size=1.0)
+    fme = bpy.data.meshes.new('fog')
+    fb.to_mesh(fme)
+    fb.free()
+    fog = bpy.data.objects.new('fog', fme)
+    lc = shot['lot']['centroid']
+    fog.location = (lc['x'], -lc['z'], 40.0)
+    fog.scale = (2400.0, 2400.0, 100.0)
+    scene.collection.objects.link(fog)
+    fm = bpy.data.materials.new('fog')
+    fnt = fm.node_tree
+    fnt.nodes.clear()
+    fout = fnt.nodes.new('ShaderNodeOutputMaterial')
+    absn = fnt.nodes.new('ShaderNodeVolumeAbsorption')
+    absn.inputs['Color'].default_value = (0, 0, 0, 1)
+    absn.inputs['Density'].default_value = args.fog
+    emi = fnt.nodes.new('ShaderNodeEmission')
+    emi.inputs['Color'].default_value = (0.62, 0.62, 0.66, 1)  # golden-hour haze radiance (linear)
+    emi.inputs['Strength'].default_value = args.fog
+    add = fnt.nodes.new('ShaderNodeAddShader')
+    fnt.links.new(absn.outputs[0], add.inputs[0])
+    fnt.links.new(emi.outputs[0], add.inputs[1])
+    fnt.links.new(add.outputs[0], fout.inputs['Volume'])
+    fme.materials.append(fm)
+    fog.visible_shadow = False
+    fog.visible_diffuse = False
+    fog.visible_glossy = False
+    fog.visible_transmission = False
+    fog.visible_volume_scatter = False
 
 # ---------------------------------------------------------------- camera
 cam_data = bpy.data.cameras.new('cam')
@@ -649,6 +692,13 @@ cy.transparent_max_bounces = 24
 cy.caustics_reflective = False
 cy.caustics_refractive = False
 cy.sample_clamp_indirect = 8.0
+if args.fast:
+    cy.max_bounces = 4
+    cy.diffuse_bounces = 2
+    cy.glossy_bounces = 2
+    cy.transmission_bounces = 4
+    cy.transparent_max_bounces = 10
+    cy.adaptive_threshold = 0.04
 if args.threads:
     r.threads_mode = 'FIXED'
     r.threads = args.threads
@@ -657,12 +707,18 @@ r.image_settings.color_depth = '32'
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from grade import grade, load_exr, save  # noqa: E402
 
+def finish(exr, png):
+    save(grade(load_exr(exr), exposure=-1.0 + args.exposure, warmth=0.06), png)
+
+
 print(f'clipped {clipped} components; rendering {W}x{H} @ {args.samples} spp', flush=True)
 if args.cams:
     # Camera path: the scene (and its BVH) is built once, every pose renders
     # in this session. Frames that already exist are skipped (resumable).
     import time
     path = json.load(open(args.cams))
+    # Keep the synced scene and BVH between renders: only the camera moves.
+    r.use_persistent_data = True
     cam_data.angle_y = math.radians(path.get('fov', shot['fov']))
     os.makedirs(args.outdir, exist_ok=True)
     for f in path['frames']:
@@ -675,12 +731,12 @@ if args.cams:
         exr = png[:-4] + '.exr'
         r.filepath = exr
         bpy.ops.render.render(write_still=True)
-        save(grade(load_exr(exr), exposure=-1.0 + args.exposure, warmth=0.06), png)
+        finish(exr, png)
         os.remove(exr)
         print(f"frame {f['i']} in {time.time() - t0:.1f} s", flush=True)
 else:
     exr = out_png.rsplit('.', 1)[0] + '.exr'
     r.filepath = exr
     bpy.ops.render.render(write_still=True)
-    save(grade(load_exr(exr), exposure=-1.0 + args.exposure, warmth=0.06), out_png)
+    finish(exr, out_png)
     print('wrote', out_png, flush=True)

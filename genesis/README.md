@@ -22,7 +22,7 @@ Development tasks need the devDependencies (`npm install`):
 | `npm run e2e` | Headless Chromium end-to-end run (desktop, mobile, no-WebGL fallback). Uses the pre-installed Playwright |
 | `npm run vendor` | Re-copies three.js, ez-tree, tree textures and the HDRI from `node_modules` into `vendor/` and `assets/` |
 | `npm run textures` | Regenerates the procedural PBR textures (Python 3 + NumPy + Pillow) |
-| `node tools/capture-renders.mjs` | Re-renders the hero sequence, the overview poster and the closing image with the engine itself (options: `--variant=desktop` or `mobile`, `--only=hero`, `overview` or `closing`) |
+| `node tools/capture-renders.mjs` | Re-renders the overview poster and the closing image with the engine itself (options: `--variant=desktop` or `mobile`, `--only=overview` or `closing`; `--only=hero` replaces the path-traced hero sequence with engine frames) |
 | `node tools/cinematic/make-film.mjs --lot=B-05 [--hero]` | Path-traced construction film of a lot (see **Cinematic films**); resumable; `--hero` makes the home page sequence and stage viewer use it |
 | `node tools/perf.mjs` | Load measurement in headless Chromium, desktop and a throttled phone profile: LCP (and its element), CLS, long-task blocking, bytes until load vs. streamed after |
 | `python3 tools/survey/extract-plan.py plan.pdf > tools/survey/plan-extract.json` | Reads the surveyor's vector PDF: fits the drawing to the four UTM monuments and polygonizes the line work (Python 3 + pdfplumber, shapely, NumPy) |

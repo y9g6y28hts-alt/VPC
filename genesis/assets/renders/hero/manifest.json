@@ -1,70 +1,75 @@
 {
-  "frames": 30,
+  "source": "../../cinematic/B-05/",
+  "frames": 12,
   "lot": "B-05",
   "progress": [
     0,
-    0.029,
-    0.062,
-    0.103,
-    0.148,
-    0.194,
-    0.236,
-    0.276,
-    0.311,
-    0.347,
-    0.382,
-    0.417,
-    0.452,
-    0.481,
-    0.51,
-    0.54,
-    0.569,
-    0.598,
-    0.628,
-    0.657,
-    0.686,
-    0.719,
-    0.754,
-    0.789,
-    0.824,
-    0.859,
-    0.894,
-    0.93,
-    0.965,
+    0.06,
+    0.17,
+    0.27,
+    0.36,
+    0.47,
+    0.55,
+    0.64,
+    0.74,
+    0.84,
+    0.92,
+    1
+  ],
+  "positions": [
+    0,
+    0.06,
+    0.17,
+    0.27,
+    0.36,
+    0.47,
+    0.55,
+    0.64,
+    0.74,
+    0.84,
+    0.92,
     1
   ],
   "stages": [
     {
       "label": "Terreno y replanteo",
-      "frame": 0
+      "frame": 0,
+      "start": 0
     },
     {
       "label": "Fundaciones",
-      "frame": 3
+      "frame": 2,
+      "start": 0.1
     },
     {
       "label": "Estructura de hormigón",
-      "frame": 6
+      "frame": 3,
+      "start": 0.22
     },
     {
       "label": "Mampostería y volúmenes",
-      "frame": 11
+      "frame": 5,
+      "start": 0.4
     },
     {
       "label": "Fachadas y cubierta",
-      "frame": 16
+      "frame": 7,
+      "start": 0.56
     },
     {
       "label": "Aberturas y detalles",
-      "frame": 21
+      "frame": 8,
+      "start": 0.7
     },
     {
       "label": "Paisajismo y exteriores",
-      "frame": 24
+      "frame": 9,
+      "start": 0.82
     },
     {
       "label": "Residencia terminada",
-      "frame": 28
+      "frame": 11,
+      "start": 0.94
     }
   ],
   "desktop": [
@@ -75,5 +80,5 @@
     720,
     1280
   ],
-  "note": "Rendered with the Viva Lago experience engine (tools/capture-renders.mjs). Conceptual visualisation."
+  "note": "Path-traced with Blender Cycles from the Viva Lago experience scene (tools/cinematic/). Conceptual visualisation."
 }

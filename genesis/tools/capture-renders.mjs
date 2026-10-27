@@ -1,6 +1,7 @@
 // Renders the site's still imagery with the experience engine itself, so every
 // picture on the page is the same conceptual scene the visitor can explore:
-//   assets/renders/hero/{desktop,mobile}/fNN.webp  – construction sequence (scroll hero)
+//   assets/renders/hero/{desktop,mobile}/fNN.webp  – construction sequence (only with --only=hero;
+//                                                   the page normally uses the path-traced film)
 //   assets/renders/hero/manifest.json               – frame count and stage labels
 //   assets/renders/overview.webp                    – development overview poster
 //   assets/renders/closing-{desktop,mobile}.webp     – finished residence from the garden
@@ -130,7 +131,9 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const browser = await launch();
   fs.mkdirSync(out(), { recursive: true });
   if (!args.only || args.only === 'overview') await captureOverview(browser, port);
-  if (!args.only || args.only === 'hero') await captureHero(browser, port);
+  // The home page uses the path-traced film (tools/cinematic/make-film.mjs
+  // --hero); engine frames replace it only when asked for explicitly.
+  if (args.only === 'hero') await captureHero(browser, port);
   if (!args.only || args.only === 'closing') await captureClosing(browser, port);
   await browser.close();
   server.close();

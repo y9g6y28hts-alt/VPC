@@ -37,7 +37,8 @@
         <a href="#proyecto">El desarrollo</a>
         <a href="#ubicacion">Ubicación</a>
         <a href="#lotes">Lotes</a>
-        <a href="#experiencia">Recorrido 3D</a>
+        <a href="#obra">La obra</a>
+        <a href="#nosotros">Nosotros</a>
         <a href="#contacto">Contacto</a>
         <button class="btn btn--light" type="button" data-open-explorer>Explorar en 3D</button>
       </nav>
@@ -184,23 +185,89 @@
       </div>
     </section>
 
-    <!-- Génesis and the provenance of the information. -->
-    <section class="section section--ivory" id="genesis" aria-labelledby="genesis-title">
-      <div class="inner genesis">
-        <div class="reveal">
-          <p class="eyebrow">Comercializa</p>
-          <h2 class="brand-statement" id="genesis-title"><img class="genesis-lockup" src="assets/brand/genesis-logo-color.svg" alt="Génesis — El comienzo de tu historia" width="483" height="105" /></h2>
-          <p class="lede">Génesis Negocios Inmobiliarios, Ciudad del Este. Un asesor responde por precio, disponibilidad y condiciones de cada lote.</p>
+    <!-- Génesis: who markets the development, its mission and how it works. -->
+    <section class="section section--dark on-dark nosotros" id="nosotros" aria-labelledby="nosotros-title">
+      <div class="inner">
+        <div class="nosotros-head reveal">
+          <p class="eyebrow on-dark">Nosotros</p>
+          <img class="nosotros-lockup" src="assets/brand/genesis-logo-ivory.svg" alt="Génesis — El comienzo de tu historia" width="483" height="105" loading="lazy" />
         </div>
-        <div class="provenance reveal">
+        <div class="mission reveal">
+          <h2 class="eyebrow on-dark mission__label" id="nosotros-title">Nuestra misión</h2>
+          <blockquote class="mission__text">
+            <p>Nuestra misión es brindar soluciones inmobiliarias integrales con eficiencia, ética y conocimiento técnico, acompañando a cada cliente en la toma de decisiones para garantizar <em>operaciones seguras, claras y exitosas.</em></p>
+          </blockquote>
+          <p class="mission__sign">Génesis Negocios Inmobiliarios · Ciudad del Este</p>
+        </div>
+        <ol class="pillars reveal" aria-label="Cómo trabajamos">
+          <li>
+            <span class="pillars__n">01</span>
+            <h3>Soluciones integrales</h3>
+            <p>Te acompañamos en cada etapa de la operación inmobiliaria, desde la primera consulta hasta la firma.</p>
+          </li>
+          <li>
+            <span class="pillars__n">02</span>
+            <h3>Ética</h3>
+            <p>Información verificada y por escrito: superficies del plano, condiciones claras y ningún dato sin respaldo.</p>
+          </li>
+          <li>
+            <span class="pillars__n">03</span>
+            <h3>Conocimiento técnico</h3>
+            <p>Planos, georreferencia y documentación de cada lote, explicados con claridad para decidir con certeza.</p>
+          </li>
+          <li>
+            <span class="pillars__n">04</span>
+            <h3>Acompañamiento</h3>
+            <p>Un asesor a tu lado en cada decisión, para que la operación sea segura, clara y exitosa.</p>
+          </li>
+        </ol>
+        <div class="provenance provenance--dark reveal">
           <h3>De dónde sale cada dato</h3>
           <ul>
             <li><strong>Loteo y superficies.</strong> Proyecto de loteamiento georreferenciado de la Finca 18.485, escala 1/1.000, con cuadro de superficies por lote.</li>
             <li><strong>Posición.</strong> Cuatro mojones en coordenadas UTM 21S (WGS 84), relevados con GPS de mano (precisión declarada: 0,80 m).</li>
             <li><strong>Estado comercial.</strong> Solo se indica cuando un documento de Génesis lo establece. El resto se consulta.</li>
-            <li><strong>Imágenes.</strong> Recreaciones generadas con la escena 3D; la residencia es un concepto, no un proyecto aprobado.</li>
+            <li><strong>Imágenes.</strong> Renders con trazado de rayos de la escena 3D; la residencia es un concepto, no un proyecto aprobado.</li>
           </ul>
         </div>
+      </div>
+    </section>
+
+    <!-- How to buy: the steps, with an advisor. -->
+    <section class="section section--ivory" id="proceso" aria-labelledby="proceso-title">
+      <div class="inner">
+        <div class="proceso-head reveal">
+          <div>
+            <p class="eyebrow">Cómo comprar</p>
+            <h2 class="display h2" id="proceso-title">Cuatro pasos, <em>con un asesor a tu lado.</em></h2>
+          </div>
+          <p class="lede">Del plano a la firma, cada decisión con información verificada y por escrito.</p>
+        </div>
+        <ol class="steps reveal">
+          <li>
+            <span class="steps__n">01</span>
+            <h3>Elegí tu lote</h3>
+            <p>Recorré el plano, compará superficies y medidas, y mirá una residencia conceptual sobre el lote en 3D.</p>
+            <a class="steps__link" href="#lotes">Ver los lotes <span aria-hidden="true">→</span></a>
+          </li>
+          <li>
+            <span class="steps__n">02</span>
+            <h3>Consultá con un asesor</h3>
+            <p>Precio, disponibilidad y condiciones de financiación del lote que elegiste, informados por Génesis.</p>
+            <a class="steps__link" href="#contacto">Hacer una consulta <span aria-hidden="true">→</span></a>
+          </li>
+          <li>
+            <span class="steps__n">03</span>
+            <h3>Visitá el predio</h3>
+            <p>Conocé el terreno, el entorno y el acceso al río Acaray en el km 9, acompañado por un asesor.</p>
+            <a class="steps__link" href="#ubicacion">Cómo llegar <span aria-hidden="true">→</span></a>
+          </li>
+          <li>
+            <span class="steps__n">04</span>
+            <h3>Formalizá la operación</h3>
+            <p>Revisamos con vos la documentación del lote antes de firmar, para una operación segura y clara.</p>
+          </li>
+        </ol>
       </div>
     </section>
 
@@ -238,17 +305,30 @@
   <footer class="site-footer on-dark">
     <div class="inner">
       <div class="footer-grid">
-        <div>
+        <div class="footer-brand">
           <a class="brand" href="#inicio" aria-label="Génesis — inicio" data-brand style="color: var(--ivory)">
             <span class="brand__name">Génesis</span>
             <span class="brand__sub">Negocios inmobiliarios</span>
           </a>
-          <p style="margin-top: 18px">Ciudad del Este, Paraguay.</p>
+          <p class="footer-tagline">El comienzo de tu historia.</p>
+          <p>Ciudad del Este, Paraguay.</p>
         </div>
+        <nav class="footer-nav" aria-label="Pie de página">
+          <h4>Viva Lago Country</h4>
+          <a href="#proyecto">El desarrollo</a>
+          <a href="#ubicacion">Ubicación</a>
+          <a href="#lotes">Lotes</a>
+          <a href="#obra">La obra</a>
+          <a href="#experiencia">Recorrido 3D</a>
+          <h4>Génesis</h4>
+          <a href="#nosotros">Nosotros</a>
+          <a href="#proceso">Cómo comprar</a>
+          <a href="#contacto">Contacto</a>
+        </nav>
         <div>
           <h4>Sobre esta presentación</h4>
           <p>Lotes, calles, numeración y superficies provienen del proyecto de loteamiento georreferenciado de Viva Lago Country. La vegetación, el relieve, el entorno y la residencia son una recreación: la residencia es un concepto adaptado a las medidas de cada lote, no un proyecto aprobado, y no está incluida en el precio de ningún lote. Precios, disponibilidad y condiciones de financiación se informan únicamente a través de un asesor de Génesis.</p>
-          <p>Escena en tiempo real con three.js (MIT) y ez-tree (MIT). Iluminación con HDRI de Poly Haven (CC0). Texturas arquitectónicas generadas para este proyecto. Tipografías Instrument Serif y Geist (SIL OFL 1.1).</p>
+          <p>Escena en tiempo real con three.js (MIT) y ez-tree (MIT); renders con Blender Cycles. Iluminación con HDRI de Poly Haven (CC0). Texturas arquitectónicas generadas para este proyecto. Tipografías Instrument Serif y Geist (SIL OFL 1.1).</p>
         </div>
       </div>
       <div class="legal">

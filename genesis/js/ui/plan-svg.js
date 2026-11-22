@@ -4,6 +4,9 @@ import { h } from './dom.js';
 import { LOTS, ROADS, NAUTICAL_ACCESS, ENTRANCE_PAD, COMMON_AREAS, SITE, lakePolygon } from '../data/viva-lago.js';
 import { lotLabel } from '../core/format.js';
 
+const STATE_CLASS = { sold: ' is-sold', reserved: ' is-reserved', available: ' is-available' };
+const STATE_LABEL = { sold: 'vendido', reserved: 'reservado', available: 'disponible' };
+
 // Local metres, north up (+z is south). Framed on the title boundary and the river.
 const VIEW = { minX: -140, minZ: -78, maxX: 186, maxZ: 80 };
 // Portrait (phones): the plan turned a quarter, east down and north to the
@@ -40,13 +43,13 @@ export function planSvg({ interactive = false, selectedId = null, onSelect, labe
   const nodes = new Map();
   for (const lot of LOTS) {
     const poly = h('svg:polygon', {
-      class: `lot${lot.id === selectedId ? ' is-selected' : ''}${lot.commercial.availability === 'sold' ? ' is-sold' : ''}`,
+      class: `lot${lot.id === selectedId ? ' is-selected' : ''}${STATE_CLASS[lot.commercial.availability] || ''}`,
       points: pts(lot.polygon),
       ...(interactive
         ? {
             tabindex: '0',
             role: 'button',
-            'aria-label': `${lotLabel(lot)}, ${lot.commercial.areaM2.toLocaleString('es-PY')} m²${lot.commercial.availability === 'sold' ? ', vendido' : ''}`,
+            'aria-label': `${lotLabel(lot)}, ${lot.commercial.areaM2.toLocaleString('es-PY')} m²${STATE_LABEL[lot.commercial.availability] ? `, ${STATE_LABEL[lot.commercial.availability]}` : ''}`,
             'aria-pressed': lot.id === selectedId ? 'true' : 'false',
             onclick: () => onSelect?.(lot.id),
             onkeydown: (e) => {

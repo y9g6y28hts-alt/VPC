@@ -10,7 +10,9 @@ import { mountFilmVideo } from './ui/film-video.js';
 import { mountGallery } from './ui/gallery.js';
 import { mountReels, mountPhotoViewer } from './ui/predio.js';
 import { initHeroSequence } from './hero-sequence.js';
-import { findLot, DEVELOPMENT, SITE_LOCATION, COMMON_AREA_TABLE } from './data/viva-lago.js';
+import { findLot, LOTS, DEVELOPMENT, SITE_LOCATION, COMMON_AREA_TABLE } from './data/viva-lago.js';
+import { SITE, AVAILABILITY_FALLBACK_URL } from './config/site.js';
+import { loadAvailability } from './core/availability.js';
 import { formatDms, formatDecimal } from './core/geo.js';
 
 const reducedMotion = prefersReducedMotion();
@@ -75,6 +77,14 @@ copyBtn?.addEventListener('click', async () => {
     copyStatus.textContent = 'Seleccionadas: copialas con Ctrl+C o mantené presionado.';
   }
 });
+
+// Lot states from Génesis' system: read on load and every minute while the
+// page is in view, so a lot marked sold there shows as sold here.
+const availabilityUrl = SITE.availabilityUrl || AVAILABILITY_FALLBACK_URL;
+const refreshAvailability = () => document.visibilityState === 'visible' && loadAvailability(availabilityUrl, LOTS);
+refreshAvailability();
+setInterval(refreshAvailability, 60_000);
+document.addEventListener('visibilitychange', refreshAvailability);
 
 // Lot browser (plan, list and lot sheet; no WebGL needed).
 let lotBrowser = null;

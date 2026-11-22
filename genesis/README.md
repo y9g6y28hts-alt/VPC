@@ -59,6 +59,10 @@ Construction runs on **one continuous clock** (`js/core/timeline.js`) shared by 
 
 Partially built elements are cut with per-component clipping planes in house space; back faces exposed by the cut are shaded with the cut's normal so walls read as solid while they rise (`js/experience/house/construction.js`). Finished components switch back to shared materials.
 
+## Lot availability from Génesis' system
+
+The page reads lot states (vendido / reservado / disponible) from `SITE.availabilityUrl` — a public, read-only endpoint of Génesis' system — or, while that is `null`, from `data/disponibilidad.json`. It applies them on load and every minute while the page is visible, so a lot marked sold in the system shows as sold without a reload. Invalid documents, unknown lots and unknown states are ignored (`js/core/availability.js`, tested in `tests/unit/availability.test.js`). The integration guide for the system's developer, in Spanish, is `docs/integracion-disponibilidad.md`.
+
 ## Génesis' own content
 
 | Where | What | Source |
@@ -138,7 +142,7 @@ Every item below is a one-line change; until it is set the page adapts on its ow
 | Public address once the domain is live | `SITE.siteUrl` in `js/config/site.js` | Absolute `og:image`, `og:url` and canonical link (link previews in WhatsApp and social networks, search engines) |
 | Google Analytics 4 measurement ID | `SITE.analyticsId` | Loads GA4 (IP anonymised; off with Do Not Track / GPC). Events: `select_lot`, `inquiry` (status, lot, channel, topic), `open_explorer`, `contact_button`, `open_map`, `gallery_fullscreen`, `spec_action`, `brochure_download`; never names, phones or messages |
 | Brochure PDF (e.g. `assets/docs/viva-lago-brochure.pdf`) | `SITE.brochureUrl` | “Descargar brochure (PDF)” appears in the development sheet |
-| Availability per lot, with its source | `KNOWN_AVAILABILITY` in `js/data/viva-lago.js` | Lot browser and 3D show sold / reserved / available |
+| Availability per lot | `SITE.availabilityUrl` (their system) or `data/disponibilidad.json` | Plan, list and lot sheet show sold / reserved / available, live |
 | Team: each person's name as it should be written, role and a square photo (≥ 800 × 800); optional two-line bio | `TEAM` in `js/config/company.js`, photos in `assets/team/` | Round portraits in “Nuestro equipo” and their “Conocé a …” cards (monograms until a photo arrives) |
 | Vision (approve or replace the draft) | `COMPANY.vision` | “Nuestra visión” on the home page |
 | Office address, opening hours, Google Maps link | `COMPANY.office` | “Nuestra oficina” with “Cómo llegar” |

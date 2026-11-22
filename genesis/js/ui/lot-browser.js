@@ -5,10 +5,13 @@ import { h } from './dom.js';
 import { planSvg } from './plan-svg.js';
 import { LOTS, findLot, BROCHURE_BLOCK } from '../data/viva-lago.js';
 import { lotDetailRows, lotLabel } from '../core/format.js';
+import { AVAILABILITY_EVENT, availabilitySummary, lastAvailability } from '../core/availability.js';
 
 const BLOCKS = ['A', 'B', 'C', 'D', 'E'];
 const area = (m2) => `${m2.toLocaleString('es-PY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} m²`;
 const metres = (v) => v.toFixed(1).replace('.', ',');
+const STATUS = { sold: ['status--sold', 'Vendido'], reserved: ['status--reserved', 'Reservado'], available: ['status--available', 'Disponible'] };
+const statusBadge = (state) => (STATUS[state] ? h('span', { class: `status ${STATUS[state][0]}` }, STATUS[state][1]) : h('span', { class: 'status' }, 'Consultar'));
 
 /**
  * @param {HTMLElement} host
@@ -40,7 +43,13 @@ export function mountLotBrowser(host, { onExplore, onInquire, reducedMotion = fa
     plan.setFilter(block);
     plan.setSelected(selectedId);
   });
-  const planWrap = h('div', { class: 'lot-plan' }, plan, h('p', { class: 'lot-plan__legend' }, h('span', { class: 'key key--lot' }), 'Lote', h('span', { class: 'key key--sold' }), 'Vendido', h('span', { class: 'key key--common' }), 'Área común'));
+  const updated = h('span', { class: 'lot-plan__updated' });
+  const planWrap = h(
+    'div',
+    { class: 'lot-plan' },
+    plan,
+    h('p', { class: 'lot-plan__legend' }, h('span', { class: 'key key--lot' }), 'Lote', h('span', { class: 'key key--available' }), 'Disponible', h('span', { class: 'key key--reserved' }), 'Reservado', h('span', { class: 'key key--sold' }), 'Vendido', h('span', { class: 'key key--common' }), 'Área común', updated),
+  );
 
   // -------------------------------------------------------------- sheet
   const sheet = h('aside', { class: 'lot-sheet', 'aria-live': 'polite', 'aria-label': 'Ficha del lote', tabindex: '-1' });
@@ -65,7 +74,7 @@ export function mountLotBrowser(host, { onExplore, onInquire, reducedMotion = fa
       h('p', { class: 'eyebrow on-dark' }, `${lotLabel(lot)} · ${lot.id}`),
       h('p', { class: 'lot-sheet__area' }, h('span', {}, area(lot.commercial.areaM2).replace(' m²', '')), h('span', { class: 'unit' }, 'm² de área propia')),
       h('dl', { class: 'facts facts--sheet' }, ...rows.map((r) => h('div', {}, h('dt', {}, r.label), h('dd', {}, r.pending ? h('span', { class: 'pending' }, r.value) : r.value)))),
-      h('p', { class: 'small lot-sheet__ref' }, `La manzana ${lot.block} figura como manzana ${BROCHURE_BLOCK[lot.block]} en el folleto de Génesis.${lot.commercial.availabilitySource ? ` Estado según ${lot.commercial.availabilitySource.toLowerCase()}.` : ''}`),
+      h('p', { class: 'small lot-sheet__ref' }, `La manzana ${lot.block} figura como manzana ${BROCHURE_BLOCK[lot.block]} en el folleto de Génesis.${lot.commercial.availabilitySource ? ` Estado según: ${lot.commercial.availabilitySource}.` : ''}`),
       h('div', { class: 'lot-sheet__actions' }, explore, inquire),
     );
   }
@@ -123,7 +132,7 @@ export function mountLotBrowser(host, { onExplore, onInquire, reducedMotion = fa
           h('td', { class: 'num' }, area(lot.commercial.areaM2)),
           h('td', { class: 'num hide-s' }, area(lot.survey.totalAreaM2)),
           h('td', { class: 'num hide-s' }, `${metres(lot.frontage)} × ${metres(lot.depth)} m`),
-          h('td', {}, sold ? h('span', { class: 'status status--sold' }, 'Vendido') : h('span', { class: 'status' }, 'Consultar')),
+          h('td', {}, statusBadge(lot.commercial.availability)),
         );
         rowsById.set(lot.id, tr);
         return tr;
@@ -160,8 +169,29 @@ export function mountLotBrowser(host, { onExplore, onInquire, reducedMotion = fa
     if (from === 'list') sheet.focus({ preventScroll: true });
   }
 
+  // States from Génesis' system: redraw the plan, the list and the sheet.
+  function refreshStates(detail, { redraw = true } = {}) {
+    if (redraw) {
+      const next = makePlan();
+      plan.replaceWith(next);
+      plan = next;
+      plan.setFilter(block);
+      plan.setSelected(selectedId);
+      renderList();
+      renderSheet();
+    }
+    const n = availabilitySummary(LOTS);
+    const count = (k, one, many) => n[k] && `${n[k]} ${n[k] === 1 ? one : many}`;
+    const parts = [count('available', 'disponible', 'disponibles'), count('reserved', 'reservado', 'reservados'), count('sold', 'vendido', 'vendidos')].filter(Boolean);
+    const when = detail?.updatedAt ? `actualizado el ${detail.updatedAt.toLocaleDateString('es-PY', { day: 'numeric', month: 'long' })}` : '';
+    updated.textContent = [parts.join(' · '), when].filter(Boolean).join(' — ');
+  }
+  // Redraw only when a state changed, so a periodic check never disturbs the visitor.
+  addEventListener(AVAILABILITY_EVENT, (e) => refreshStates(e.detail, { redraw: e.detail.changed.length > 0 }));
+
   host.replaceChildren(filter, h('div', { class: 'lot-browser__grid' }, planWrap, sheet), list);
   setBlock(null);
   renderSheet();
+  if (lastAvailability) refreshStates(lastAvailability, { redraw: false });
   return { select, setBlock, element: host };
 }

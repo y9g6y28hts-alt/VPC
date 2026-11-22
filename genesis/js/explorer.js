@@ -122,7 +122,7 @@ function buildUI() {
     'select',
     { id: 'xp-lot-select', 'aria-label': 'Elegir un lote de la lista' },
     h('option', { value: '' }, 'Elegir de la lista…'),
-    ...['A', 'B', 'C', 'D', 'E'].map((b) => h('optgroup', { label: `Manzana ${b}` }, ...LOTS.filter((l) => l.block === b).map((l) => h('option', { value: l.id }, `${lotLabel(l)} · ${formatArea(l.commercial.areaM2)}${l.commercial.availability === 'sold' ? ' · vendido' : ''}`)))),
+    ...['A', 'B', 'C', 'D', 'E'].map((b) => h('optgroup', { label: `Manzana ${b}` }, ...LOTS.filter((l) => l.block === b).map((l) => h('option', { value: l.id }, `${lotLabel(l)} · ${formatArea(l.commercial.areaM2)}${l.commercial.availability === 'sold' ? ' · vendido' : l.commercial.availability === 'reserved' ? ' · reservado' : ''}`)))),
   );
   lotSelect.addEventListener('change', () => {
     if (lotSelect.value) selectLot(lotSelect.value);

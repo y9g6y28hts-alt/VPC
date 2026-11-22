@@ -98,11 +98,15 @@ body {
   background: var(--paper);
   color: var(--ink);
   font-family: var(--sans);
-  font-weight: 350;
+  font-weight: 400;
   font-size: 16px;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+  font-kerning: normal;
+  font-variant-ligatures: common-ligatures contextual;
+  font-optical-sizing: auto;
   overflow-x: hidden;
 }
 
@@ -113,6 +117,12 @@ body.is-locked {
 img {
   max-width: 100%;
   display: block;
+}
+
+p,
+li,
+dd {
+  text-wrap: pretty;
 }
 
 a {
@@ -367,7 +377,7 @@ textarea {
 }
 .brand__sub {
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   opacity: 0.66;
@@ -570,7 +580,7 @@ textarea {
 }
 .scroll-cue {
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: rgba(244, 239, 230, 0.6);
@@ -1127,7 +1137,7 @@ textarea {
 }
 .xp-chip {
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   border: 1px solid rgba(244, 239, 230, 0.32);
@@ -1225,7 +1235,7 @@ textarea {
   display: flex;
   justify-content: space-between;
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: rgba(244, 239, 230, 0.6);
@@ -1312,7 +1322,7 @@ textarea {
 }
 .xp-views .label {
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--ink-soft);
@@ -1476,7 +1486,7 @@ textarea {
 }
 .xp-tooltip .mono {
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.1em;
   color: var(--ink-soft);
   margin-left: 6px;
@@ -1695,6 +1705,12 @@ textarea {
 }
 .plan-svg .lot.is-sold {
   fill: rgba(244, 239, 230, 0.14);
+}
+.plan-svg .lot.is-reserved {
+  fill: rgba(226, 170, 76, 0.28);
+}
+.plan-svg .lot.is-available {
+  fill: rgba(129, 169, 65, 0.3);
 }
 .plan-svg .lot.is-selected {
   fill: rgba(195, 211, 59, 0.35);
@@ -1960,7 +1976,7 @@ textarea {
   stroke-width: 1.5;
 }
 .map-label {
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: 0.24em;
   fill: var(--ink);
 }
@@ -1974,7 +1990,7 @@ textarea {
 }
 .map-north text,
 .map-scale text {
-  font-size: 9px;
+  font-size: 11px;
   fill: var(--ink-soft);
 }
 .map-scale rect.a {
@@ -2072,6 +2088,23 @@ textarea {
 }
 .key--sold {
   background: rgba(244, 239, 230, 0.26);
+}
+.key--reserved {
+  background: rgba(226, 170, 76, 0.5);
+}
+.key--available {
+  background: rgba(129, 169, 65, 0.55);
+}
+.lot-plan__updated {
+  flex-basis: 100%;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(244, 239, 230, 0.55);
+}
+.lot-plan__updated:empty {
+  display: none;
 }
 .key--common {
   background: rgba(140, 170, 110, 0.3);
@@ -2246,11 +2279,21 @@ textarea {
   font-size: 12px;
   color: rgba(244, 239, 230, 0.6);
 }
-.status--sold {
+.status--sold,
+.status--reserved,
+.status--available {
   display: inline-block;
   padding: 2px 8px;
   border: 1px solid rgba(244, 239, 230, 0.35);
   color: var(--ivory);
+}
+.status--reserved {
+  border-color: rgba(226, 170, 76, 0.7);
+  color: #f0c27a;
+}
+.status--available {
+  border-color: rgba(129, 169, 65, 0.8);
+  color: #b5d77a;
 }
 @media (max-width: 900px) {
   .lot-browser__grid {
@@ -3044,7 +3087,7 @@ textarea {
     bottom: auto;
     top: calc(env(safe-area-inset-top, 0px) + 158px);
     right: var(--gutter);
-    font-size: 10.5px;
+    font-size: 11px;
     line-height: 1.4;
   }
 }
@@ -3141,7 +3184,7 @@ textarea {
 }
 .club-shot__kind {
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: rgba(244, 239, 230, 0.72);
@@ -3466,7 +3509,7 @@ textarea {
   background: rgba(127, 65, 128, 0.2);
   color: #d9bfdc;
   font-family: var(--mono);
-  font-size: 10.5px;
+  font-size: 11px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
 }
@@ -3806,11 +3849,16 @@ body.is-locked .fab {
   right: var(--gutter);
   top: calc(var(--header-h) + 18px);
   margin: 0;
+  padding: 6px 11px;
+  border-radius: 999px;
+  background: rgba(23, 15, 27, 0.45);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: 10.5px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: rgba(244, 239, 230, 0.62);
+  color: rgba(244, 239, 230, 0.85);
 }
 
 .stats-card {
@@ -3835,7 +3883,7 @@ body.is-locked .fab {
 }
 .stats-card dt {
   font-family: var(--mono);
-  font-size: 10.5px;
+  font-size: 11px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: rgba(244, 239, 230, 0.66);
@@ -3857,7 +3905,7 @@ body.is-locked .fab {
   margin: 0;
   padding: 12px clamp(16px, 1.8vw, 24px);
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: rgba(244, 239, 230, 0.58);
@@ -4047,7 +4095,7 @@ body.is-locked .fab {
 }
 .project-tab span {
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--ink-soft);
@@ -4098,7 +4146,7 @@ body.is-locked .fab {
   -webkit-backdrop-filter: blur(8px);
   color: var(--ivory);
   font-family: var(--mono);
-  font-size: 10.5px;
+  font-size: 11px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -4160,7 +4208,7 @@ body.is-locked .fab {
 }
 .project-card__facts dt {
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--ink-soft);
@@ -4221,15 +4269,19 @@ body.is-locked .fab {
 }
 .category__tag {
   position: absolute;
-  left: 16px;
+  left: 14px;
   bottom: 14px;
   z-index: 1;
+  padding: 6px 11px;
+  border-radius: 999px;
+  background: rgba(23, 15, 27, 0.55);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   font-family: var(--mono);
-  font-size: 9.5px;
+  font-size: 10.5px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: rgba(244, 239, 230, 0.8);
-  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.45);
+  color: rgba(244, 239, 230, 0.9);
 }
 .category__n {
   font-family: var(--mono);
@@ -4252,7 +4304,7 @@ body.is-locked .fab {
   background: linear-gradient(0deg, rgba(23, 15, 27, 0.94) 0%, rgba(23, 15, 27, 0.72) 34%, rgba(23, 15, 27, 0.05) 68%);
 }
 .category--tile .category__tag {
-  top: 16px;
+  top: 14px;
   bottom: auto;
 }
 .category--tile .category__body {
@@ -4390,7 +4442,7 @@ body.is-locked .fab {
 }
 .member__role {
   font-family: var(--mono);
-  font-size: 10.5px;
+  font-size: 11px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--ink-soft);
@@ -4555,7 +4607,7 @@ body.is-locked .fab {
 }
 .office__details dt {
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--ink-soft);
@@ -4699,7 +4751,7 @@ body.is-locked .fab {
 .hero-tag {
   margin: 0 0 14px;
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: rgba(244, 239, 230, 0.6);
@@ -4755,7 +4807,7 @@ body.is-locked .fab {
   -webkit-backdrop-filter: blur(8px);
   color: var(--ivory);
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   display: inline-flex;
@@ -4893,7 +4945,7 @@ body.is-locked .fab {
   border: 1px solid rgba(129, 169, 65, 0.6);
   color: var(--lime);
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
 }
@@ -5082,7 +5134,7 @@ body.is-locked .fab {
   background: var(--lime);
   color: #1d1a3f;
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -5101,5 +5153,11 @@ body.is-locked .fab {
   }
   .real__strip {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 860px) {
+  .mosaic__item:last-child {
+    grid-column: span 2;
+    aspect-ratio: 4 / 3;
   }
 }

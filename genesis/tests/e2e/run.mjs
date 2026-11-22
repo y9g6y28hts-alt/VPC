@@ -236,6 +236,27 @@ const gpuArgs = ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ig
     assert.equal(await page.evaluate(() => document.activeElement?.name), 'name');
   });
 
+  await check('lot states from Génesis’ system update the plan, list and sheet (also while the page is open)', async () => {
+    const doc = { desarrollo: 'viva-lago-country', actualizado: '2026-11-22T18:30:00-03:00', fuente: 'Sistema de gestión de Génesis', lotes: { 'C-02': 'vendido', 'B-05': 'reservado', 'A-01': 'disponible', 'Z-99': 'vendido' } };
+    await page.route('**/data/disponibilidad.json', (route) => route.fulfill({ contentType: 'application/json', body: JSON.stringify(doc) }));
+    await page.goto(`${site}#lotes`);
+    await page.locator('[data-lot-browser]').scrollIntoViewIfNeeded();
+    await page.waitForSelector('.plan-svg .lot.is-reserved');
+    assert.equal(await page.locator('.plan-svg .lot.is-sold').count(), 1);
+    assert.equal(await page.locator('.plan-svg .lot.is-available').count(), 1);
+    assert.match(await page.textContent('.lot-plan__updated'), /1 disponible · 1 reservado · 1 vendido — actualizado el 22 de noviembre/);
+    await page.click('.lot-filter [data-block="B"]');
+    assert.match(await page.locator('.lot-row', { hasText: 'B-05' }).textContent(), /Reservado/);
+    await page.locator('.lot-row', { hasText: 'B-05' }).locator('button').click();
+    assert.match(await page.textContent('.lot-sheet'), /Estado según: Sistema de gestión de Génesis/);
+    // A sale recorded while the page is open shows without a reload.
+    doc.lotes['B-05'] = 'vendido';
+    await page.evaluate(() => import('./js/core/availability.js').then((m) => import('./js/data/viva-lago.js').then((d) => m.loadAvailability('data/disponibilidad.json', d.LOTS))));
+    await page.waitForFunction(() => document.querySelectorAll('.plan-svg .lot.is-sold').length === 2);
+    assert.match(await page.locator('.lot-row', { hasText: 'B-05' }).textContent(), /Vendido/);
+    await page.unroute('**/data/disponibilidad.json');
+  });
+
   await check('with reduced motion the hero shows the finished residence without scroll-scrubbing', async () => {
     const last = await page.evaluate(async () => (await (await fetch('assets/renders/hero/manifest.json')).json()).frames - 1);
     assert.match(await page.getAttribute('[data-hero-poster]', 'src'), new RegExp(`f${String(last).padStart(2, '0')}\\.webp$`));

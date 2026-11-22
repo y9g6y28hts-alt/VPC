@@ -59,6 +59,16 @@ Construction runs on **one continuous clock** (`js/core/timeline.js`) shared by 
 
 Partially built elements are cut with per-component clipping planes in house space; back faces exposed by the cut are shaded with the cut's normal so walls read as solid while they rise (`js/experience/house/construction.js`). Finished components switch back to shared materials.
 
+## Génesis' own content
+
+| Where | What | Source |
+|---|---|---|
+| Viva Lago · “El predio, hoy” (`#predio`) | Three vertical clips (costa, monte, sendero) and six photographs, full-screen viewer | Génesis' phone footage and photographs of the site (`assets/predio/`, `assets/predio/video/`: H.264 540 px wide, silent, ~3 MB each) |
+| Viva Lago · “Avances de obra” (`#avances`) | Antes / Durante / Hoy of the access road, and work on site | Génesis' “El camino hacia tu futuro…” piece (cropped, text removed) and photographs |
+| Home · campaign band | “Invertir en tranquilidad también es un buen negocio.” and the instalment | Génesis' campaign piece (image cropped) |
+| Barrios · hero | Family at the water's edge | Génesis' campaign piece (cropped), labelled “Imagen de campaña” |
+| Hero chips, ficha, barrios card | “Cuotas desde Gs. 4.400.000”, “Condominio de casa quinta”, “Administración y venta: Génesis” | Génesis' campaign pieces |
+
 ## Structure
 
 ```
@@ -111,8 +121,9 @@ In the explorer (`js/ui/cinema.js`), the real-time camera lands exactly on the f
 
 ## Commercial integrity
 
-- The lot panel shows the plan's surfaces (own area, proportional common area, total and co-ownership share) and the approximate frontage × depth of the drawing. Price and financing always read **“Consultar con un asesor”**; `priceUSD` and `financing` stay `null` and a unit test fails if either is set.
+- The lot panel shows the plan's surfaces (own area, proportional common area, total and co-ownership share) and the approximate frontage × depth of the drawing. Lot prices always read **“Consultar con un asesor”**: each lot's `priceUSD` and `financing` stay `null` and a unit test fails if either is set. The one published figure is Génesis' own campaign instalment, **“Cuotas desde Gs. 4.400.000”** (`DEVELOPMENT.facts.financing`, written with `formatGuaranies`); the tests fail if any other amount appears on a page.
 - Availability is shown only with a documented source (`KNOWN_AVAILABILITY` in `js/data/viva-lago.js`): today only C-02, marked sold in the brochure. The brochure numbers blocks 1–5; the plan letters them A–E (1 = C, 2 = D, 3 = B, 4 = E, 5 = A).
+- Photographs and clips of the site (`assets/predio/`, from Génesis) are labelled as real; campaign images (stock photography in Génesis' ads) are labelled “Imagen de campaña”; renders and 3D are labelled illustrative.
 - The residence is labelled as a conceptual visualisation adapted to the lot, not included in the lot price and not approved for construction.
 - The inquiry form keeps the selected lot. It reports **sent** only when a configured endpoint answers 2xx; WhatsApp/e-mail are reported as hand-offs; with no channel configured (the current state) it says nothing was sent and offers the text to copy.
 - The plan's personal data (owner, ID numbers, professional) is not published anywhere on the site, and the plan PDF itself is not part of the repository; `tools/survey/plan-extract.json` keeps only the drawing's geometry and labels.

@@ -50,10 +50,11 @@
       <nav class="nav" id="nav" aria-label="Principal">
         <a class="nav__back" href="barrios.html"><span aria-hidden="true">←</span> Barrios privados</a>
         <a href="#proyecto">El desarrollo</a>
+        <a href="#predio">El predio</a>
         <a href="#ubicacion">Ubicación</a>
         <a href="#lotes">Lotes</a>
         <a href="#club">El club</a>
-        <a href="#obra">La obra</a>
+        <a href="#avances">Avances</a>
         <a href="#contacto">Contacto</a>
         <button class="btn btn--light" type="button" data-open-explorer>Explorar en 3D</button>
       </nav>
@@ -73,9 +74,10 @@
         <div class="hero__shade"></div>
         <div class="hero__content">
           <nav class="crumbs on-dark" aria-label="Estás en"><a href="./">Génesis</a><span aria-hidden="true">/</span><a href="barrios.html">Barrios privados</a><span aria-hidden="true">/</span><span aria-current="page">Viva Lago Country</span></nav>
-          <p class="eyebrow on-dark">Un barrio privado de Génesis · Km 9 Acaray<span class="hide-s"> · Ciudad del Este</span></p>
+          <p class="eyebrow on-dark">Condominio de casa quinta · Km 9 Acaray<span class="hide-s"> · Administración y venta: Génesis</span></p>
           <h1 class="display h1 hero__title">El comienzo de <em>tu historia.</em></h1>
-          <p class="lede hero__lede">Treinta y dos lotes sobre el río Acaray, con club náutico y acceso propio al agua. Elegí el tuyo y mirá cómo una residencia toma forma sobre él.</p>
+          <p class="lede hero__lede">Treinta y dos lotes a orillas del lago Acaray, con club náutico y acceso propio al agua. Elegí el tuyo y mirá cómo una residencia toma forma sobre él.</p>
+          <p class="price-chip">Cuotas desde <strong>Gs. 4.400.000</strong></p>
           <div class="hero__actions">
             <a class="btn btn--light" href="#lotes">Ver los lotes <span class="arrow" aria-hidden="true">→</span></a>
             <button class="btn btn--text on-dark-text" type="button" data-open-explorer>Recorrido 3D</button>
@@ -100,7 +102,7 @@
           </div>
           <div class="project-intro">
             <p class="lede">Un barrio cerrado de casas quinta sobre la margen del río Acaray, a la altura del km 9, en Ciudad del Este. Dos hectáreas ordenadas en cinco manzanas, una avenida central y un club náutico con salida propia al agua.</p>
-            <p class="small">Comercializa Génesis Negocios Inmobiliarios.</p>
+            <p class="small">Administración y venta: Génesis Negocios Inmobiliarios.</p>
           </div>
         </div>
         <dl class="figures reveal" aria-label="El desarrollo en cifras">
@@ -111,7 +113,7 @@
         </dl>
         <div class="spec reveal" aria-labelledby="spec-title">
           <div class="spec__head">
-            <p class="pill">Barrio cerrado · Km 9 Acaray</p>
+            <p class="pill">Condominio de casa quinta · Km 9 Acaray</p>
             <h3 class="spec__title" id="spec-title">Ficha del desarrollo</h3>
           </div>
           <div class="spec__grid">
@@ -129,7 +131,8 @@
             </section>
             <section class="spec__terms">
               <h4>Condiciones</h4>
-              <p class="spec__strong">Precio, disponibilidad y financiación de cada lote, por escrito y con un asesor de Génesis.</p>
+              <p class="spec__price">Cuotas desde <strong>Gs. 4.400.000</strong></p>
+              <p class="spec__strong">Según la campaña de Génesis. El precio de cada lote, la disponibilidad y el plan de cuotas vigente, por escrito con un asesor.</p>
             </section>
           </div>
           <div class="spec__actions">
@@ -139,6 +142,53 @@
             <a class="btn btn--ghost" href="#" data-brochure hidden download>Descargar brochure (PDF)</a>
           </div>
         </div>
+      </div>
+    </section>
+
+
+    <!-- The site today: photographs and footage supplied by Génesis. -->
+    <section class="section predio" id="predio" aria-labelledby="predio-title">
+      <div class="inner">
+        <div class="predio__head reveal">
+          <p class="eyebrow">El predio, hoy · Fotografías y videos reales</p>
+          <h2 class="display h2" id="predio-title">Tu próxima historia comienza <em>a orillas del agua.</em></h2>
+          <p class="lede">Monte nativo, sombra todo el año y la costa del lago Acaray a pocos pasos. Así es hoy el terreno de Viva Lago Country, sin retoques.</p>
+        </div>
+        <div class="predio__grid">
+          <figure class="reels reveal" data-reels>
+            <div class="reels__frame">
+              <video class="reels__video" playsinline muted preload="none"></video>
+              <span class="reels__badge">Video real</span>
+            </div>
+            <div class="reels__tabs" role="tablist" aria-label="Videos del predio">
+              <button type="button" role="tab" data-reel="assets/predio/video/costa.mp4" data-poster="assets/predio/video/costa-poster.webp" data-label="La costa del lago Acaray">Costa</button>
+              <button type="button" role="tab" data-reel="assets/predio/video/bosque.mp4" data-poster="assets/predio/video/bosque-poster.webp" data-label="El monte, con vista al lago">Monte</button>
+              <button type="button" role="tab" data-reel="assets/predio/video/sendero.mp4" data-poster="assets/predio/video/sendero-poster.webp" data-label="Sendero entre los árboles">Sendero</button>
+            </div>
+            <figcaption data-reel-caption>La costa del lago Acaray</figcaption>
+          </figure>
+          <div class="mosaic reveal" data-photos>
+            <a class="mosaic__item mosaic__item--tall" href="assets/predio/costa-arboles-1200.webp" data-photo data-caption="Monte nativo frente al lago · Fotografía del predio">
+              <img src="assets/predio/costa-arboles-640.webp" alt="Monte nativo con troncos encalados frente al lago Acaray" width="640" height="853" loading="lazy" decoding="async" />
+            </a>
+            <a class="mosaic__item" href="assets/predio/lago-entre-arboles-1200.webp" data-photo data-caption="El lago, entre los árboles · Fotografía del predio">
+              <img src="assets/predio/lago-entre-arboles-640.webp" alt="El lago Acaray visto entre los árboles del predio" width="640" height="853" loading="lazy" decoding="async" />
+            </a>
+            <a class="mosaic__item" href="assets/predio/monte-costa-1200.webp" data-photo data-caption="La arboleda sobre la costa · Fotografía del predio">
+              <img src="assets/predio/monte-costa-640.webp" alt="Arboleda del predio sobre la costa del lago" width="640" height="853" loading="lazy" decoding="async" />
+            </a>
+            <a class="mosaic__item" href="assets/predio/lago-brillo-1200.webp" data-photo data-caption="Sol sobre el agua · Fotografía del predio">
+              <img src="assets/predio/lago-brillo-640.webp" alt="Reflejos del sol sobre el lago Acaray desde el predio" width="640" height="853" loading="lazy" decoding="async" />
+            </a>
+            <a class="mosaic__item" href="assets/predio/troncos-1200.webp" data-photo data-caption="Árboles cuidados del predio · Fotografía del predio">
+              <img src="assets/predio/troncos-640.webp" alt="Árboles del predio con troncos encalados" width="640" height="853" loading="lazy" decoding="async" />
+            </a>
+            <a class="mosaic__item" href="assets/predio/monte-camioneta-1200.webp" data-photo data-caption="Recorriendo el predio · Fotografía del predio">
+              <img src="assets/predio/monte-camioneta-640.webp" alt="Monte nativo junto al lago, con un vehículo de Génesis al fondo" width="640" height="853" loading="lazy" decoding="async" />
+            </a>
+          </div>
+        </div>
+        <p class="small predio__note">Fotografías y videos del predio publicados por Génesis. Los renders del club y de la residencia, más abajo, son ilustrativos.</p>
       </div>
     </section>
 
@@ -259,6 +309,44 @@
           </figure>
         </div>
         <p class="small club-note">Imágenes provistas por Génesis. Los renders son ilustrativos: el diseño final del club, sus equipamientos y materiales pueden variar.</p>
+      </div>
+    </section>
+
+    <!-- Progress on site, from Génesis' own photographs. -->
+    <section class="section section--dark on-dark avances" id="avances" aria-labelledby="avances-title">
+      <div class="inner">
+        <div class="avances__head reveal">
+          <p class="eyebrow on-dark">Avances de obra</p>
+          <h2 class="display h2" id="avances-title">El camino hacia tu futuro frente al lago <em>está siendo mejorado.</em></h2>
+          <p class="lede">Cada día más cerca. Seguimos los trabajos en el predio y los mostramos tal como están.</p>
+        </div>
+        <ol class="avances__list">
+          <li class="avance reveal">
+            <figure class="avance__media"><img src="assets/predio/avance-antes-720.webp" alt="El acceso, antes de los trabajos: Limpieza del monte y del trazado del camino de ingreso." loading="lazy" decoding="async" /></figure>
+            <span class="avance__tag">Antes</span>
+            <h3>El acceso, antes de los trabajos</h3>
+            <p>Limpieza del monte y del trazado del camino de ingreso.</p>
+          </li>
+          <li class="avance reveal">
+            <figure class="avance__media"><img src="assets/predio/avance-durante-720.webp" alt="Apertura del camino: Nivelación del suelo y apertura del camino hacia el lago." loading="lazy" decoding="async" /></figure>
+            <span class="avance__tag">Durante</span>
+            <h3>Apertura del camino</h3>
+            <p>Nivelación del suelo y apertura del camino hacia el lago.</p>
+          </li>
+          <li class="avance reveal">
+            <figure class="avance__media"><img src="assets/predio/avance-hoy-720.webp" alt="Camino enripiado: El camino de acceso, con su capa de ripio terminada." loading="lazy" decoding="async" /></figure>
+            <span class="avance__tag">Hoy</span>
+            <h3>Camino enripiado</h3>
+            <p>El camino de acceso, con su capa de ripio terminada.</p>
+          </li>
+          <li class="avance reveal">
+            <figure class="avance__media"><img src="assets/predio/avance-postes-720.webp" alt="Trabajos en el predio: Llegada de postes y maquinaria para las próximas obras." loading="lazy" decoding="async" /></figure>
+            <span class="avance__tag">En marcha</span>
+            <h3>Trabajos en el predio</h3>
+            <p>Llegada de postes y maquinaria para las próximas obras.</p>
+          </li>
+        </ol>
+        <p class="small avances__note">Fotografías tomadas en el predio por Génesis.</p>
       </div>
     </section>
 
@@ -447,7 +535,7 @@
         </nav>
         <div>
           <h4>Sobre esta presentación</h4>
-          <p>Lotes, calles, numeración y superficies provienen del proyecto de loteamiento georreferenciado de Viva Lago Country. La vegetación, el relieve, el entorno y la residencia son una recreación: la residencia es un concepto adaptado a las medidas de cada lote, no un proyecto aprobado, y no está incluida en el precio de ningún lote. Precios, disponibilidad y condiciones de financiación se informan únicamente a través de un asesor de Génesis.</p>
+          <p>Lotes, calles, numeración y superficies provienen del proyecto de loteamiento georreferenciado de Viva Lago Country. La vegetación, el relieve, el entorno y la residencia son una recreación: la residencia es un concepto adaptado a las medidas de cada lote, no un proyecto aprobado, y no está incluida en el precio de ningún lote. La cuota publicada es la de la campaña de Génesis; el precio de cada lote, la disponibilidad y las condiciones vigentes se confirman con un asesor.</p>
           <p>Escena en tiempo real con three.js (MIT) y ez-tree (MIT); renders con Blender Cycles. Iluminación con HDRI de Poly Haven (CC0). Texturas arquitectónicas generadas para este proyecto. Tipografías Instrument Serif y Geist (SIL OFL 1.1).</p>
         </div>
       </div>

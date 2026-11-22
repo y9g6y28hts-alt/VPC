@@ -13,6 +13,12 @@ export function formatPrice(usd) {
   return `USD ${Math.round(usd).toLocaleString('es-PY')}`;
 }
 
+/** Guaraníes as Paraguay writes them: "Gs. 4.400.000" (no decimals). */
+export function formatGuaranies(pyg) {
+  if (typeof pyg !== 'number' || !Number.isFinite(pyg) || pyg <= 0) return PENDING;
+  return `Gs. ${String(Math.round(pyg)).replace(/\B(?=(\d{3})+(?!\d))/g, '.')}`;
+}
+
 const AVAILABILITY = { available: 'Disponible', reserved: 'Reservado', sold: 'Vendido' };
 
 export function formatAvailability(value) {
@@ -32,7 +38,8 @@ function formatDecimalArea(m2) {
 
 /**
  * Rows for the lot panel, in display order. Surfaces come from the plan's
- * surface table; prices and financing are not published on the site, and
+ * surface table; lot prices are not published (only Génesis' campaign
+ * instalment, shown elsewhere), and
  * availability is shown only where a Génesis document states it.
  */
 export function lotDetailRows(lot) {

@@ -19,6 +19,8 @@ const server = createServer().listen(0);
 const base = `http://localhost:${server.address().port}/`;
 const site = `${base}viva-lago.html`;
 const results = [];
+// Génesis' campaign instalment is the one published figure (js/data/viva-lago.js).
+const withoutCampaign = (text) => text.replaceAll('Gs. 4.400.000', '');
 let failures = 0;
 
 async function check(name, fn) {
@@ -70,7 +72,8 @@ const gpuArgs = ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ig
     assert.match(await page.title(), /^Génesis/);
     assert.match(await page.textContent('h1'), /el comienzo de tu historia/i);
     assert.match(await page.textContent('.stats-card'), /datos del plano/);
-    assert.ok(!/USD|Gs\b|\$/.test(await page.locator('main').textContent()), 'no prices on the home page');
+    assert.ok(!/USD|Gs\b|\$/.test(withoutCampaign(await page.locator('main').textContent())), 'no prices on the home page but the campaign instalment');
+    assert.match(await page.textContent('.campaign__price'), /Cuotas desde\s*Gs\. 4\.400\.000/);
     await snap(page, '00-genesis-home');
     assert.deepEqual(await page.locator('.category .btn--pill').allTextContents().then((t) => t.map((x) => x.replace(/\s*→$/, '').trim())), ['Conocer barrios privados', 'Conocer nuestros lotes disponibles', 'Conocer terrenos y futuras inversiones']);
     // The team: round portraits open “Conocé a …”, Escape closes it.
@@ -99,15 +102,35 @@ const gpuArgs = ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ig
     await page.goto(site);
     await page.waitForLoadState('networkidle');
     assert.match(await page.textContent('h1'), /El comienzo de/);
-    assert.deepEqual(await page.locator('.nav a:not(.nav__back)').allTextContents(), ['El desarrollo', 'Ubicación', 'Lotes', 'El club', 'La obra', 'Contacto']);
+    assert.deepEqual(await page.locator('.nav a:not(.nav__back)').allTextContents(), ['El desarrollo', 'El predio', 'Ubicación', 'Lotes', 'El club', 'Avances', 'Contacto']);
     for (const id of await page.locator('.nav a:not(.nav__back)').evaluateAll((as) => as.map((a) => a.getAttribute('href')))) {
       assert.equal(await page.locator(id).count(), 1, `${id} exists`);
     }
     const figures = await page.locator('.figures').textContent();
     assert.match(figures, /32/);
     assert.match(figures, /20\.000 m²/);
-    assert.ok(!/USD|Gs\b|\$/.test(await page.locator('main').textContent()), 'no prices anywhere on the page');
+    assert.ok(!/USD|Gs\b|\$/.test(withoutCampaign(await page.locator('main').textContent())), 'no lot prices anywhere on the page');
     await snap(page, '01-home');
+  });
+
+  await check('the site today: real clips switch with tabs, photographs open full screen, progress is shown', async () => {
+    await page.locator('#predio').scrollIntoViewIfNeeded();
+    const tabs = page.locator('[data-reels] [role="tab"]');
+    assert.equal(await tabs.count(), 3);
+    assert.match(await page.getAttribute('[data-reels] video', 'src'), /costa\.mp4$/);
+    await tabs.nth(1).click();
+    assert.match(await page.getAttribute('[data-reels] video', 'src'), /bosque\.mp4$/);
+    assert.equal(await tabs.nth(1).getAttribute('aria-selected'), 'true');
+    assert.equal(await page.locator('[data-photos] [data-photo]').count(), 6);
+    await page.locator('[data-photos] [data-photo]').first().click();
+    await page.waitForSelector('.lightbox--photo[open]');
+    assert.match(await page.textContent('.lightbox--photo .lightbox__caption'), /Fotografía del predio/);
+    await page.keyboard.press('ArrowRight');
+    assert.match(await page.textContent('.lightbox--photo .lightbox__count'), /^2 \/ 6$/);
+    await page.keyboard.press('Escape');
+    assert.equal(await page.locator('.lightbox--photo[open]').count(), 0);
+    assert.equal(await page.locator('#avances .avance').count(), 4);
+    await snap(page, '01b-predio');
   });
 
   await check('location shows the surveyed coordinates and the Génesis map link', async () => {
@@ -152,17 +175,17 @@ const gpuArgs = ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ig
     await page.click('.showcase__thumbs button >> nth=2');
     assert.match(await page.textContent('.showcase__kind'), /Fotografía/);
     await page.click('.showcase__open');
-    await page.waitForSelector('dialog.lightbox[open]');
-    assert.match(await page.textContent('.lightbox__caption'), /Sombrillas de paja.*Fotografía/);
+    await page.waitForSelector('dialog.lightbox--club[open]');
+    assert.match(await page.textContent('.lightbox--club .lightbox__caption'), /Sombrillas de paja.*Fotografía/);
     await page.keyboard.press('ArrowRight');
-    assert.match(await page.textContent('.lightbox__count'), /4 \/ 9/);
+    assert.match(await page.textContent('.lightbox--club .lightbox__count'), /4 \/ 9/);
     await page.keyboard.press('Escape');
-    await page.waitForSelector('dialog.lightbox:not([open])', { state: 'attached' });
+    await page.waitForSelector('dialog.lightbox--club:not([open])', { state: 'attached' });
     assert.match(await page.textContent('.club-note'), /renders son ilustrativos/);
     // No WhatsApp number is configured: the button goes to the form, never to a made-up channel.
     assert.equal(await page.getAttribute('.fab', 'href'), '#contacto');
-    assert.match(await page.textContent('.spec'), /Precio, disponibilidad y financiación/);
-    assert.doesNotMatch(await page.textContent('.spec'), /USD|Gs\b|\$/);
+    assert.match(await page.textContent('.spec'), /Cuotas desde\s*Gs\. 4\.400\.000[\s\S]*precio de cada lote, la disponibilidad/);
+    assert.doesNotMatch(withoutCampaign(await page.textContent('.spec')), /USD|Gs\b|\$/);
   });
 
   await check('construction orbit video: poster, a playable source, labelled as a render; static with reduced motion', async () => {

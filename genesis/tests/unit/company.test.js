@@ -36,3 +36,10 @@ test('a land inquiry is about Génesis, not a Viva Lago lot', () => {
   assert.match(text, /terrenos y las futuras inversiones de Génesis/);
   assert.doesNotMatch(text, /Me interesa Viva Lago/);
 });
+
+test('guaraníes are written the Paraguayan way', async () => {
+  const { formatGuaranies, PENDING } = await import('../../js/core/format.js');
+  assert.equal(formatGuaranies(4400000), 'Gs. 4.400.000');
+  assert.equal(formatGuaranies(950), 'Gs. 950');
+  assert.equal(formatGuaranies(null), PENDING);
+});

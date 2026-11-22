@@ -86,7 +86,7 @@ function buildUI() {
     h('p', {}, h('strong', {}, 'Plano georreferenciado. '), `Lotes, calles, numeración y superficies provienen del ${DEVELOPMENT.planSource}. La vegetación, el entorno y el relieve son una recreación.`),
     h('p', {}, 'La residencia es un concepto arquitectónico, ajustado a las medidas de cada lote, para visualizar el potencial del terreno. No está aprobada para construcción ni incluida en el precio del lote.'),
     h('p', {}, 'Las personas, vehículos y embarcaciones que se ven en la escena son ilustrativos: muestran usos posibles del entorno, no servicios ni equipamientos confirmados.'),
-    h('p', {}, 'Precios, disponibilidad y financiación se informan únicamente a través de un asesor de Génesis.'),
+    h('p', {}, 'El precio de cada lote, la disponibilidad y las condiciones vigentes se confirman con un asesor de Génesis.'),
   );
   const disclosureBtn = h('button', { class: 'xp-chip', type: 'button', 'aria-expanded': 'false', 'aria-controls': 'xp-disclosure' }, 'Sobre esta escena');
   disclosureBtn.addEventListener('click', () => {

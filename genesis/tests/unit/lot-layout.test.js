@@ -134,10 +134,11 @@ test('every lot faces a street, and the fitted residence stays inside it', () =>
   }
 });
 
-test('data honesty: surveyed layout, no prices, availability only where documented', () => {
+test('data honesty: surveyed layout, no lot prices, only the campaign instalment, availability only where documented', () => {
   assert.equal(DEVELOPMENT.dataStatus, 'surveyed');
   assert.equal(DEVELOPMENT.facts.lotCount, 32);
-  assert.equal(DEVELOPMENT.facts.financing, null);
+  assert.equal(DEVELOPMENT.facts.financing.installmentsFromPYG, 4400000);
+  assert.match(DEVELOPMENT.facts.financing.source, /Campaña de Génesis/);
   for (const lot of LOTS) {
     assert.equal(lot.commercial.priceUSD, null);
     assert.equal(lot.commercial.financing, null);

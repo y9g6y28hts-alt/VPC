@@ -5,9 +5,10 @@
 // lot numbering and surfaces come from js/data/masterplan.js, which is generated
 // from the surveyor's PDF by tools/survey/ (see the README).
 //
-// Commercial data: prices and financing are intentionally not published here.
-// Availability is only set where a Génesis document states it; every other lot
-// reads "consultar".
+// Commercial data: the only published figure is the instalment Génesis
+// advertises in its own campaign ("Cuotas desde 4.400.000 Gs"); lot prices are
+// not published. Availability is only set where a Génesis document states it;
+// every other lot reads "consultar".
 import { polygonArea, polygonCentroid, lotFrame, lotToWorld, pointInPolygon } from '../core/lot-layout.js';
 import { utmToLatLon } from '../core/geo.js';
 import { MONUMENTS, ROADS, NAUTICAL_ACCESS, ENTRANCE_PAD, RIVER_EDGE, COMMON_PARCELS, SURVEYED_LOTS, UTM_ORIGIN } from './masterplan.js';
@@ -26,8 +27,15 @@ export const DEVELOPMENT = Object.freeze({
     privateAreaM2: 12400.77,
     commonAreaM2: 7599.23,
     amenities: Object.freeze(['Club Náutico & Deportivo', 'Acceso náutico al río Acaray', 'Administración', 'Avenida principal y calles internas']),
-    financing: null,
+    /** From Génesis' campaign pieces; the advisor confirms current terms. */
+    financing: Object.freeze({
+      installmentsFromPYG: 4400000,
+      source: 'Campaña de Génesis: “Cuotas desde 4.400.000 Gs”',
+    }),
   }),
+  /** As Génesis' campaign signs it. */
+  category: 'Condominio de casa quinta',
+  administeredBy: 'Génesis',
   // Location pin shared by Génesis.
   mapsUrl: 'https://maps.app.goo.gl/MoXFWMTVsvddWcvg7',
 });

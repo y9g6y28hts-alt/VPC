@@ -122,7 +122,7 @@ export function mountGallery(host, { reducedMotion = false } = {}) {
   const vNext = h('button', { class: 'lightbox__nav lightbox__nav--next', type: 'button', 'aria-label': 'Imagen siguiente' }, chevron(1));
   const vClose = h('button', { class: 'lightbox__close', type: 'button', 'aria-label': 'Cerrar' }, '×');
   const vStrip = thumbs(items, (i) => view(i), 'lightbox__thumbs');
-  const dialog = h('dialog', { class: 'lightbox', 'aria-label': 'Galería del club' }, h('figure', { class: 'lightbox__figure' }, vImg, h('figcaption', {}, vCaption, vCount)), vStrip.row, vPrev, vNext, vClose);
+  const dialog = h('dialog', { class: 'lightbox lightbox--club', 'aria-label': 'Galería del club' }, h('figure', { class: 'lightbox__figure' }, vImg, h('figcaption', {}, vCaption, vCount)), vStrip.row, vPrev, vNext, vClose);
   document.body.append(dialog);
   let vIndex = 0;
   function view(i) {

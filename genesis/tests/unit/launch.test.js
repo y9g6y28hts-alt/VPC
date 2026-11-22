@@ -6,6 +6,8 @@ import { readFileSync } from 'node:fs';
 import { SITE } from '../../js/config/site.js';
 import { CONTACT } from '../../js/config/contact.js';
 import { initAnalytics, track } from '../../js/core/track.js';
+import { DEVELOPMENT } from '../../js/data/viva-lago.js';
+import { formatGuaranies } from '../../js/core/format.js';
 
 test('launch settings are empty until supplied', () => {
   assert.equal(SITE.siteUrl, null);
@@ -42,5 +44,12 @@ test('the site is Génesis first: home → barrios privados → Viva Lago Countr
   assert.match(home, /href="terrenos\.html"[^>]*>[\s\S]*?Conocer terrenos y futuras inversiones/);
   assert.match(home, /data-team/);
   assert.match(read('viva-lago.html'), /class="nav__back" href="barrios\.html"/);
-  for (const f of ['index.html', 'barrios.html', 'terrenos.html']) assert.doesNotMatch(read(f), /USD|Gs\.? ?\d|\$ ?\d/, `${f} has no prices`);
+  // The only figure in guaraníes is Génesis' campaign instalment, from the data.
+  const campaign = formatGuaranies(DEVELOPMENT.facts.financing.installmentsFromPYG);
+  assert.equal(campaign, 'Gs. 4.400.000');
+  for (const f of ['index.html', 'barrios.html', 'terrenos.html', 'viva-lago.html']) {
+    const html = read(f);
+    assert.doesNotMatch(html.replaceAll(campaign, ''), /USD|Gs\.? ?\d|\$ ?\d/, `${f}: no other prices`);
+  }
+  assert.ok(read('index.html').includes(`Cuotas desde</span> <strong>${campaign}</strong>`));
 });
